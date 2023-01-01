@@ -1107,6 +1107,40 @@ export interface Homepage {
    * Legacy Banner 3 image field kept to avoid schema data loss.
    */
   playBoldImage?: (number | null) | Media;
+  childrensCornerTitle?: string | null;
+  /**
+   * Where the DISCOVER MORE button links.
+   */
+  childrensCornerHref?: string | null;
+  /**
+   * Drag rows to reorder cards. Untick Active to hide a card without deleting it.
+   */
+  childrensCornerItems?:
+    | {
+        /**
+         * e.g. Batman. Shown in this list and used as image alt text — not displayed on the card.
+         */
+        name: string;
+        /**
+         * Where the card links when clicked.
+         */
+        category: number | Category;
+        /**
+         * The full card artwork (character + background in one image). The card shows a blue placeholder until this is uploaded.
+         */
+        cardImage?: (number | null) | Media;
+        /**
+         * Transparent PNG/SVG of the brand text logo shown in the white strip.
+         */
+        logoImage?: (number | null) | Media;
+        /**
+         * Colour of the tab below the white strip (and the card outline).
+         */
+        tabColor?: string | null;
+        isActive?: boolean | null;
+        id?: string | null;
+      }[]
+    | null;
   meta?: {
     title?: string | null;
     description?: string | null;
@@ -1177,6 +1211,19 @@ export interface HomepageSelect<T extends boolean = true> {
         ctaHref?: T;
       };
   playBoldImage?: T;
+  childrensCornerTitle?: T;
+  childrensCornerHref?: T;
+  childrensCornerItems?:
+    | T
+    | {
+        name?: T;
+        category?: T;
+        cardImage?: T;
+        logoImage?: T;
+        tabColor?: T;
+        isActive?: T;
+        id?: T;
+      };
   meta?:
     | T
     | {

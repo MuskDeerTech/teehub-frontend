@@ -37,6 +37,20 @@ export type HomepageWatchAndBuyItem = {
   video: string;
 };
 
+export type HomepageChildrensCornerItem = {
+  name: string;
+  href: string;
+  cardImage: string | null;
+  logoImage: string | null;
+  tabColor: string;
+};
+
+export type HomepageChildrensCorner = {
+  title: string;
+  discoverHref: string;
+  items: HomepageChildrensCornerItem[];
+};
+
 const FALLBACK_SECTIONS: [HomepageCategorySection, HomepageCategorySection] = [
   { slug: "hoodies", label: "Hoodies" },
   { slug: "polo", label: "Polo T-shirts" },
@@ -221,6 +235,51 @@ export async function getHomepageBanners(): Promise<
       image: mediaUrl(homepage.banner3?.image) ?? mediaUrl(homepage.playBoldImage),
     },
   ];
+}
+
+export async function getHomepageChildrensCorner(): Promise<HomepageChildrensCorner> {
+  const payload = await getPayload({ config });
+  const homepage = (await payload.findGlobal({
+    slug: "homepage",
+    depth: 1,
+  })) as {
+    childrensCornerTitle?: string | null;
+    childrensCornerHref?: string | null;
+    childrensCornerItems?:
+      | {
+          name?: string | null;
+          category?: number | CategoryDoc | null;
+          cardImage?: number | Media | null;
+          logoImage?: number | Media | null;
+          tabColor?: string | null;
+          isActive?: boolean | null;
+        }[]
+      | null;
+  };
+
+  const items = (homepage.childrensCornerItems ?? [])
+    .filter((item) => item.isActive !== false)
+    .map((item): HomepageChildrensCornerItem | null => {
+      if (!item.name) return null;
+      const category =
+        typeof item.category === "object" && item.category !== null
+          ? item.category
+          : null;
+      return {
+        name: item.name,
+        href: category ? `/category/${category.slug}` : "/all/",
+        cardImage: mediaUrl(item.cardImage) ?? null,
+        logoImage: mediaUrl(item.logoImage) ?? null,
+        tabColor: textOr(item.tabColor, "#295DBE"),
+      };
+    })
+    .filter((item): item is HomepageChildrensCornerItem => Boolean(item));
+
+  return {
+    title: textOr(homepage.childrensCornerTitle, "Children's Corner"),
+    discoverHref: textOr(homepage.childrensCornerHref, "/all/"),
+    items,
+  };
 }
 
 export async function getHomepageWatchAndBuy(): Promise<

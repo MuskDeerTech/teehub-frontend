@@ -1693,6 +1693,97 @@ const HomePage: GlobalConfig = {
           ],
         },
         {
+          label: "Children's Corner",
+          description:
+            "Character category cards shown at the bottom of the homepage. The section is hidden while there are no active cards.",
+          fields: [
+            {
+              name: "childrensCornerTitle",
+              label: "Section Title",
+              type: "text",
+              defaultValue: "Children's Corner",
+            },
+            {
+              name: "childrensCornerHref",
+              label: "Discover More Link",
+              type: "text",
+              defaultValue: "/all/",
+              admin: {
+                description: "Where the DISCOVER MORE button links.",
+              },
+            },
+            {
+              name: "childrensCornerItems",
+              label: "Character Cards",
+              type: "array",
+              labels: { singular: "Character Card", plural: "Character Cards" },
+              admin: {
+                description:
+                  "Drag rows to reorder cards. Untick Active to hide a card without deleting it.",
+              },
+              fields: [
+                {
+                  name: "name",
+                  type: "text",
+                  required: true,
+                  admin: {
+                    description:
+                      "e.g. Batman. Shown in this list and used as image alt text — not displayed on the card.",
+                  },
+                },
+                {
+                  name: "category",
+                  type: "relationship",
+                  relationTo: "categories",
+                  required: true,
+                  admin: {
+                    description: "Where the card links when clicked.",
+                  },
+                },
+                {
+                  name: "cardImage",
+                  label: "Card Image",
+                  type: "upload",
+                  relationTo: "media",
+                  admin: {
+                    description:
+                      "The full card artwork (character + background in one image). The card shows a blue placeholder until this is uploaded.",
+                  },
+                },
+                {
+                  name: "logoImage",
+                  label: "Logo",
+                  type: "upload",
+                  relationTo: "media",
+                  admin: {
+                    description:
+                      "Transparent PNG/SVG of the brand text logo shown in the white strip.",
+                  },
+                },
+                {
+                  name: "tabColor",
+                  label: "Bottom Colour",
+                  type: "text",
+                  defaultValue: "#295DBE",
+                  admin: {
+                    description:
+                      "Colour of the tab below the white strip (and the card outline).",
+                    components: {
+                      Field: "/src/components/admin/ColorPickerField#default",
+                    },
+                  },
+                },
+                {
+                  name: "isActive",
+                  label: "Active",
+                  type: "checkbox",
+                  defaultValue: true,
+                },
+              ],
+            },
+          ],
+        },
+        {
           label: "SEO",
           fields: [seoMetaGroup],
         },
