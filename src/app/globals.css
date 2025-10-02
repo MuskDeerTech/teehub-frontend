@@ -24,3 +24,7 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+.filter-sidebar {
+  background-color: #F7F7F7;
+}

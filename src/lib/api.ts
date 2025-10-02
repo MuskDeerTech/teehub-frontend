@@ -1,3 +1,4 @@
+// D:\teehub-frontend\src\lib\api.ts
 import axios from "axios";
 
 const api = axios.create({
@@ -7,9 +8,8 @@ const api = axios.create({
   },
 });
 
-// 🔒 Optional: Add API key/token for secure routes
 api.interceptors.request.use((config) => {
-  const token = process.env.NEXT_PUBLIC_API_KEY; // set in .env.local
+  const token = process.env.NEXT_PUBLIC_API_KEY; // Set if required
   if (token) config.headers.Authorization = `Bearer ${token}`;
   return config;
 });

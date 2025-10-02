@@ -1,27 +1,12 @@
-import api from "@/lib/api";
-import ProductGrid from "@/components/ProductGrid";
+"use client";
 
-async function getProducts() {
-  try {
-    const res = await api.get("/products", {
-      params: {
-        where: { status: { equals: "Published" } },
-      },
-    });
-    return res.data.docs;
-  } catch (err) {
-    console.error("Error fetching products", err);
-    return [];
-  }
-}
+import { Suspense } from "react";
+import ProductsPageContent from "@/components/ProductsPageContent";
 
-export default async function ProductsPage() {
-  const products = await getProducts();
-
+export default function ProductsPage() {
   return (
-    <main className="p-6">
-      <h1 className="text-2xl font-bold mb-6">All Products</h1>
-      <ProductGrid products={products} />
-    </main>
+    <Suspense fallback={<div>Loading products...</div>}>
+      <ProductsPageContent />
+    </Suspense>
   );
 }
