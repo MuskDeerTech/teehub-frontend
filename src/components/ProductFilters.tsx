@@ -1,12 +1,10 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-import { Product } from "@/types/Product"; // ✅ use the same type everywhere
+import React, { useEffect, useState, useCallback } from "react";
+import { Product } from "@/types/Product";
 
 type AttrValue = { id: string; value: string };
 type Attr = { id: string; name: string; values: AttrValue[] };
-
 
 interface AttributeAPI {
   id: string;
@@ -23,7 +21,6 @@ interface Category {
   value: string;
 }
 
-
 interface Props {
   categories: Category[];
   products: Product[];
@@ -35,39 +32,21 @@ export default function ProductFilters({
   products,
   onFiltered,
 }: Props) {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-
   // UI state
-  const [category, setCategory] = useState<string>(
-    searchParams.get("category") || ""
-  );
-  const [minPrice, setMinPrice] = useState<number>(
-    Number(searchParams.get("minPrice")) || 0
-  );
-  const [maxPrice, setMaxPrice] = useState<number>(
-    Number(searchParams.get("maxPrice")) || 5000
-  );
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [minPrice, setMinPrice] = useState<number>(0);
+  const [maxPrice, setMaxPrice] = useState<number>(5000);
 
   // Attributes fetched from backend
   const [attributes, setAttributes] = useState<Attr[]>([]);
 
+  // Selected filters: attributeName → values
   const [selectedFilters, setSelectedFilters] = useState<
     Record<string, string[]>
-  >(() => {
-    const init: Record<string, string[]> = {};
-    if (searchParams) {
-      Array.from(searchParams.entries()).forEach(([k, v]) => {
-        if (k.startsWith("attr_")) {
-          const id = k.replace(/^attr_/, "");
-          init[id] = v.split(",").filter(Boolean);
-        }
-      });
-    }
-    return init;
-  });
+  >({});
 
-  // Define the possible sections as a union type
+  // Accordion open state
+  // Accordion open state
   type AccordionSection =
     | "theme"
     | "category"
@@ -76,26 +55,27 @@ export default function ProductFilters({
     | "priceRange"
     | "fit";
 
-  // Update the accordionOpen state type
-  const [accordionOpen, setAccordionOpen] = useState<{
-    [K in AccordionSection]: boolean;
-  }>({
-    theme: false,
-    category: false,
-    colors: false,
-    sleeves: false,
-    priceRange: false,
-    fit: false,
+  const [accordionOpen, setAccordionOpen] = useState<
+    Record<AccordionSection, boolean>
+  >({
+    theme: true,
+    category: true,
+    colors: true,
+    sleeves: true,
+    priceRange: true, // ✅ open by default
+    fit: true, // also open fit
   });
 
-  // Fetch attributes and their values from Payload
+  // Track "show more" per attribute
+  const [showMore, setShowMore] = useState<Record<string, boolean>>({});
+
+  // Fetch attributes
   useEffect(() => {
     const apiBase = process.env.NEXT_PUBLIC_API_URL || "";
     const fetchAttributes = async () => {
       try {
         const res = await fetch(`${apiBase}/attributes?limit=100`);
-        if (!res.ok)
-          throw new Error(`Failed to fetch attributes: ${res.status}`);
+        if (!res.ok) throw new Error(`Failed to fetch attributes`);
         const data = await res.json();
         if (!data?.docs) {
           setAttributes([]);
@@ -103,27 +83,22 @@ export default function ProductFilters({
         }
 
         const attrs: Attr[] = await Promise.all(
-  data.docs.map(async (attr: AttributeAPI) => {
-    const valsRes = await fetch(
-      `${apiBase}/attribute-values?where[attribute][equals]=${attr.id}&limit=200`
-    );
-    const valsData = await valsRes.json();
-    const values: AttrValue[] =
-      valsData?.docs?.flatMap((v: AttributeValueAPI) =>
-        v.value.split(",").map((val) => ({
-          id: `${v.id}-${val.trim()}`,
-          value: val.trim(),
-        }))
-      ) || [];
+          data.docs.map(async (attr: AttributeAPI) => {
+            const valsRes = await fetch(
+              `${apiBase}/attribute-values?where[attribute][equals]=${attr.id}&limit=200`
+            );
+            const valsData = await valsRes.json();
+            const values: AttrValue[] =
+              valsData?.docs?.flatMap((v: AttributeValueAPI) =>
+                v.value.split(",").map((val) => ({
+                  id: `${v.id}-${val.trim()}`,
+                  value: val.trim(),
+                }))
+              ) || [];
 
-    return {
-      id: attr.id,
-      name: attr.name,
-      values,
-    };
-  })
-);
-
+            return { id: attr.id, name: attr.name, values };
+          })
+        );
 
         setAttributes(attrs);
       } catch (err) {
@@ -135,329 +110,307 @@ export default function ProductFilters({
     fetchAttributes();
   }, []);
 
-  // Toggle a value for an attribute
-  const toggleValue = (attributeId: string, value: string) => {
+  // Toggle filter value
+  const toggleValue = (attributeName: string, value: string) => {
     setSelectedFilters((prev) => {
-      const existing = prev[attributeId] || [];
+      const key = attributeName.toLowerCase();
+      const existing = prev[key] || [];
       const next = existing.includes(value)
         ? existing.filter((x) => x !== value)
         : [...existing, value];
-      return { ...prev, [attributeId]: next };
+      return { ...prev, [key]: next };
     });
   };
 
-  // Filter products
-  const filterProducts = (baseProducts: Product[] = products) => {
-    const filtered = baseProducts.filter((product) => {
+  // Filter products whenever filters change
+  const filterProducts = useCallback(() => {
+    const filtered = products.filter((product) => {
       // Category filter
-      if (category && !product.categories?.some((c) => c.id === category))
-        return false;
+      if (selectedCategories.length > 0) {
+        const productCats = product.categories?.map((c) => c.id) || [];
+        if (!selectedCategories.some((cat) => productCats.includes(cat))) {
+          return false;
+        }
+      }
 
       // Price filter
       const price = product.salePrice ?? product.regularPrice;
       if (price < minPrice || price > maxPrice) return false;
 
-      // Attribute filter
-      for (const [attrId, selectedVals] of Object.entries(selectedFilters)) {
+      // Attribute filters
+      for (const [attrName, selectedVals] of Object.entries(selectedFilters)) {
         if (!selectedVals.length) continue;
 
-        let matched = false;
+        const attr = product.attributes?.find(
+          (a) => a.attribute.name.toLowerCase() === attrName
+        );
+        if (!attr) return false;
 
-        // Check attributes
-        const attr = product.attributes?.find((a) => a.attribute.id === attrId);
-        if (attr) {
-          const values = (attr.values || []).map((v) =>
-            v.value.trim().toLowerCase()
-          );
-          if (selectedVals.some((val) => values.includes(val.toLowerCase()))) {
-            matched = true;
-          }
+        const values = (attr.values || []).map((v) =>
+          v.value.trim().toLowerCase()
+        );
+
+        if (!selectedVals.some((val) => values.includes(val.toLowerCase()))) {
+          return false;
         }
-
-        if (!matched) return false; // If this filter fails, reject product
       }
 
-      return true; // Passes all filters
+      return true;
     });
 
     onFiltered(filtered);
-  };
+  }, [
+    products,
+    selectedCategories,
+    minPrice,
+    maxPrice,
+    selectedFilters,
+    onFiltered,
+  ]); // ✅ Add selectedCategories here
 
-  // Apply filters and update URL
-  const applyFilters = () => {
+  useEffect(() => {
     filterProducts();
+  }, [filterProducts]);
 
-    const params = new URLSearchParams();
-    if (category) params.set("category", category);
-    if (minPrice) params.set("minPrice", String(minPrice));
-    if (maxPrice) params.set("maxPrice", String(maxPrice));
-
-    Object.entries(selectedFilters).forEach(([attrId, values]) => {
-      if (values.length) params.set(`attr_${attrId}`, values.join(","));
-    });
-
-    router.push(`/products?${params.toString()}`);
+  const toggleCategory = (catId: string) => {
+    setSelectedCategories((prev) =>
+      prev.includes(catId) ? prev.filter((c) => c !== catId) : [...prev, catId]
+    );
   };
 
-  // Reset
-  const resetFilters = () => {
-    setCategory("");
+  // Clear all filters
+  const clearAllFilters = () => {
     setMinPrice(0);
     setMaxPrice(5000);
     setSelectedFilters({});
+    setSelectedCategories([]); // ✅ Add this
     onFiltered(products);
-    router.push("/products");
   };
 
-  // Auto-apply filters on state change
-  useEffect(() => {
-    applyFilters();
-  }, [category, minPrice, maxPrice, selectedFilters]);
-
-  // Toggle accordion section
   const toggleAccordion = (section: AccordionSection) => {
-    setAccordionOpen((prev) => ({
-      ...prev,
-      [section]: !prev[section],
-    }));
+    setAccordionOpen((prev) => ({ ...prev, [section]: !prev[section] }));
+  };
+
+  // Helper: render checkboxes with "show more"
+  const renderCheckboxes = (attrName: string) => {
+    const attr = attributes.find(
+      (a) => a.name.toLowerCase() === attrName.toLowerCase()
+    );
+    if (!attr) return null;
+
+    const isExpanded = showMore[attrName] || false;
+    const valuesToShow = isExpanded ? attr.values : attr.values.slice(0, 4);
+
+    return (
+      <div className="flex flex-col gap-2">
+        {valuesToShow.map((v) => {
+          const checked = selectedFilters[attrName.toLowerCase()]?.includes(
+            v.value
+          );
+          return (
+            <label
+              key={v.id}
+              className="flex items-center justify-between text-sm gap-2"
+            >
+              <span>{v.value}</span>
+              <input
+                type="checkbox"
+                checked={!!checked}
+                onChange={() => toggleValue(attrName, v.value)}
+              />
+            </label>
+          );
+        })}
+        {attr.values.length > 4 && (
+          <button
+            className="text-xs text-blue-600 mt-1 self-start"
+            onClick={() =>
+              setShowMore((prev) => ({
+                ...prev,
+                [attrName]: !isExpanded,
+              }))
+            }
+          >
+            {isExpanded ? "Show Less" : "Show More"}
+          </button>
+        )}
+      </div>
+    );
   };
 
   return (
-    <aside className="p-4 max-w-sm filter-sidebar">
-      <h2 className="text-lg font-semibold mb-4">Filters</h2>
+    <aside className="p-4 max-w-xs filter-sidebar ">
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-lg font-semibold">Filters</h2>
+        <button
+          onClick={clearAllFilters}
+          className="text-sm text-blue-600 hover:underline"
+        >
+          Clear All
+        </button>
+      </div>
 
-      {/* Theme Accordion */}
-      <div className="mb-4">
+      {/* Theme */}
+      <div className="mb-4 border-b pb-2">
         <button
           onClick={() => toggleAccordion("theme")}
-          className="w-full text-left text-sm font-medium mb-2 flex justify-between items-center"
+          className="w-full flex justify-between items-center text-sm font-medium mb-2"
         >
-          Theme
-          <span>{accordionOpen.theme ? "-" : "+"}</span>
+          Theme <span>{accordionOpen.theme ? "-" : "+"}</span>
         </button>
-        {accordionOpen.theme && (
+        {accordionOpen.theme && renderCheckboxes("theme")}
+      </div>
+
+      {/* Category */}
+      <div className="mb-4 border-b pb-2">
+        <button
+          onClick={() => toggleAccordion("category")}
+          className="w-full flex justify-between items-center text-sm font-medium mb-2"
+        >
+          Category <span>{accordionOpen.category ? "-" : "+"}</span>
+        </button>
+        {accordionOpen.category && (
           <div className="flex flex-col gap-2">
-            {attributes
-              .find((attr) => attr.name.toLowerCase() === "theme")
-              ?.values.map((v) => {
-                const checked =
-                  selectedFilters["68db7fc0e34a4d8402b29509"]?.includes(
-                    v.value
-                  ) || false; // Assuming Theme attribute ID
+            {(showMore["category"] ? categories : categories.slice(0, 4)).map(
+              (c) => {
+                const checked = selectedCategories.includes(c.value);
                 return (
-                  <label key={v.id} className="flex justify-between items-center gap-2 text-sm">
-                    
-                    <span>{v.value}</span>
+                  <label
+                    key={c.value}
+                    className="flex items-center justify-between text-sm gap-2"
+                  >
+                    <span>{c.label}</span>
                     <input
                       type="checkbox"
                       checked={checked}
-                      onChange={() =>
-                        toggleValue("68db7fc0e34a4d8402b29509", v.value)
-                      }
-                      
+                      onChange={() => toggleCategory(c.value)}
                     />
                   </label>
                 );
-              })}
+              }
+            )}
+            {categories.length > 4 && (
+              <button
+                className="text-xs text-blue-600 mt-1 self-start"
+                onClick={() =>
+                  setShowMore((prev) => ({
+                    ...prev,
+                    category: !prev["category"],
+                  }))
+                }
+              >
+                {showMore["category"] ? "Show Less" : "Show More"}
+              </button>
+            )}
           </div>
         )}
       </div>
 
-      {/* Category Accordion */}
-      <div className="mb-4">
-        <button style={{justifyContent: "space-between"}}
-          onClick={() => toggleAccordion("category")}
-          className="w-full text-left text-sm font-medium mb-2 flex justify-between items-center"
-        >
-          Category
-          <span>{accordionOpen.category ? "-" : "+"}</span>
-        </button>
-        {accordionOpen.category && (
-          <select
-            id="category"
-            aria-label="Filter by category" // Added accessible name
-            className="w-full border rounded p-2 text-sm"
-            value={category}
-            onChange={(e) => setCategory(e.target.value)}
-          >
-            <option value="">All</option>
-            {categories.map((c) => (
-              <option key={c.value} value={c.value}>
-                {c.label}
-              </option>
-            ))}
-          </select>
-        )}
-      </div>
-
-      {/* Colors Accordion */}
-      <div className="mb-4">
+      {/* Colors */}
+      <div className="mb-4 border-b pb-2">
         <button
           onClick={() => toggleAccordion("colors")}
-          className="w-full text-left text-sm font-medium mb-2 flex justify-between items-center"
+          className="w-full flex justify-between items-center text-sm font-medium mb-2"
         >
-          Colors
-          <span>{accordionOpen.colors ? "-" : "+"}</span>
+          Colors <span>{accordionOpen.colors ? "-" : "+"}</span>
         </button>
-        {accordionOpen.colors && (
-          <div className="flex flex-col gap-2">
-            {attributes
-              .find((attr) => attr.name.toLowerCase() === "color")
-              ?.values.map((v) => {
-                const checked =
-                  selectedFilters["68db7e5ee34a4d8402b294df"]?.includes(
-                    v.value
-                  ) || false; // Assuming Color attribute ID
-                return (
-                  <label key={v.id} className="flex items-center gap-2 text-sm  justify-between">
-                   
-                    <span>{v.value}</span>
-                     <input
-                      type="checkbox"
-                      checked={checked}
-                      onChange={() =>
-                        toggleValue("68db7e5ee34a4d8402b294df", v.value)
-                      }
-                      
-                    />
-                  </label>
-                );
-              })}
-          </div>
-        )}
+        {accordionOpen.colors && renderCheckboxes("Colors")}
       </div>
 
-      {/* Sleeves Accordion */}
-      <div className="mb-4">
+      {/* Sleeves */}
+      <div className="mb-4 border-b pb-2">
         <button
           onClick={() => toggleAccordion("sleeves")}
-          className="w-full text-left text-sm font-medium mb-2 flex justify-between items-center"
+          className="w-full flex justify-between items-center text-sm font-medium mb-2"
         >
-          Sleeves
-          <span>{accordionOpen.sleeves ? "-" : "+"}</span>
+          Sleeves <span>{accordionOpen.sleeves ? "-" : "+"}</span>
         </button>
-        {accordionOpen.sleeves && (
-          <div className="flex flex-col gap-2">
-            {attributes
-              .find((attr) => attr.name.toLowerCase() === "sleeve type")
-              ?.values.map((v) => {
-                const checked =
-                  selectedFilters["68d51cc58b6e969778b57f94"]?.includes(
-                    v.value
-                  ) || false; // Assuming Sleeve Type attribute ID
-                return (
-                  <label key={v.id} className="flex items-center gap-2 text-sm justify-between">
-                  
-                    <span>{v.value}</span>
-                      <input
-                      type="checkbox"
-                      checked={checked}
-                      onChange={() =>
-                        toggleValue("68d51cc58b6e969778b57f94", v.value)
-                      }
-                      
-                    />
-                  </label>
-                );
-              })}
-          </div>
-        )}
+        {accordionOpen.sleeves && renderCheckboxes("Sleeves")}
       </div>
 
-      {/* Price Range Accordion */}
-      <div className="mb-4">
+      {/* Price */}
+      <div className="mb-4 border-b pb-2">
         <button
           onClick={() => toggleAccordion("priceRange")}
-          className="w-full text-left text-sm font-medium mb-2 flex justify-between items-center"
+          className="w-full flex justify-between items-center text-sm font-medium mb-2"
         >
-          Price Range
-          <span>{accordionOpen.priceRange ? "-" : "+"}</span>
+          Price Range <span>{accordionOpen.priceRange ? "-" : "+"}</span>
         </button>
         {accordionOpen.priceRange && (
           <div className="mb-4">
-            <p className="text-sm font-medium mb-1">
-              Price: ₹{minPrice} - ₹{maxPrice}
+            <p className="text-sm font-medium mb-2">Select Price Range</p>
+            <div className="relative h-6 mb-3">
+              {/* Background track */}
+              <div className="absolute inset-y-0 left-0 w-full h-1 bg-gray-200 rounded-full top-1/2 -translate-y-1/2"></div>
+              {/* Fill track */}
+              <div
+                className="absolute h-1 bg-orange-500 rounded-full top-1/2 -translate-y-1/2"
+                style={{
+                  left: `${(minPrice / 5000) * 100}%`,
+                  width: `${((maxPrice - minPrice) / 5000) * 100}%`,
+                }}
+              ></div>
+              {/* Min thumb */}
+              <div
+                className="absolute top-1/2 -translate-y-1/2 w-3 h-3 bg-orange-500 rounded-full border-2 border-white shadow-sm"
+                style={{
+                  left: `${(minPrice / 5000) * 100}%`,
+                }}
+              ></div>
+              {/* Max thumb */}
+              <div
+                className="absolute top-1/2 -translate-y-1/2 w-3 h-3 bg-orange-500 rounded-full border-2 border-white shadow-sm"
+                style={{
+                  left: `${(maxPrice / 5000) * 100}%`,
+                }}
+              ></div>
+              {/* Hidden min input */}
+              <input
+                type="range"
+                className="absolute inset-0 w-full h-full appearance-none bg-transparent cursor-pointer opacity-0"
+                min={0}
+                max={5000}
+                step={50}
+                value={minPrice}
+                onChange={(e) => {
+                  const val = Number(e.target.value);
+                  setMinPrice(val);
+                  if (val > maxPrice) setMaxPrice(val);
+                }}
+                aria-label="Minimum price"
+              />
+              {/* Hidden max input */}
+              <input
+                type="range"
+                className="absolute inset-0 w-full h-full appearance-none bg-transparent cursor-pointer opacity-0"
+                min={0}
+                max={5000}
+                step={50}
+                value={maxPrice}
+                onChange={(e) => {
+                  const val = Number(e.target.value);
+                  setMaxPrice(val);
+                  if (val < minPrice) setMinPrice(val);
+                }}
+                aria-label="Maximum price"
+              />
+            </div>
+            <p className="text-sm text-gray-600 text-center">
+              ₹{minPrice} - ₹{maxPrice} INR
             </p>
-            <label htmlFor="minPrice" className="sr-only">
-              Minimum price
-            </label>
-            <input
-              id="minPrice"
-              type="range"
-              min={0}
-              max={5000}
-              step={50}
-              value={minPrice}
-              onChange={(e) => setMinPrice(Number(e.target.value))}
-              className="w-full mb-1"
-            />
-            <label htmlFor="maxPrice" className="sr-only">
-              Maximum price
-            </label>
-            <input
-              id="maxPrice"
-              type="range"
-              min={0}
-              max={5000}
-              step={50}
-              value={maxPrice}
-              onChange={(e) => setMaxPrice(Number(e.target.value))}
-              className="w-full"
-            />
           </div>
         )}
       </div>
 
-      {/* Fit Accordion */}
-      <div className="mb-4">
+      {/* Fit */}
+      <div className="mb-4 border-b pb-2">
         <button
           onClick={() => toggleAccordion("fit")}
-          className="w-full text-left text-sm font-medium mb-2 flex justify-between items-center"
+          className="w-full flex justify-between items-center text-sm font-medium mb-2"
         >
-          Fit
-          <span>{accordionOpen.fit ? "-" : "+"}</span>
+          Fit <span>{accordionOpen.fit ? "-" : "+"}</span>
         </button>
-        {accordionOpen.fit && (
-          <div className="flex flex-col gap-2">
-            {attributes
-              .find((attr) => attr.name.toLowerCase() === "fit")
-              ?.values.map((v) => {
-                const checked =
-                  selectedFilters["68db7f9ae34a4d8402b294f4"]?.includes(
-                    v.value
-                  ) || false; // Assuming Fit attribute ID
-                return (
-                  <label key={v.id} className="flex items-center gap-2 text-sm justify-between">
-                       <span>{v.value}</span>
-                    <input
-                      type="checkbox"
-                      checked={checked}
-                      onChange={() =>
-                        toggleValue("68db7f9ae34a4d8402b294f4", v.value)
-                      }
-                      
-                    />
-                 
-                  </label>
-                );
-              })}
-          </div>
-        )}
-      </div>
-
-      <div className="flex gap-2 mt-4">
-        <button
-          onClick={applyFilters}
-          className="flex-1 px-3 py-2 bg-black text-white rounded text-sm hover:bg-gray-800"
-        >
-          Apply
-        </button>
-        <button
-          onClick={resetFilters}
-          className="px-3 py-2 border rounded text-sm hover:bg-gray-100"
-        >
-          Reset
-        </button>
+        {accordionOpen.fit && renderCheckboxes("fit")}
       </div>
     </aside>
   );

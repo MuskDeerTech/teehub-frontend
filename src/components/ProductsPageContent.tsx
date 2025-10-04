@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import api from "@/lib/api";
 import ProductGrid from "@/components/ProductGrid";
 import ProductFilters from "@/components/ProductFilters";
@@ -24,9 +24,9 @@ async function getProductsFromSearchParams(
   Object.entries(searchParams).forEach(([k, v]) => {
     if (k.startsWith("attr_")) {
       const values = v.split(",").filter(Boolean);
-      values.forEach((val) => {
-        params.append("where[attributes.selectedValues][contains]", val);
-      });
+      values.forEach((val) =>
+        params.append("where[attributes.values.value][contains]", val)
+      );
     }
   });
 
@@ -61,28 +61,29 @@ export default function ProductsPageContent() {
       setCategories(cats);
     };
     fetchData();
-  }, []); // ✅ fine: no missing deps
+  }, []);
 
-  const handleSort = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setSortBy(e.target.value);
-    const sortedProducts = [...filteredProducts];
-    if (e.target.value === "priceAsc") {
-      sortedProducts.sort((a, b) => a.regularPrice - b.regularPrice);
-    } else if (e.target.value === "priceDesc") {
-      sortedProducts.sort((a, b) => b.regularPrice - a.regularPrice);
+  // ✅ Sorting logic applied after filtering
+  const sortedProducts = useMemo(() => {
+    const list = [...filteredProducts];
+    if (sortBy === "priceAsc") {
+      return list.sort((a, b) => a.regularPrice - b.regularPrice);
     }
-    setFilteredProducts(sortedProducts);
-  };
+    if (sortBy === "priceDesc") {
+      return list.sort((a, b) => b.regularPrice - a.regularPrice);
+    }
+    return list;
+  }, [filteredProducts, sortBy]);
 
   return (
-    <main className="p-6">
+    <main className="p-6 ">
       <h1 className="text-2xl font-bold mb-6">All Products</h1>
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <aside className="md:col-span-1">
           <ProductFilters
             categories={categories}
             products={allProducts}
-            onFiltered={(filtered) => setFilteredProducts(filtered)}
+            onFiltered={setFilteredProducts} // ✅ pass setter directly
           />
         </aside>
         <section className="md:col-span-3">
@@ -91,15 +92,15 @@ export default function ProductsPageContent() {
               aria-label="Sort by"
               className="border rounded p-2 text-sm"
               value={sortBy}
-              onChange={handleSort}
+              onChange={(e) => setSortBy(e.target.value)}
             >
               <option value="">Sort By</option>
               <option value="priceAsc">Price: Low to High</option>
               <option value="priceDesc">Price: High to Low</option>
             </select>
           </div>
-          <ProductGrid products={filteredProducts} />
-          {filteredProducts.length === 0 && (
+          <ProductGrid products={sortedProducts} />
+          {sortedProducts.length === 0 && (
             <p className="text-gray-500 mt-4">
               No products found for the selected filters.
             </p>
