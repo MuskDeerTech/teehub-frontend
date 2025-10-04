@@ -1,103 +1,206 @@
+// src/app/page.tsx
+"use client";
+
+import { Suspense } from "react";
 import Image from "next/image";
+import Link from 'next/link'; // Ensure this is imported at top
+import api from "@/lib/api";
+import ProductGrid from "@/components/ProductGrid";
+import { Product } from "@/types/Product";
 
-export default function Home() {
+async function getFeaturedProducts(): Promise<Product[]> {
+  const res = await api.get("/products?limit=8&sort=createdAt&order=-1&depth=2");
+  return res.data?.docs || [];
+}
+
+async function getCategories(): Promise<{ label: string; value: string }[]> {
+  const res = await api.get("/categories");
   return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+    res.data?.docs?.map((cat: { id: string; name: string }) => ({
+      label: cat.name,
+      value: cat.id,
+    })) || []
+  );
+}
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+export default async function HomePage() {
+  const [featuredProducts, categories] = await Promise.all([
+    getFeaturedProducts(),
+    getCategories(),
+  ]);
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      {/* Hero Banner */}
+      <section className="relative bg-gradient-to-r from-blue-600 to-indigo-700 overflow-hidden">
+        <div className="absolute inset-0">
+          <Image
+            src="/hero-banner.jpg" // Replace with your hero image or use a dynamic one
+            alt="Shop Tees & Apparel"
+            fill
+            className="object-cover opacity-20"
+          />
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+        <div className="relative max-w-7xl mx-auto px-4 py-24 text-center text-white">
+          <h1 className="text-5xl font-bold mb-4 drop-shadow-lg">
+            Teehub Shop
+          </h1>
+          <p className="text-xl mb-8 max-w-2xl mx-auto drop-shadow-md">
+            Elevate your style with our exclusive collection of cricket jerseys, hoodies, and more. Shop now and save up to 50%!
+          </p>
+          <Link prefetch={true}
+            href="/products"
+            className="inline-block bg-white text-blue-600 px-8 py-4 rounded-full font-semibold text-lg hover:bg-gray-100 transition transform hover:scale-105 shadow-2xl"
+          >
+            Shop Collection
+          </Link>
+        </div>
+      </section>
+
+      {/* Categories Section */}
+      <section className="py-16 bg-white">
+        <div className="max-w-7xl mx-auto px-4">
+          <h2 className="text-3xl font-bold text-center mb-12 text-gray-900">
+            Shop by Category
+          </h2>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+            {categories.slice(0, 4).map((category) => (
+              <Link prefetch={true}
+                key={category.value}
+                href={`/products?category=${category.value}`}
+                className="group relative overflow-hidden rounded-xl shadow-md hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+              >
+                <div className="h-48 bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
+                  {/* Placeholder for category image */}
+                  <div className="w-16 h-16 bg-orange-500 rounded-full flex items-center justify-center text-white font-bold text-lg">
+                    {category.label.charAt(0)}
+                  </div>
+                </div>
+                <div className="p-4 text-center">
+                  <h3 className="font-semibold text-gray-900 mt-2">
+                    {category.label}
+                  </h3>
+                </div>
+              </Link>
+            ))}
+          </div>
+          {categories.length > 4 && (
+            <div className="text-center mt-8">
+              <Link 
+                href="/products" prefetch={true}
+                className="text-blue-600 hover:underline text-lg font-medium"
+              >
+                View All Categories →
+              </Link>
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* Featured Products */}
+      <section className="py-16 bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="flex justify-between items-center mb-12">
+            <h2 className="text-3xl font-bold text-gray-900">
+              Featured Products
+            </h2>
+            <Link prefetch={true}
+              href="/products" 
+              className="text-blue-600 hover:underline font-medium"
+            >
+              View All →
+            </Link>
+          </div>
+          <Suspense fallback={<div className="text-center py-12">Loading featured products...</div>}>
+            <ProductGrid products={featuredProducts} />
+          </Suspense>
+        </div>
+      </section>
+
+      {/* Sale/Promo Section */}
+      {/* <section className="py-16 bg-white">
+        <div className="max-w-7xl mx-auto px-4 text-center">
+          <h2 className="text-3xl font-bold mb-4 text-gray-900">
+            Flash Sale: Up to 50% Off!
+          </h2>
+          <p className="text-xl text-gray-600 mb-8">
+            Limited time offer on select jerseys and hoodies. Don't miss out!
+          </p>
+          <Link prefetch={true}
+            href="/products"
+            className="inline-block bg-red-600 text-white px-8 py-4 rounded-full font-semibold text-lg hover:bg-red-700 transition transform hover:scale-105 shadow-lg"
+          >
+            Shop Sale
+          </Link>
+        </div>
+      </section> */}
+
+      {/* Newsletter Signup */}
+      {/* <section className="py-16 bg-gray-900 text-white">
+        <div className="max-w-4xl mx-auto px-4 text-center">
+          <h2 className="text-3xl font-bold mb-4">
+            Stay Updated with Exclusive Deals
+          </h2>
+          <p className="text-xl mb-8 text-gray-300">
+            Subscribe to our newsletter and get 10% off your first order.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <input
+              type="email"
+              placeholder="Enter your email"
+              className="flex-1 px-6 py-4 rounded-full text-gray-900 focus:outline-none focus:ring-2 focus:ring-orange-500"
+            />
+            <button className="px-8 py-4 bg-orange-500 text-white rounded-full font-semibold hover:bg-orange-600 transition">
+              Subscribe
+            </button>
+          </div>
+        </div>
+      </section> */}
+
+      {/* Footer */}
+      {/* <footer className="bg-gray-800 text-white py-12">
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+            <div>
+              <h3 className="text-xl font-bold mb-4">TeeHub</h3>
+              <p className="text-gray-400">
+                Your one-stop shop for premium tees and apparel.
+              </p>
+            </div>
+            <div>
+              <h4 className="text-lg font-semibold mb-4">Categories</h4>
+              <ul className="space-y-2 text-gray-400">
+                {categories.slice(0, 4).map((cat) => (
+                  <li key={cat.value}>
+                    <Link prefetch={true} href={`/products?category=${cat.value}`} className="hover:text-white">
+                      {cat.label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div>
+              <h4 className="text-lg font-semibold mb-4">Customer Care</h4>
+              <ul className="space-y-2 text-gray-400">
+                <li><Link href="/about" className="hover:text-white">About Us</Link></li>
+                <li><Link href="/contact" className="hover:text-white">Contact</Link></li>
+                <li><Link href="/returns" className="hover:text-white">Returns</Link></li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="text-lg font-semibold mb-4">Follow Us</h4>
+              <div className="flex space-x-4">
+                <a href="#" className="text-gray-400 hover:text-white">Facebook</a>
+                <a href="#" className="text-gray-400 hover:text-white">Instagram</a>
+                <a href="#" className="text-gray-400 hover:text-white">Twitter</a>
+              </div>
+            </div>
+          </div>
+          <div className="border-t border-gray-700 mt-8 pt-8 text-center text-gray-400">
+            <p>&copy; 2025 TeeHub. All rights reserved.</p>
+          </div>
+        </div>
+      </footer> */}
     </div>
   );
 }
