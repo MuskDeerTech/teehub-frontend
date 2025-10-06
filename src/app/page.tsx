@@ -17,7 +17,7 @@ async function getFeaturedProducts(): Promise<Product[]> {
   const data = await res.json();
   return data.docs || [];
 }
-
+//add
 async function getCategories(): Promise<{ label: string; value: string }[]> {
   const res = await api.get("/categories");
   return (
