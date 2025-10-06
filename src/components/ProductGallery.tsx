@@ -34,6 +34,7 @@ export default function ProductGallery({ images, apiBase, productName }: Product
           src={mainImage}
           alt={productName}
           className="object-cover w-full h-full"
+          priority={true}
         />
       </div>
 
@@ -56,6 +57,7 @@ export default function ProductGallery({ images, apiBase, productName }: Product
                   src={thumbUrl}
                   alt={img.image.alt || productName}
                   className="object-cover w-full h-full"
+                  priority={true}
                 />
               </div>
             );

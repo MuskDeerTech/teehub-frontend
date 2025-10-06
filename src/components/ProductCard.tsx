@@ -1,52 +1,93 @@
 "use client";
+
 import Link from "next/link";
-import { Product } from "@/types/Product"; // import the interface
+import { Product } from "@/types/Product";
 import Image from "next/image";
+import useSWR from "swr";
+import { useState } from "react";
+
 interface ProductCardProps {
-  product: Product;
+  product: Product | { slug: string }; // Allow either full product or just slug
 }
+
+// SWR fetcher function
+const fetcher = async (url: string) => {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`Failed to fetch product: ${url}`);
+  const data = await res.json();
+  return data?.docs?.[0] || null;
+};
 
 export default function ProductCard({ product }: ProductCardProps) {
   const apiBase = (process.env.NEXT_PUBLIC_API_URL || "").replace(/\/api$/, "");
 
-  const imageUrl = product.images?.[0]?.image?.url
-    ? product.images[0].image.url.startsWith("http")
-      ? product.images[0].image.url
-      : `${apiBase}${product.images[0].image.url}`
+  // Use SWR to fetch product if only slug is provided, otherwise use prop
+  const { data: fetchedProduct, error } = useSWR<Product>(
+    product && "slug" in product && !("id" in product)
+      ? `${process.env.NEXT_PUBLIC_API_URL}/products?where[slug][equals]=${encodeURIComponent(product.slug)}&depth=2`
+      : null,
+    fetcher,
+    {
+      dedupingInterval: 3600000, // Cache for 1 hour
+      revalidateOnFocus: false,
+      revalidateOnReconnect: true,
+    }
+  );
+
+  const displayProduct = fetchedProduct || (product as Product);
+
+  // Image URL with fallback
+  const imageUrl = displayProduct.images?.[0]?.image?.url
+    ? displayProduct.images[0].image.url.startsWith("http")
+      ? displayProduct.images[0].image.url
+      : `${apiBase}${displayProduct.images[0].image.url}`
     : "/placeholder.png";
 
-  // Extract color from attributes
-  // const colorAttr = product.attributes?.find(
-  //   (attr) => attr.attribute.name === "Colors"
-  // );
-  // const color = colorAttr?.values?.[0]?.value || "";
+const Skeleton = () => (
+  <div className="rounded-lg overflow-hidden bg-white animate-pulse">
+    <div className="w-full h-64 bg-gray-300" />
+    <div className="p-3">
+      <div className="h-6 w-3/4 bg-gray-300 mt-2" />
+      <div className="flex items-center gap-2 mt-2">
+        <div className="h-5 w-16 bg-gray-300" />
+        <div className="h-5 w-12 bg-gray-300" />
+      </div>
+    </div>
+  </div>
+);
+
+  if (error) return <div>Error loading product...</div>;
+  if (!displayProduct) return <Skeleton />;
 
   return (
-    <div className="rounded-lg overflow-hidden transition bg-white ">
-      <Link href={`/products/${product.slug}`}>
+    <div className="rounded-lg overflow-hidden transition bg-white">
+      <Link href={`/products/${displayProduct.slug}`}>
         <div>
-          <Image
-            style={{ borderRadius: "8px" }}
-            width={400}
-            height={400}
-            src={imageUrl}
-            alt={product.images?.[0]?.image?.alt || product.name}
-            className="w-full object-cover"
-          />
+          {imageUrl && (
+            <Image
+              style={{ borderRadius: "8px" }}
+              width={400}
+              height={400}
+              src={imageUrl}
+              alt={displayProduct.images?.[0]?.image?.alt || displayProduct.name}
+              className="w-full object-cover"
+              priority={true}
+            />
+          )}
         </div>
 
         <div className="p-3">
           <div className="flex items-center gap-2 mt-2">
-            <p className="text-lg font-semibold">₹{product.regularPrice}</p>
-            {product.salePrice && (
+            <p className="text-lg font-semibold">₹{displayProduct.regularPrice}</p>
+            {displayProduct.salePrice && (
               <>
                 <p className="text-sm line-through text-gray-400">
-                  ₹{product.salePrice}
+                  ₹{displayProduct.salePrice}
                 </p>
                 <p className="text-green-600 text-sm">
                   {Math.round(
-                    ((product.regularPrice! - product.salePrice) /
-                      product.regularPrice!) *
+                    ((displayProduct.regularPrice! - displayProduct.salePrice) /
+                      displayProduct.regularPrice!) *
                       100
                   )}
                   % OFF
@@ -55,8 +96,7 @@ export default function ProductCard({ product }: ProductCardProps) {
             )}
           </div>
           <h2 className="text-base font-medium text-gray-800">
-            {product.name}
-            {/* {color ? `(${color})` : ""} */}
+            {displayProduct.name}
           </h2>
 
           <button className="mt-3 w-full border border-black text-black py-2 text-sm rounded hover:border-gray-800 flex items-center justify-center gap-2">

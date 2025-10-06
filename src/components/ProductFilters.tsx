@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState, useCallback } from "react";
+import useSWR from "swr";
 import { Product } from "@/types/Product";
 
 type AttrValue = { id: string; value: string };
@@ -11,9 +12,12 @@ interface AttributeAPI {
   name: string;
 }
 
+// Updated interface to handle potential relationship structure
 interface AttributeValueAPI {
   id: string;
   value: string; // comma-separated string
+  attribute?: { id: string } | string; // Allow for relationship object or string ID
+  attributeId?: string; // Fallback field name
 }
 
 interface Category {
@@ -26,6 +30,23 @@ interface Props {
   products: Product[];
   onFiltered: (filtered: Product[]) => void;
 }
+
+type AccordionSection =
+  | "theme"
+  | "category"
+  | "colors"
+  | "sleeves"
+  | "priceRange"
+  | "fit";
+
+// SWR fetcher function
+const fetcher = async (url: string) => {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`Failed to fetch attributes`);
+  const data = await res.json();
+  console.log(`Fetched data from ${url}:`, data); // Debug log
+  return data?.docs || [];
+};
 
 export default function ProductFilters({
   categories,
@@ -46,15 +67,6 @@ export default function ProductFilters({
   >({});
 
   // Accordion open state
-  // Accordion open state
-  type AccordionSection =
-    | "theme"
-    | "category"
-    | "colors"
-    | "sleeves"
-    | "priceRange"
-    | "fit";
-
   const [accordionOpen, setAccordionOpen] = useState<
     Record<AccordionSection, boolean>
   >({
@@ -69,46 +81,64 @@ export default function ProductFilters({
   // Track "show more" per attribute
   const [showMore, setShowMore] = useState<Record<string, boolean>>({});
 
-  // Fetch attributes
+  // Fetch attributes with SWR
+  const { data: attributesData, error: attributesError } = useSWR(
+    `${process.env.NEXT_PUBLIC_API_URL}/attributes?limit=100`,
+    fetcher,
+    {
+      dedupingInterval: 3600000, // Cache for 1 hour
+      revalidateOnFocus: false,
+      revalidateOnReconnect: true,
+    }
+  );
+
+  // Fetch all attribute values with SWR (single call for all values)
+  const { data: attributeValuesData, error: attributeValuesError } = useSWR(
+    `${process.env.NEXT_PUBLIC_API_URL}/attribute-values?limit=1000`,
+    fetcher,
+    {
+      dedupingInterval: 3600000, // Cache for 1 hour
+      revalidateOnFocus: false,
+      revalidateOnReconnect: true,
+    }
+  );
+
+  // Process attributes and values
   useEffect(() => {
-    const apiBase = process.env.NEXT_PUBLIC_API_URL || "";
-    const fetchAttributes = async () => {
-      try {
-        const res = await fetch(`${apiBase}/attributes?limit=100`);
-        if (!res.ok) throw new Error(`Failed to fetch attributes`);
-        const data = await res.json();
-        if (!data?.docs) {
-          setAttributes([]);
-          return;
-        }
+    if (!attributesData || !attributeValuesData) return;
 
-        const attrs: Attr[] = await Promise.all(
-          data.docs.map(async (attr: AttributeAPI) => {
-            const valsRes = await fetch(
-              `${apiBase}/attribute-values?where[attribute][equals]=${attr.id}&limit=200`
-            );
-            const valsData = await valsRes.json();
-            const values: AttrValue[] =
-              valsData?.docs?.flatMap((v: AttributeValueAPI) =>
-                v.value.split(",").map((val) => ({
-                  id: `${v.id}-${val.trim()}`,
-                  value: val.trim(),
-                }))
-              ) || [];
+    console.log("Attributes Data:", attributesData); // Debug log
+    console.log("Attribute Values Data:", attributeValuesData); // Debug log
 
-            return { id: attr.id, name: attr.name, values };
-          })
+    const attrs: Attr[] = attributesData.map((attr: AttributeAPI) => {
+      const values: AttrValue[] = attributeValuesData
+        .filter((v: AttributeValueAPI) => {
+          // Try different ways to match the attribute ID
+          if (typeof v.attribute === "string") return v.attribute === attr.id;
+          if (typeof v.attribute === "object" && v.attribute?.id) return v.attribute.id === attr.id;
+          if (v.attributeId) return v.attributeId === attr.id;
+          return false;
+        })
+        .flatMap((v: AttributeValueAPI) =>
+          v.value.split(",").map((val) => ({
+            id: `${v.id}-${val.trim()}`,
+            value: val.trim(),
+          }))
         );
 
-        setAttributes(attrs);
-      } catch (err) {
-        console.error("Error fetching attributes:", err);
-        setAttributes([]);
-      }
-    };
+      return { id: attr.id, name: attr.name, values };
+    });
 
-    fetchAttributes();
-  }, []);
+    setAttributes(attrs.filter((attr) => attr.values.length > 0));
+  }, [attributesData, attributeValuesData]);
+
+  // Handle errors
+  useEffect(() => {
+    if (attributesError || attributeValuesError) {
+      console.error("Error fetching attributes:", attributesError || attributeValuesError);
+      setAttributes([]);
+    }
+  }, [attributesError, attributeValuesError]);
 
   // Toggle filter value
   const toggleValue = (attributeName: string, value: string) => {

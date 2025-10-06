@@ -1,7 +1,8 @@
 // src/app/products/[slug]/page.tsx
 "use client"; // make this page client-side because we handle state
 
-import React, { useState, useEffect, use } from "react";
+import React, { useState, useEffect } from "react";
+import useSWR from "swr";
 import Image from "next/image";
 import { notFound } from "next/navigation";
 
@@ -46,7 +47,7 @@ interface Product {
   salePrice?: number;
   mrp?: number;
   images?: { image: { url: string; alt?: string } }[];
-  categories?: { name: string; id: string }[];
+  categories?: { name: string; id: string }[] | null;
   brand?: string;
   stockStatus?: string;
   stockQuantity?: number;
@@ -56,6 +57,7 @@ interface Product {
   }[];
   variations?: Variation[];
 }
+
 interface Variation {
   attributes: string[];
   sku: string;
@@ -63,6 +65,7 @@ interface Variation {
   stock: number;
   image?: { url: string; alt?: string };
 }
+
 interface RelatedProduct {
   id: string;
   name: string;
@@ -72,59 +75,25 @@ interface RelatedProduct {
   images: { image: { url: string; alt?: string } }[];
 }
 
-async function getProduct(slug: string): Promise<Product | null> {
-  try {
-    const baseUrl = process.env.NEXT_PUBLIC_API_URL;
-    if (!baseUrl) throw new Error("NEXT_PUBLIC_API_URL is not defined");
-
-    const res = await fetch(
-      `${baseUrl}/products?where[slug][equals]=${encodeURIComponent(
-        slug
-      )}&depth=2`,
-      { cache: "no-store" }
-    );
-
-    if (!res.ok) return null;
-    const data = await res.json();
-    return data?.docs?.[0] || null;
-  } catch (error) {
-    console.error("Error fetching product:", error);
-    return null;
-  }
-}
-
-async function getRelatedProducts(
-  categoryId: string
-): Promise<RelatedProduct[]> {
-  try {
-    const baseUrl = process.env.NEXT_PUBLIC_API_URL;
-    if (!baseUrl) return [];
-
-    const res = await fetch(
-      `${baseUrl}/products?where[categories][in]=${categoryId}&limit=3&depth=1`,
-      { cache: "no-store" }
-    );
-
-    if (!res.ok) return [];
-    const data = await res.json();
-    return data?.docs || [];
-  } catch (error) {
-    console.error("Error fetching related products:", error);
-    return [];
-  }
-}
-
 interface ProductPageProps {
   params: Promise<{ slug: string }>;
 }
 
-export default function ProductPage({ params }: ProductPageProps) {
-  const { slug } = use(params);
+// SWR fetcher function
+const fetcher = async (url: string) => {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`Failed to fetch: ${url}`);
+  const data = await res.json();
+  return data?.docs || [];
+};
 
-  const [product, setProduct] = useState<Product | null>(null);
-  const [relatedProducts, setRelatedProducts] = useState<RelatedProduct[]>([]);
-  const [mainImage, setMainImage] = useState<string>("");
-  const [selectedVariation, setSelectedVariation] = useState<Variation | null>(null);
+export default function ProductPage({ params }: ProductPageProps) {
+  const { slug } = React.use(params);
+
+  const [mainImage, setMainImage] = useState<string>("/placeholder.png");
+  const [selectedVariation, setSelectedVariation] = useState<Variation | null>(
+    null
+  );
   const [selectedAttributes, setSelectedAttributes] = useState<
     Record<string, string>
   >({});
@@ -146,35 +115,52 @@ export default function ProductPage({ params }: ProductPageProps) {
     // Add more as needed
   };
 
-  // Fetch product and related on mount
-  useEffect(() => {
-    async function fetchData() {
-      const prod = await getProduct(slug);
-      if (!prod) return notFound();
-      setProduct(prod);
+  // Fetch product with SWR
+  const { data: productData, error: productError } = useSWR<Product[]>(
+    `${
+      process.env.NEXT_PUBLIC_API_URL
+    }/products?where[slug][equals]=${encodeURIComponent(slug)}&depth=2`,
+    fetcher,
+    {
+      dedupingInterval: 3600000, // Cache for 1 hour
+      revalidateOnFocus: false,
+      revalidateOnReconnect: true,
+    }
+  );
 
-      const firstImage = prod.images?.[0]?.image?.url
-        ? prod.images[0].image.url.startsWith("http")
-          ? prod.images[0].image.url
-          : `${apiBase}${prod.images[0].image.url}`
+  // Fetch related products with SWR
+  const { data: relatedProductsData, error: relatedProductsError } = useSWR<
+    RelatedProduct[]
+  >(
+    productData?.[0]?.categories && productData[0].categories.length > 0
+      ? `${process.env.NEXT_PUBLIC_API_URL}/products?where[categories][in]=${productData[0].categories[0].id}&limit=3&depth=1`
+      : null,
+    fetcher,
+    {
+      dedupingInterval: 3600000, // Cache for 1 hour
+      revalidateOnFocus: false,
+      revalidateOnReconnect: true,
+    }
+  );
+
+  const product = productData?.[0] || null;
+  const relatedProducts =
+    relatedProductsData?.filter((r) => r.id !== product?.id).slice(0, 3) || [];
+
+  // Set initial state when product data is available
+  useEffect(() => {
+    if (product) {
+      const firstImage = product.images?.[0]?.image?.url
+        ? product.images[0].image.url.startsWith("http")
+          ? product.images[0].image.url
+          : `${apiBase}${product.images[0].image.url}`
         : "/placeholder.png";
       setMainImage(firstImage);
-
-      if (prod.variations && prod.variations.length > 0) {
-        setSelectedVariation(prod.variations[0]);
-      }
-
-      // Fetch related
-      if (prod.categories && prod.categories.length > 0) {
-        const related = await getRelatedProducts(prod.categories[0].id);
-        // Filter out current product
-        const filteredRelated = related.filter((r) => r.id !== prod.id);
-        setRelatedProducts(filteredRelated.slice(0, 3));
+      if (product.variations && product.variations.length > 0) {
+        setSelectedVariation(product.variations[0]);
       }
     }
-
-    fetchData();
-  }, [slug]);
+  }, [product]);
 
   // Handle attribute selection for variations
   useEffect(() => {
@@ -198,6 +184,11 @@ export default function ProductPage({ params }: ProductPageProps) {
       }
     }
   }, [selectedAttributes, product]);
+
+  if (productError || relatedProductsError) {
+    console.error("Error fetching data:", productError || relatedProductsError);
+    return <div>Error loading product...</div>;
+  }
 
   if (!product) return <div>Loading...</div>;
 
@@ -262,13 +253,16 @@ export default function ProductPage({ params }: ProductPageProps) {
         <div className="space-y-6">
           {/* Main Image */}
           <div className="relative bg-white rounded-xl shadow-lg overflow-hidden">
-            <Image
-              width={800}
-              height={600}
-              src={mainImage}
-              alt={product.name}
-              className="w-full object-cover"
-            />
+            {mainImage && (
+              <Image
+                width={600}
+                height={600}
+                src={mainImage}
+                alt={product.name}
+                className="w-full object-cover"
+                priority={true}
+              />
+            )}
             {/* Discount Badge */}
             {hasSale && (
               <div className="absolute top-4 left-4 bg-red-500 text-white px-3 py-1 rounded-full text-sm font-bold shadow-lg">
@@ -285,7 +279,7 @@ export default function ProductPage({ params }: ProductPageProps) {
                   ? img.image.url
                   : `${apiBase}${img.image.url}`;
                 const isActive = thumbUrl === mainImage;
-                return (
+                return thumbUrl ? (
                   <div
                     key={idx}
                     className={`relative cursor-pointer rounded-lg overflow-hidden shadow-md transition-all ${
@@ -299,9 +293,10 @@ export default function ProductPage({ params }: ProductPageProps) {
                       src={thumbUrl}
                       alt={img.image.alt || product.name}
                       className="w-full h-16 object-cover"
+                      priority={true}
                     />
                   </div>
-                );
+                ) : null;
               })}
             </div>
           )}
@@ -331,7 +326,7 @@ export default function ProductPage({ params }: ProductPageProps) {
               )}
             </div>
 
-           {/* Coupons - Static Display */}
+            {/* Coupons - Static Display */}
             <div className="grid grid-cols-2 gap-3 mb-6">
               <div>
                 <label className="block text-xs font-medium text-gray-600 mb-1">
@@ -525,25 +520,104 @@ export default function ProductPage({ params }: ProductPageProps) {
                 <span className="text-sm">Cash on Delivery</span>
               </div>
               <div className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg">
-                <svg className="w-10 h-10"  width="50" height="50" viewBox="0 0 50 50" fill="none" xmlns="http://www.w3.org/2000/svg">
-<circle cx="25" cy="25" r="25" fill="#FF7E38" fill-opacity="0.5"/>
-<path d="M33.0002 38.4008C34.5466 38.4008 35.8002 37.1472 35.8002 35.6008C35.8002 34.0544 34.5466 32.8008 33.0002 32.8008C31.4538 32.8008 30.2002 34.0544 30.2002 35.6008C30.2002 37.1472 31.4538 38.4008 33.0002 38.4008Z" stroke="black" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-<path d="M19.0002 38.4008C20.5466 38.4008 21.8002 37.1472 21.8002 35.6008C21.8002 34.0544 20.5466 32.8008 19.0002 32.8008C17.4538 32.8008 16.2002 34.0544 16.2002 35.6008C16.2002 37.1472 17.4538 38.4008 19.0002 38.4008Z" stroke="black" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-<path d="M16.2 35.5608C14.6642 35.4852 13.708 35.257 13.0248 34.5752C12.3416 33.8934 12.1148 32.9358 12.0392 31.4M21.8 35.6H30.2M35.8 35.5608C37.3358 35.4852 38.292 35.257 38.9752 34.5752C40 33.549 40 31.8998 40 28.6V25.8H33.42C32.377 25.8 31.8562 25.8 31.4348 25.6628C31.0146 25.5263 30.6327 25.2922 30.3202 24.9798C30.0078 24.6673 29.7737 24.2854 29.6372 23.8652C29.5 23.4438 29.5 22.923 29.5 21.88C29.5 20.3162 29.5 19.535 29.2942 18.9022C29.0894 18.2719 28.7383 17.699 28.2697 17.2303C27.801 16.7617 27.2281 16.4106 26.5978 16.2058C25.965 16 25.1838 16 23.62 16H12M12 21.6H20.4M12 25.8H17.6" stroke="black" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-<path d="M29.5 18.8008H32.0494C34.0878 18.8008 35.1056 18.8008 35.9344 19.2964C36.7646 19.7906 37.2476 20.688 38.2136 22.4828L40 25.8008" stroke="black" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-</svg>
+                <svg
+                  className="w-10 h-10"
+                  width="50"
+                  height="50"
+                  viewBox="0 0 50 50"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <circle
+                    cx="25"
+                    cy="25"
+                    r="25"
+                    fill="#FF7E38"
+                    fill-opacity="0.5"
+                  />
+                  <path
+                    d="M33.0002 38.4008C34.5466 38.4008 35.8002 37.1472 35.8002 35.6008C35.8002 34.0544 34.5466 32.8008 33.0002 32.8008C31.4538 32.8008 30.2002 34.0544 30.2002 35.6008C30.2002 37.1472 31.4538 38.4008 33.0002 38.4008Z"
+                    stroke="black"
+                    stroke-width="1.5"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                  <path
+                    d="M19.0002 38.4008C20.5466 38.4008 21.8002 37.1472 21.8002 35.6008C21.8002 34.0544 20.5466 32.8008 19.0002 32.8008C17.4538 32.8008 16.2002 34.0544 16.2002 35.6008C16.2002 37.1472 17.4538 38.4008 19.0002 38.4008Z"
+                    stroke="black"
+                    stroke-width="1.5"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                  <path
+                    d="M16.2 35.5608C14.6642 35.4852 13.708 35.257 13.0248 34.5752C12.3416 33.8934 12.1148 32.9358 12.0392 31.4M21.8 35.6H30.2M35.8 35.5608C37.3358 35.4852 38.292 35.257 38.9752 34.5752C40 33.549 40 31.8998 40 28.6V25.8H33.42C32.377 25.8 31.8562 25.8 31.4348 25.6628C31.0146 25.5263 30.6327 25.2922 30.3202 24.9798C30.0078 24.6673 29.7737 24.2854 29.6372 23.8652C29.5 23.4438 29.5 22.923 29.5 21.88C29.5 20.3162 29.5 19.535 29.2942 18.9022C29.0894 18.2719 28.7383 17.699 28.2697 17.2303C27.801 16.7617 27.2281 16.4106 26.5978 16.2058C25.965 16 25.1838 16 23.62 16H12M12 21.6H20.4M12 25.8H17.6"
+                    stroke="black"
+                    stroke-width="1.5"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                  <path
+                    d="M29.5 18.8008H32.0494C34.0878 18.8008 35.1056 18.8008 35.9344 19.2964C36.7646 19.7906 37.2476 20.688 38.2136 22.4828L40 25.8008"
+                    stroke="black"
+                    stroke-width="1.5"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
 
                 <span className="text-sm">Delivery Charges</span>
               </div>
               <div className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg">
-               <svg className="w-10 h-10" width="50" height="50" viewBox="0 0 50 50" fill="none" xmlns="http://www.w3.org/2000/svg">
-<circle cx="25" cy="25" r="25" fill="#FF7E38" fill-opacity="0.5"/>
-<path d="M23.2852 38.9989C23.2852 38.9989 33.5699 35.5706 33.5699 27" stroke="black" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-<path d="M33.5699 26.9989V16.7141C33.5699 16.7141 30.1417 15 23.2852 15" stroke="black" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-<path d="M23.2848 38.9989C23.2848 38.9989 13 35.5706 13 27" stroke="black" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-<path d="M13 26.9989V16.7141C13 16.7141 16.4283 15 23.2848 15" stroke="black" stroke-linecap="round" stroke-linejoin="round"/>
-<path d="M30.1415 20.1426C23.285 25.285 21.5708 32.1415 21.5708 32.1415C21.5708 32.1415 19.8567 30.0955 18.1426 28.7132" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-</svg>
+                <svg
+                  className="w-10 h-10"
+                  width="50"
+                  height="50"
+                  viewBox="0 0 50 50"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <circle
+                    cx="25"
+                    cy="25"
+                    r="25"
+                    fill="#FF7E38"
+                    fill-opacity="0.5"
+                  />
+                  <path
+                    d="M23.2852 38.9989C23.2852 38.9989 33.5699 35.5706 33.5699 27"
+                    stroke="black"
+                    stroke-width="1.5"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                  <path
+                    d="M33.5699 26.9989V16.7141C33.5699 16.7141 30.1417 15 23.2852 15"
+                    stroke="black"
+                    stroke-width="1.5"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                  <path
+                    d="M23.2848 38.9989C23.2848 38.9989 13 35.5706 13 27"
+                    stroke="black"
+                    stroke-width="1.5"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                  <path
+                    d="M13 26.9989V16.7141C13 16.7141 16.4283 15 23.2848 15"
+                    stroke="black"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                  <path
+                    d="M30.1415 20.1426C23.285 25.285 21.5708 32.1415 21.5708 32.1415C21.5708 32.1415 19.8567 30.0955 18.1426 28.7132"
+                    stroke="black"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
 
                 <span className="text-sm">Secure Payments</span>
               </div>
@@ -566,7 +640,7 @@ export default function ProductPage({ params }: ProductPageProps) {
                 className="flex flex-col space-y-1 border-b border-gray-100 pb-2 last:border-b-0"
               >
                 <span className="font-bold text-gray-700">
-                  {attr.attribute.name}: 
+                  {attr.attribute.name}:
                 </span>
                 <span className="text-gray-600 ">
                   {attr.values?.[0]?.value || "N/A"}
@@ -667,13 +741,16 @@ export default function ProductPage({ params }: ProductPageProps) {
                   key={rel.id}
                   className="bg-white rounded-xl shadow-sm p-4 text-center hover:shadow-md transition"
                 >
-                  <Image
-                    width={150}
-                    height={150}
-                    src={relImage}
-                    alt={rel.name}
-                    className="mx-auto mb-3 rounded-lg object-cover"
-                  />
+                  {relImage && (
+                    <Image
+                      width={150}
+                      height={150}
+                      src={relImage}
+                      alt={rel.name}
+                      className="mx-auto mb-3 rounded-lg object-cover"
+                      priority={true}
+                    />
+                  )}
                   <h3 className="text-sm font-medium mb-2 text-gray-900 line-clamp-2">
                     {rel.name}
                   </h3>

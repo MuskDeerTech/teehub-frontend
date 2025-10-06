@@ -1,5 +1,4 @@
 // src/app/page.tsx
-"use client";
 
 import { Suspense } from "react";
 import Image from "next/image";
@@ -7,10 +6,16 @@ import Link from 'next/link'; // Ensure this is imported at top
 import api from "@/lib/api";
 import ProductGrid from "@/components/ProductGrid";
 import { Product } from "@/types/Product";
+import next from "next";
 
 async function getFeaturedProducts(): Promise<Product[]> {
-  const res = await api.get("/products?limit=8&sort=createdAt&order=-1&depth=2");
-  return res.data?.docs || [];
+  const res = await fetch(
+    `${process.env.NEXT_PUBLIC_API_URL}/products?limit=8&sort=createdAt&order=-1&depth=2`,
+    { next: { revalidate: 60 } } // cache for 60s
+  );
+  if (!res.ok) return [];
+  const data = await res.json();
+  return data.docs || [];
 }
 
 async function getCategories(): Promise<{ label: string; value: string }[]> {
@@ -23,6 +28,8 @@ async function getCategories(): Promise<{ label: string; value: string }[]> {
   );
 }
 
+
+
 export default async function HomePage() {
   const [featuredProducts, categories] = await Promise.all([
     getFeaturedProducts(),
@@ -33,14 +40,14 @@ export default async function HomePage() {
     <div className="min-h-screen bg-gray-50">
       {/* Hero Banner */}
       <section className="relative bg-gradient-to-r from-blue-600 to-indigo-700 overflow-hidden">
-        <div className="absolute inset-0">
+        {/* <div className="absolute inset-0">
           <Image
-            src="/hero-banner.jpg" // Replace with your hero image or use a dynamic one
+            src="/hero-banner.jpg" 
             alt="Shop Tees & Apparel"
             fill
             className="object-cover opacity-20"
           />
-        </div>
+        </div> */}
         <div className="relative max-w-7xl mx-auto px-4 py-24 text-center text-white">
           <h1 className="text-5xl font-bold mb-4 drop-shadow-lg">
             Teehub Shop
