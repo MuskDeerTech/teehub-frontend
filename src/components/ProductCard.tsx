@@ -24,7 +24,11 @@ export default function ProductCard({ product }: ProductCardProps) {
   // Use SWR to fetch product if only slug is provided, otherwise use prop
   const { data: fetchedProduct, error } = useSWR<Product>(
     product && "slug" in product && !("id" in product)
-      ? `${process.env.NEXT_PUBLIC_API_URL}/products?where[slug][equals]=${encodeURIComponent(product.slug)}&depth=2`
+      ? `${
+          process.env.NEXT_PUBLIC_API_URL
+        }/products?where[slug][equals]=${encodeURIComponent(
+          product.slug
+        )}&depth=2`
       : null,
     fetcher,
     {
@@ -43,18 +47,18 @@ export default function ProductCard({ product }: ProductCardProps) {
       : `${apiBase}${displayProduct.images[0].image.url}`
     : "/placeholder.png";
 
-const Skeleton = () => (
-  <div className="rounded-lg overflow-hidden bg-white animate-pulse">
-    <div className="w-full h-64 bg-gray-300" />
-    <div className="p-3">
-      <div className="h-6 w-3/4 bg-gray-300 mt-2" />
-      <div className="flex items-center gap-2 mt-2">
-        <div className="h-5 w-16 bg-gray-300" />
-        <div className="h-5 w-12 bg-gray-300" />
+  const Skeleton = () => (
+    <div className="rounded-lg overflow-hidden bg-white animate-pulse">
+      <div className="w-full h-64 bg-gray-300" />
+      <div className="p-3">
+        <div className="h-6 w-3/4 bg-gray-300 mt-2" />
+        <div className="flex items-center gap-2 mt-2">
+          <div className="h-5 w-16 bg-gray-300" />
+          <div className="h-5 w-12 bg-gray-300" />
+        </div>
       </div>
     </div>
-  </div>
-);
+  );
 
   if (error) return <div>Error loading product...</div>;
   if (!displayProduct) return <Skeleton />;
@@ -69,7 +73,9 @@ const Skeleton = () => (
               width={400}
               height={400}
               src={imageUrl}
-              alt={displayProduct.images?.[0]?.image?.alt || displayProduct.name}
+              alt={
+                displayProduct.images?.[0]?.image?.alt || displayProduct.name
+              }
               className="w-full object-cover"
               priority={true}
             />
@@ -78,7 +84,9 @@ const Skeleton = () => (
 
         <div className="p-3">
           <div className="flex items-center gap-2 mt-2">
-            <p className="text-lg font-semibold">₹{displayProduct.regularPrice}</p>
+            <p className="text-lg font-semibold">
+              ₹{displayProduct.regularPrice}
+            </p>
             {displayProduct.salePrice && (
               <>
                 <p className="text-sm line-through text-gray-400">

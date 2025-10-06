@@ -48,6 +48,23 @@ const fetcher = async (url: string) => {
   return data?.docs || [];
 };
 
+const FilterSkeleton = () => (
+  <aside className="p-4 max-w-xs filter-sidebar animate-pulse">
+    <div className="flex justify-between items-center mb-4">
+      <div className="h-6 w-1/3 bg-gray-300" />
+      <div className="h-5 w-1/4 bg-gray-300" />
+    </div>
+    {Array(6)
+      .fill(null)
+      .map((_, index) => (
+        <div key={index} className="mb-4 border-b pb-2">
+          <div className="h-5 w-1/2 bg-gray-300 mb-2" />
+          <div className="h-20 w-full bg-gray-300" />
+        </div>
+      ))}
+  </aside>
+);
+
 export default function ProductFilters({
   categories,
   products,
@@ -115,7 +132,8 @@ export default function ProductFilters({
         .filter((v: AttributeValueAPI) => {
           // Try different ways to match the attribute ID
           if (typeof v.attribute === "string") return v.attribute === attr.id;
-          if (typeof v.attribute === "object" && v.attribute?.id) return v.attribute.id === attr.id;
+          if (typeof v.attribute === "object" && v.attribute?.id)
+            return v.attribute.id === attr.id;
           if (v.attributeId) return v.attributeId === attr.id;
           return false;
         })
@@ -135,7 +153,10 @@ export default function ProductFilters({
   // Handle errors
   useEffect(() => {
     if (attributesError || attributeValuesError) {
-      console.error("Error fetching attributes:", attributesError || attributeValuesError);
+      console.error(
+        "Error fetching attributes:",
+        attributesError || attributeValuesError
+      );
       setAttributes([]);
     }
   }, [attributesError, attributeValuesError]);
@@ -269,179 +290,186 @@ export default function ProductFilters({
   };
 
   return (
-    <aside className="p-4 max-w-xs filter-sidebar ">
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-lg font-semibold">Filters</h2>
-        <button
-          onClick={clearAllFilters}
-          className="text-sm text-blue-600 hover:underline"
-        >
-          Clear All
-        </button>
-      </div>
+    <>
+      {!attributesData || !attributeValuesData ? (
+        <FilterSkeleton />
+      ) : (
+        <aside className="p-4 max-w-xs filter-sidebar ">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-lg font-semibold">Filters</h2>
+            <button
+              onClick={clearAllFilters}
+              className="text-sm text-blue-600 hover:underline"
+            >
+              Clear All
+            </button>
+          </div>
 
-      {/* Theme */}
-      <div className="mb-4 border-b pb-2">
-        <button
-          onClick={() => toggleAccordion("theme")}
-          className="w-full flex justify-between items-center text-sm font-medium mb-2"
-        >
-          Theme <span>{accordionOpen.theme ? "-" : "+"}</span>
-        </button>
-        {accordionOpen.theme && renderCheckboxes("theme")}
-      </div>
+          {/* Theme */}
+          <div className="mb-4 border-b pb-2">
+            <button
+              onClick={() => toggleAccordion("theme")}
+              className="w-full flex justify-between items-center text-sm font-medium mb-2"
+            >
+              Theme <span>{accordionOpen.theme ? "-" : "+"}</span>
+            </button>
+            {accordionOpen.theme && renderCheckboxes("theme")}
+          </div>
 
-      {/* Category */}
-      <div className="mb-4 border-b pb-2">
-        <button
-          onClick={() => toggleAccordion("category")}
-          className="w-full flex justify-between items-center text-sm font-medium mb-2"
-        >
-          Category <span>{accordionOpen.category ? "-" : "+"}</span>
-        </button>
-        {accordionOpen.category && (
-          <div className="flex flex-col gap-2">
-            {(showMore["category"] ? categories : categories.slice(0, 4)).map(
-              (c) => {
-                const checked = selectedCategories.includes(c.value);
-                return (
-                  <label
-                    key={c.value}
-                    className="flex items-center justify-between text-sm gap-2"
+          {/* Category */}
+          <div className="mb-4 border-b pb-2">
+            <button
+              onClick={() => toggleAccordion("category")}
+              className="w-full flex justify-between items-center text-sm font-medium mb-2"
+            >
+              Category <span>{accordionOpen.category ? "-" : "+"}</span>
+            </button>
+            {accordionOpen.category && (
+              <div className="flex flex-col gap-2">
+                {(showMore["category"]
+                  ? categories
+                  : categories.slice(0, 4)
+                ).map((c) => {
+                  const checked = selectedCategories.includes(c.value);
+                  return (
+                    <label
+                      key={c.value}
+                      className="flex items-center justify-between text-sm gap-2"
+                    >
+                      <span>{c.label}</span>
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={() => toggleCategory(c.value)}
+                      />
+                    </label>
+                  );
+                })}
+                {categories.length > 4 && (
+                  <button
+                    className="text-xs text-blue-600 mt-1 self-start"
+                    onClick={() =>
+                      setShowMore((prev) => ({
+                        ...prev,
+                        category: !prev["category"],
+                      }))
+                    }
                   >
-                    <span>{c.label}</span>
-                    <input
-                      type="checkbox"
-                      checked={checked}
-                      onChange={() => toggleCategory(c.value)}
-                    />
-                  </label>
-                );
-              }
-            )}
-            {categories.length > 4 && (
-              <button
-                className="text-xs text-blue-600 mt-1 self-start"
-                onClick={() =>
-                  setShowMore((prev) => ({
-                    ...prev,
-                    category: !prev["category"],
-                  }))
-                }
-              >
-                {showMore["category"] ? "Show Less" : "Show More"}
-              </button>
+                    {showMore["category"] ? "Show Less" : "Show More"}
+                  </button>
+                )}
+              </div>
             )}
           </div>
-        )}
-      </div>
 
-      {/* Colors */}
-      <div className="mb-4 border-b pb-2">
-        <button
-          onClick={() => toggleAccordion("colors")}
-          className="w-full flex justify-between items-center text-sm font-medium mb-2"
-        >
-          Colors <span>{accordionOpen.colors ? "-" : "+"}</span>
-        </button>
-        {accordionOpen.colors && renderCheckboxes("Colors")}
-      </div>
-
-      {/* Sleeves */}
-      <div className="mb-4 border-b pb-2">
-        <button
-          onClick={() => toggleAccordion("sleeves")}
-          className="w-full flex justify-between items-center text-sm font-medium mb-2"
-        >
-          Sleeves <span>{accordionOpen.sleeves ? "-" : "+"}</span>
-        </button>
-        {accordionOpen.sleeves && renderCheckboxes("Sleeves")}
-      </div>
-
-      {/* Price */}
-      <div className="mb-4 border-b pb-2">
-        <button
-          onClick={() => toggleAccordion("priceRange")}
-          className="w-full flex justify-between items-center text-sm font-medium mb-2"
-        >
-          Price Range <span>{accordionOpen.priceRange ? "-" : "+"}</span>
-        </button>
-        {accordionOpen.priceRange && (
-          <div className="mb-4">
-            <p className="text-sm font-medium mb-2">Select Price Range</p>
-            <div className="relative h-6 mb-3">
-              {/* Background track */}
-              <div className="absolute inset-y-0 left-0 w-full h-1 bg-gray-200 rounded-full top-1/2 -translate-y-1/2"></div>
-              {/* Fill track */}
-              <div
-                className="absolute h-1 bg-orange-500 rounded-full top-1/2 -translate-y-1/2"
-                style={{
-                  left: `${(minPrice / 5000) * 100}%`,
-                  width: `${((maxPrice - minPrice) / 5000) * 100}%`,
-                }}
-              ></div>
-              {/* Min thumb */}
-              <div
-                className="absolute top-1/2 -translate-y-1/2 w-3 h-3 bg-orange-500 rounded-full border-2 border-white shadow-sm"
-                style={{
-                  left: `${(minPrice / 5000) * 100}%`,
-                }}
-              ></div>
-              {/* Max thumb */}
-              <div
-                className="absolute top-1/2 -translate-y-1/2 w-3 h-3 bg-orange-500 rounded-full border-2 border-white shadow-sm"
-                style={{
-                  left: `${(maxPrice / 5000) * 100}%`,
-                }}
-              ></div>
-              {/* Hidden min input */}
-              <input
-                type="range"
-                className="absolute inset-0 w-full h-full appearance-none bg-transparent cursor-pointer opacity-0"
-                min={0}
-                max={5000}
-                step={50}
-                value={minPrice}
-                onChange={(e) => {
-                  const val = Number(e.target.value);
-                  setMinPrice(val);
-                  if (val > maxPrice) setMaxPrice(val);
-                }}
-                aria-label="Minimum price"
-              />
-              {/* Hidden max input */}
-              <input
-                type="range"
-                className="absolute inset-0 w-full h-full appearance-none bg-transparent cursor-pointer opacity-0"
-                min={0}
-                max={5000}
-                step={50}
-                value={maxPrice}
-                onChange={(e) => {
-                  const val = Number(e.target.value);
-                  setMaxPrice(val);
-                  if (val < minPrice) setMinPrice(val);
-                }}
-                aria-label="Maximum price"
-              />
-            </div>
-            <p className="text-sm text-gray-600 text-center">
-              ₹{minPrice} - ₹{maxPrice} INR
-            </p>
+          {/* Colors */}
+          <div className="mb-4 border-b pb-2">
+            <button
+              onClick={() => toggleAccordion("colors")}
+              className="w-full flex justify-between items-center text-sm font-medium mb-2"
+            >
+              Colors <span>{accordionOpen.colors ? "-" : "+"}</span>
+            </button>
+            {accordionOpen.colors && renderCheckboxes("Colors")}
           </div>
-        )}
-      </div>
 
-      {/* Fit */}
-      <div className="mb-4 border-b pb-2">
-        <button
-          onClick={() => toggleAccordion("fit")}
-          className="w-full flex justify-between items-center text-sm font-medium mb-2"
-        >
-          Fit <span>{accordionOpen.fit ? "-" : "+"}</span>
-        </button>
-        {accordionOpen.fit && renderCheckboxes("fit")}
-      </div>
-    </aside>
+          {/* Sleeves */}
+          <div className="mb-4 border-b pb-2">
+            <button
+              onClick={() => toggleAccordion("sleeves")}
+              className="w-full flex justify-between items-center text-sm font-medium mb-2"
+            >
+              Sleeves <span>{accordionOpen.sleeves ? "-" : "+"}</span>
+            </button>
+            {accordionOpen.sleeves && renderCheckboxes("Sleeves")}
+          </div>
+
+          {/* Price */}
+          <div className="mb-4 border-b pb-2">
+            <button
+              onClick={() => toggleAccordion("priceRange")}
+              className="w-full flex justify-between items-center text-sm font-medium mb-2"
+            >
+              Price Range <span>{accordionOpen.priceRange ? "-" : "+"}</span>
+            </button>
+            {accordionOpen.priceRange && (
+              <div className="mb-4">
+                <p className="text-sm font-medium mb-2">Select Price Range</p>
+                <div className="relative h-6 mb-3">
+                  {/* Background track */}
+                  <div className="absolute inset-y-0 left-0 w-full h-1 bg-gray-200 rounded-full top-1/2 -translate-y-1/2"></div>
+                  {/* Fill track */}
+                  <div
+                    className="absolute h-1 bg-orange-500 rounded-full top-1/2 -translate-y-1/2"
+                    style={{
+                      left: `${(minPrice / 5000) * 100}%`,
+                      width: `${((maxPrice - minPrice) / 5000) * 100}%`,
+                    }}
+                  ></div>
+                  {/* Min thumb */}
+                  <div
+                    className="absolute top-1/2 -translate-y-1/2 w-3 h-3 bg-orange-500 rounded-full border-2 border-white shadow-sm"
+                    style={{
+                      left: `${(minPrice / 5000) * 100}%`,
+                    }}
+                  ></div>
+                  {/* Max thumb */}
+                  <div
+                    className="absolute top-1/2 -translate-y-1/2 w-3 h-3 bg-orange-500 rounded-full border-2 border-white shadow-sm"
+                    style={{
+                      left: `${(maxPrice / 5000) * 100}%`,
+                    }}
+                  ></div>
+                  {/* Hidden min input */}
+                  <input
+                    type="range"
+                    className="absolute inset-0 w-full h-full appearance-none bg-transparent cursor-pointer opacity-0"
+                    min={0}
+                    max={5000}
+                    step={50}
+                    value={minPrice}
+                    onChange={(e) => {
+                      const val = Number(e.target.value);
+                      setMinPrice(val);
+                      if (val > maxPrice) setMaxPrice(val);
+                    }}
+                    aria-label="Minimum price"
+                  />
+                  {/* Hidden max input */}
+                  <input
+                    type="range"
+                    className="absolute inset-0 w-full h-full appearance-none bg-transparent cursor-pointer opacity-0"
+                    min={0}
+                    max={5000}
+                    step={50}
+                    value={maxPrice}
+                    onChange={(e) => {
+                      const val = Number(e.target.value);
+                      setMaxPrice(val);
+                      if (val < minPrice) setMinPrice(val);
+                    }}
+                    aria-label="Maximum price"
+                  />
+                </div>
+                <p className="text-sm text-gray-600 text-center">
+                  ₹{minPrice} - ₹{maxPrice} INR
+                </p>
+              </div>
+            )}
+          </div>
+
+          {/* Fit */}
+          <div className="mb-4 border-b pb-2">
+            <button
+              onClick={() => toggleAccordion("fit")}
+              className="w-full flex justify-between items-center text-sm font-medium mb-2"
+            >
+              Fit <span>{accordionOpen.fit ? "-" : "+"}</span>
+            </button>
+            {accordionOpen.fit && renderCheckboxes("fit")}
+          </div>
+        </aside>
+      )}
+    </>
   );
 }

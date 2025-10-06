@@ -2,7 +2,7 @@
 
 import { Suspense } from "react";
 import Image from "next/image";
-import Link from 'next/link'; // Ensure this is imported at top
+import Link from "next/link"; // Ensure this is imported at top
 import api from "@/lib/api";
 import ProductGrid from "@/components/ProductGrid";
 import { Product } from "@/types/Product";
@@ -28,7 +28,27 @@ async function getCategories(): Promise<{ label: string; value: string }[]> {
   );
 }
 
-
+const ProductGridSkeleton = () => (
+  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
+    {Array(8)
+      .fill(null)
+      .map((_, index) => (
+        <div
+          key={index}
+          className="rounded-lg overflow-hidden bg-white animate-pulse"
+        >
+          <div className="w-full h-64 bg-gray-300" />
+          <div className="p-3">
+            <div className="h-6 w-3/4 bg-gray-300 mt-2" />
+            <div className="flex items-center gap-2 mt-2">
+              <div className="h-5 w-16 bg-gray-300" />
+              <div className="h-5 w-12 bg-gray-300" />
+            </div>
+          </div>
+        </div>
+      ))}
+  </div>
+);
 
 export default async function HomePage() {
   const [featuredProducts, categories] = await Promise.all([
@@ -53,9 +73,11 @@ export default async function HomePage() {
             Teehub Shop
           </h1>
           <p className="text-xl mb-8 max-w-2xl mx-auto drop-shadow-md">
-            Elevate your style with our exclusive collection of cricket jerseys, hoodies, and more. Shop now and save up to 50%!
+            Elevate your style with our exclusive collection of cricket jerseys,
+            hoodies, and more. Shop now and save up to 50%!
           </p>
-          <Link prefetch={true}
+          <Link
+            prefetch={true}
             href="/products"
             className="inline-block bg-white text-blue-600 px-8 py-4 rounded-full font-semibold text-lg hover:bg-gray-100 transition transform hover:scale-105 shadow-2xl"
           >
@@ -72,7 +94,8 @@ export default async function HomePage() {
           </h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
             {categories.slice(0, 4).map((category) => (
-              <Link prefetch={true}
+              <Link
+                prefetch={true}
                 key={category.value}
                 href={`/products?category=${category.value}`}
                 className="group relative overflow-hidden rounded-xl shadow-md hover:shadow-xl transition-all duration-300 transform hover:scale-105"
@@ -93,8 +116,9 @@ export default async function HomePage() {
           </div>
           {categories.length > 4 && (
             <div className="text-center mt-8">
-              <Link 
-                href="/products" prefetch={true}
+              <Link
+                href="/products"
+                prefetch={true}
                 className="text-blue-600 hover:underline text-lg font-medium"
               >
                 View All Categories →
@@ -111,14 +135,15 @@ export default async function HomePage() {
             <h2 className="text-3xl font-bold text-gray-900">
               Featured Products
             </h2>
-            <Link prefetch={true}
-              href="/products" 
+            <Link
+              prefetch={true}
+              href="/products"
               className="text-blue-600 hover:underline font-medium"
             >
               View All →
             </Link>
           </div>
-          <Suspense fallback={<div className="text-center py-12">Loading featured products...</div>}>
+          <Suspense fallback={<ProductGridSkeleton />}>
             <ProductGrid products={featuredProducts} />
           </Suspense>
         </div>

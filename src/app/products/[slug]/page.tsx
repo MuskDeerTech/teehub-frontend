@@ -87,6 +87,45 @@ const fetcher = async (url: string) => {
   return data?.docs || [];
 };
 
+const ProductDetailSkeleton = () => (
+  <div className="max-w-7xl mx-auto px-4 py-8 bg-gray-50">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
+      <div className="space-y-6">
+        <div className="relative bg-white rounded-xl shadow-lg overflow-hidden animate-pulse">
+          <div className="w-full h-[600px] bg-gray-300" />
+        </div>
+        <div className="grid grid-cols-4 gap-2">
+          {Array(4)
+            .fill(null)
+            .map((_, index) => (
+              <div
+                key={index}
+                className="w-full h-16 bg-gray-300 rounded-lg animate-pulse"
+              />
+            ))}
+        </div>
+      </div>
+      <div className="space-y-6">
+        <div className="bg-white p-6 rounded-xl shadow-sm animate-pulse">
+          <div className="h-8 w-3/4 bg-gray-300 mb-4" />
+          <div className="flex items-center gap-3 mb-6">
+            <div className="h-10 w-20 bg-gray-300" />
+            <div className="h-8 w-16 bg-gray-300" />
+          </div>
+          <div className="grid grid-cols-2 gap-3 mb-6">
+            <div className="h-10 w-full bg-gray-300" />
+            <div className="h-10 w-full bg-gray-300" />
+          </div>
+          <div className="h-12 w-full bg-gray-300 mb-6" />
+          <div className="h-10 w-1/2 bg-gray-300 mb-6" />
+          <div className="h-10 w-1/4 bg-gray-300 mb-6" />
+          <div className="h-12 w-full bg-gray-300 mb-6" />
+        </div>
+      </div>
+    </div>
+  </div>
+);
+
 export default function ProductPage({ params }: ProductPageProps) {
   const { slug } = React.use(params);
 
@@ -190,7 +229,7 @@ export default function ProductPage({ params }: ProductPageProps) {
     return <div>Error loading product...</div>;
   }
 
-  if (!product) return <div>Loading...</div>;
+  if (!product) return <ProductDetailSkeleton />;
 
   const descriptionText =
     typeof product.description === "object" &&

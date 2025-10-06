@@ -80,7 +80,25 @@ export default function ProductsPageContent() {
             </select>
           </div>
           {!allProducts ? (
-            <p>Loading products...</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+              {Array(9)
+                .fill(null)
+                .map((_, index) => (
+                  <div
+                    key={index}
+                    className="rounded-lg overflow-hidden bg-white animate-pulse"
+                  >
+                    <div className="w-full h-64 bg-gray-300" />
+                    <div className="p-3">
+                      <div className="h-6 w-3/4 bg-gray-300 mt-2" />
+                      <div className="flex items-center gap-2 mt-2">
+                        <div className="h-5 w-16 bg-gray-300" />
+                        <div className="h-5 w-12 bg-gray-300" />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+            </div>
           ) : (
             <>
               <ProductGrid products={sortedProducts} />
