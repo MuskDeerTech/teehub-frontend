@@ -24,9 +24,7 @@ export default function ProductCard({ product }: ProductCardProps) {
   // Use SWR to fetch product if only slug is provided, otherwise use prop
   const { data: fetchedProduct, error } = useSWR<Product>(
     product && "slug" in product && !("id" in product)
-      ? `${
-          process.env.NEXT_PUBLIC_API_URL
-        }/products?where[slug][equals]=${encodeURIComponent(
+      ? `${process.env.NEXT_PUBLIC_API_URL}/products?where[slug][equals]=${encodeURIComponent(
           product.slug
         )}&depth=2`
       : null,
@@ -49,12 +47,12 @@ export default function ProductCard({ product }: ProductCardProps) {
 
   const Skeleton = () => (
     <div className="rounded-lg overflow-hidden bg-white animate-pulse">
-      <div className="w-full h-64 bg-gray-300" />
-      <div className="p-3">
-        <div className="h-6 w-3/4 bg-gray-300 mt-2" />
-        <div className="flex items-center gap-2 mt-2">
-          <div className="h-5 w-16 bg-gray-300" />
-          <div className="h-5 w-12 bg-gray-300" />
+      <div className="w-full h-48 sm:h-64 bg-gray-300" />
+      <div className="p-2 sm:p-3">
+        <div className="h-4 sm:h-6 w-3/4 bg-gray-300 mt-1 sm:mt-2" />
+        <div className="flex items-center gap-1 sm:gap-2 mt-1 sm:mt-2">
+          <div className="h-3 sm:h-5 w-12 sm:w-16 bg-gray-300" />
+          <div className="h-3 sm:h-5 w-8 sm:w-12 bg-gray-300" />
         </div>
       </div>
     </div>
@@ -70,48 +68,53 @@ export default function ProductCard({ product }: ProductCardProps) {
           {imageUrl && (
             <Image
               style={{ borderRadius: "8px" }}
-              width={400}
-              height={400}
+              width={300}
+              height={300}
               src={imageUrl}
-              alt={
-                displayProduct.images?.[0]?.image?.alt || displayProduct.name
-              }
-              className="w-full object-cover"
+              alt={displayProduct.images?.[0]?.image?.alt || displayProduct.name}
+              className="w-full  object-cover"
               priority={true}
             />
           )}
         </div>
-
-        <div className="p-3">
-          <div className="flex items-center gap-2 mt-2">
-            <p className="text-lg font-semibold">
-              ₹{displayProduct.regularPrice}
-            </p>
-            {displayProduct.salePrice && (
-              <>
-                <p className="text-sm line-through text-gray-400">
-                  ₹{displayProduct.salePrice}
-                </p>
-                <p className="text-green-600 text-sm">
-                  {Math.round(
-                    ((displayProduct.regularPrice! - displayProduct.salePrice) /
-                      displayProduct.regularPrice!) *
-                      100
-                  )}
-                  % OFF
-                </p>
-              </>
-            )}
+        <div className="p-2 sm:p-3">
+          {/* Price and Discount Section with consistent alignment */}
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-2">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-1 sm:gap-2">
+              <p className="text-base sm:text-lg font-semibold">
+                ₹{displayProduct.regularPrice}
+              </p>
+              {displayProduct.salePrice && (
+                <>
+                  <p className="text-xs sm:text-sm line-through text-gray-400">
+                    ₹{displayProduct.salePrice}
+                  </p>
+                  <p className="text-xs sm:text-sm text-green-600">
+                    {Math.round(
+                      ((displayProduct.regularPrice! - displayProduct.salePrice) /
+                        displayProduct.regularPrice!) *
+                        100
+                    )}
+                    % OFF
+                  </p>
+                </>
+              )}
+           
+            </div>
           </div>
-          <h2 className="text-base font-medium text-gray-800">
+          {/* Product Name on a single line with ellipsis */}
+          <h2
+            className="text-sm sm:text-base font-medium text-gray-800 mb-2 whitespace-nowrap overflow-hidden text-ellipsis"
+            style={{ maxWidth: "100%" }} // Ensures ellipsis works within the card
+          >
             {displayProduct.name}
           </h2>
-
-          <button className="mt-3 w-full border border-black text-black py-2 text-sm rounded hover:border-gray-800 flex items-center justify-center gap-2">
+          {/* Add to Cart Button */}
+          <button className="mt-2 w-full border border-black text-black py-1 sm:py-2 text-xs sm:text-sm rounded hover:border-gray-800 flex items-center justify-center gap-1 sm:gap-2">
             Add to Cart
             <svg
-              width="22"
-              height="21"
+              width="18"
+              height="18"
               viewBox="0 0 22 21"
               fill="none"
               xmlns="http://www.w3.org/2000/svg"

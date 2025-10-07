@@ -28,3 +28,39 @@ body {
 .filter-sidebar {
   background-color: #F7F7F7;
 }
+
+:root {
+  /* Light mode defaults */
+  --background-color: #ffffff;
+  --text-color: #000000;
+  --card-background: #ffffff;
+  --border-color: #e5e7eb;
+  --price-color: #1f2937;
+  --discount-color: #10b981;
+  --filter-background: #f9fafb;
+}
+
+
+
+body {
+  background-color: var(--background-color);
+  color: var(--text-color);
+}
+
+.filter-sidebar {
+  background-color: var(--filter-background);
+  border-color: var(--border-color);
+}
+
+.product-card {
+  background-color: var(--card-background);
+}
+
+.price {
+  color: var(--price-color);
+}
+
+.discount {
+  color: var(--discount-color);
+}
+

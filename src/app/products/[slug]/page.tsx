@@ -4,7 +4,14 @@
 import React, { useState, useEffect } from "react";
 import useSWR from "swr";
 import Image from "next/image";
-import { notFound } from "next/navigation";
+import { useRef } from "react";
+import SwiperCore from "swiper";
+import { Swiper, SwiperSlide } from "swiper/react";
+import { Zoom } from "swiper/modules";
+import "swiper/css";
+import "swiper/css/zoom";
+
+// Import Swiper styles
 
 interface LexicalTextNode {
   text: string;
@@ -128,7 +135,7 @@ const ProductDetailSkeleton = () => (
 
 export default function ProductPage({ params }: ProductPageProps) {
   const { slug } = React.use(params);
-
+  const mainSwiperRef = useRef<SwiperCore | null>(null);
   const [mainImage, setMainImage] = useState<string>("/placeholder.png");
   const [selectedVariation, setSelectedVariation] = useState<Variation | null>(
     null
@@ -237,7 +244,7 @@ export default function ProductPage({ params }: ProductPageProps) {
       ? product.description.root.children[0].children[0].text
       : "No description available";
 
-  const thumbnailImages = product.images?.slice(1) || [];
+  const thumbnailImages = product.images || [];
   const attributes = product.attributes || [];
   const variations = product.variations || [];
   const currentPrice = selectedVariation?.price || product.regularPrice || 0;
@@ -286,59 +293,109 @@ export default function ProductPage({ params }: ProductPageProps) {
   );
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-8 bg-gray-50">
+    <div className="px-4 py-8 bg-gray-50">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
         {/* 1st Column: Images */}
-        <div className="space-y-6">
+        <div className="flex flex-col lg:flex-row gap-4" style={{height: '600px'}}>
+          {/* Vertical Thumbnails */}
+          <div className="w-full lg:w-24 flex-shrink-0 order-2 lg:order-1">
+            <Swiper
+              direction="vertical"
+              slidesPerView={4}
+              spaceBetween={8}
+              className="h-[150px] lg:h-[600px] w-full lg:w-24"
+              breakpoints={{
+                0: {
+                  direction: "horizontal",
+                  slidesPerView: 4,
+                  spaceBetween: 4,
+                },
+                1024: {
+                  direction: "vertical",
+                  slidesPerView: 4,
+                  spaceBetween: 8,
+                },
+              }}
+            >
+              {thumbnailImages.map((img, idx) => {
+                const thumbUrl = img.image.url.startsWith("http")
+                  ? img.image.url
+                  : `${apiBase}${img.image.url}`;
+                const isActive = thumbUrl === mainImage;
+                return (
+                  <SwiperSlide key={idx}>
+                    <div
+                      className={`relative cursor-pointer rounded-lg overflow-hidden transition-all shadow-sm ${
+                        isActive
+                          ? "border-2 border-orange-700 p-0.5"
+                          : "hover:shadow-md hover:scale-105"
+                      }`}
+                      onClick={() => {
+                        setMainImage(thumbUrl);
+                        if (mainSwiperRef.current) {
+                          mainSwiperRef.current.slideTo(idx, 300);
+                        }
+                      }}
+                    >
+                      <Image
+                        width={100}
+                        height={100}
+                        src={thumbUrl}
+                        alt={img.image.alt || product.name}
+                        className="w-full h-full object-cover rounded-lg"
+                      />
+                    </div>
+                  </SwiperSlide>
+                );
+              })}
+            </Swiper>
+          </div>
+
           {/* Main Image */}
-          <div className="relative bg-white rounded-xl shadow-lg overflow-hidden">
-            {mainImage && (
-              <Image
-                width={600}
-                height={600}
-                src={mainImage}
-                alt={product.name}
-                className="w-full object-cover"
-                priority={true}
-              />
-            )}
-            {/* Discount Badge */}
+          <div  className="flex-1 relative bg-white rounded-xl shadow-lg overflow-hidden aspect-[4/5] order-1 lg:order-2 "
+>
+            <Swiper
+              zoom={true}
+              modules={[Zoom]}
+              className="w-full h-full"
+              onSwiper={(swiper) => (mainSwiperRef.current = swiper)}
+              onSlideChange={(swiper) => {
+                const activeIndex = swiper.activeIndex;
+                const activeImage = thumbnailImages[activeIndex]?.image?.url;
+                if (activeImage) {
+                  const imgUrl = activeImage.startsWith("http")
+                    ? activeImage
+                    : `${apiBase}${activeImage}`;
+                  setMainImage(imgUrl);
+                }
+              }}
+            >
+              {thumbnailImages.map((img, idx) => {
+                const imgUrl = img.image.url.startsWith("http")
+                  ? img.image.url
+                  : `${apiBase}${img.image.url}`;
+                return (
+                  <SwiperSlide key={idx}>
+                    <div className="swiper-zoom-container">
+                      <Image
+                        width={600}
+                        height={600}
+                        src={imgUrl}
+                        alt={img.image.alt || product.name}
+                        className="w-full h-full object-contain bg-white"
+                      />
+                    </div>
+                  </SwiperSlide>
+                );
+              })}
+            </Swiper>
+
             {hasSale && (
               <div className="absolute top-4 left-4 bg-red-500 text-white px-3 py-1 rounded-full text-sm font-bold shadow-lg">
                 {discountPercent}% OFF
               </div>
             )}
           </div>
-
-          {/* Thumbnails - Small */}
-          {thumbnailImages.length > 0 && (
-            <div className="grid grid-cols-4 gap-2">
-              {thumbnailImages.map((img, idx) => {
-                const thumbUrl = img.image.url.startsWith("http")
-                  ? img.image.url
-                  : `${apiBase}${img.image.url}`;
-                const isActive = thumbUrl === mainImage;
-                return thumbUrl ? (
-                  <div
-                    key={idx}
-                    className={`relative cursor-pointer rounded-lg overflow-hidden shadow-md transition-all ${
-                      isActive ? "ring-2 ring-blue-500" : "hover:shadow-lg"
-                    }`}
-                    onClick={() => setMainImage(thumbUrl)}
-                  >
-                    <Image
-                      width={100}
-                      height={100}
-                      src={thumbUrl}
-                      alt={img.image.alt || product.name}
-                      className="w-full h-16 object-cover"
-                      priority={true}
-                    />
-                  </div>
-                ) : null;
-              })}
-            </div>
-          )}
         </div>
 
         {/* 2nd Column: Product Details */}
@@ -488,8 +545,8 @@ export default function ProductPage({ params }: ProductPageProps) {
             </div>
 
             {/* Icons: Return & Exchange, Cash on Delivery, etc. */}
-            <div className="grid grid-cols-2 gap-4 mb-6">
-              <div className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg">
+            <div className="grid grid-cols-4 gap-4 text-center mb-6">
+              <div className="flex flex-col items-center gap-2">
                 <svg
                   className="w-10 h-10"
                   width="50"
@@ -530,7 +587,7 @@ export default function ProductPage({ params }: ProductPageProps) {
 
                 <span className="text-sm">Return & Exchange</span>
               </div>
-              <div className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg">
+              <div className="flex flex-col items-center gap-2">
                 <svg
                   className="w-10 h-10"
                   width="50"
@@ -558,7 +615,7 @@ export default function ProductPage({ params }: ProductPageProps) {
 
                 <span className="text-sm">Cash on Delivery</span>
               </div>
-              <div className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg">
+              <div className="flex flex-col items-center gap-2">
                 <svg
                   className="w-10 h-10"
                   width="50"
@@ -606,7 +663,7 @@ export default function ProductPage({ params }: ProductPageProps) {
 
                 <span className="text-sm">Delivery Charges</span>
               </div>
-              <div className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg">
+              <div className="flex flex-col items-center gap-2">
                 <svg
                   className="w-10 h-10"
                   width="50"
@@ -689,76 +746,78 @@ export default function ProductPage({ params }: ProductPageProps) {
           </div>
         </div>
 
-        {/* Product Information */}
-        <div className="space-y-2">
-          <details className="bg-white rounded-xl shadow-sm border border-gray-200">
-            <summary className="p-4 cursor-pointer font-semibold text-gray-900 flex items-center justify-between">
-              <span>Product Description</span>
-              <svg
-                className="w-4 h-4 transition-transform"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M19 9l-7 7-7-7"
-                />
-              </svg>
-            </summary>
-            <div className="p-4 pt-4 text-sm text-gray-700 border-t border-gray-200">
-              {descriptionText}
-            </div>
-          </details>
-          <details className="bg-white rounded-xl shadow-sm border border-gray-200">
-            <summary className="p-4 cursor-pointer font-semibold text-gray-900 flex items-center justify-between">
-              <span>Return & Exchange</span>
-              <svg
-                className="w-4 h-4 transition-transform"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M19 9l-7 7-7-7"
-                />
-              </svg>
-            </summary>
-            <div className="p-4 pt-4 text-sm text-gray-700 border-t border-gray-200">
-              Free return within 30 days. Learn more about return & exchange
-              policy.
-            </div>
-          </details>
-          <details className="bg-white rounded-xl shadow-sm border border-gray-200">
-            <summary className="p-4 cursor-pointer font-semibold text-gray-900 flex items-center justify-between">
-              <span>Customer Reviews</span>
-              <svg
-                className="w-4 h-4 transition-transform"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M19 9l-7 7-7-7"
-                />
-              </svg>
-            </summary>
-            <div className="p-4 pt-4 text-sm text-gray-700 border-t border-gray-200">
-              <div className="flex items-center gap-2 mb-2">
-                <Stars rating={4.7} />
-                <span>Based on 4,712 reviews</span>
-              </div>
-            </div>
-          </details>
-        </div>
+      {/* Product Information */}
+<div className="space-y-2">
+  <details open className="bg-white rounded-xl shadow-sm border border-gray-200">
+    <summary className="p-4 cursor-pointer font-semibold text-gray-900 flex items-center justify-between">
+      <span>Product Description</span>
+      <svg
+        className="w-4 h-4 transition-transform"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={2}
+          d="M19 9l-7 7-7-7"
+        />
+      </svg>
+    </summary>
+    <div className="p-4 pt-4 text-sm text-gray-700 border-t border-gray-200">
+      {descriptionText}
+    </div>
+  </details>
+
+  <details className="bg-white rounded-xl shadow-sm border border-gray-200">
+    <summary className="p-4 cursor-pointer font-semibold text-gray-900 flex items-center justify-between">
+      <span>Return & Exchange</span>
+      <svg
+        className="w-4 h-4 transition-transform"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={2}
+          d="M19 9l-7 7-7-7"
+        />
+      </svg>
+    </summary>
+    <div className="p-4 pt-4 text-sm text-gray-700 border-t border-gray-200">
+      Free return within 30 days. Learn more about return & exchange policy.
+    </div>
+  </details>
+
+  <details className="bg-white rounded-xl shadow-sm border border-gray-200">
+    <summary className="p-4 cursor-pointer font-semibold text-gray-900 flex items-center justify-between">
+      <span>Customer Reviews</span>
+      <svg
+        className="w-4 h-4 transition-transform"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={2}
+          d="M19 9l-7 7-7-7"
+        />
+      </svg>
+    </summary>
+    <div className="p-4 pt-4 text-sm text-gray-700 border-t border-gray-200">
+      <div className="flex items-center gap-2 mb-2">
+        <Stars rating={4.7} />
+        <span>Based on 4,712 reviews</span>
+      </div>
+    </div>
+  </details>
+</div>
+
       </div>
 
       {/* Frequently Bought Together */}
