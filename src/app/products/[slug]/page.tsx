@@ -10,6 +10,9 @@ import { Swiper, SwiperSlide } from "swiper/react";
 import { Zoom } from "swiper/modules";
 import "swiper/css";
 import "swiper/css/zoom";
+import { useCart } from "@/context/CartContext";
+import { Product } from "@/types/Product";
+
 
 // Import Swiper styles
 
@@ -45,25 +48,7 @@ interface LexicalRootNode {
   };
 }
 
-interface Product {
-  id: string;
-  name: string;
-  slug: string;
-  description?: LexicalRootNode;
-  regularPrice?: number;
-  salePrice?: number;
-  mrp?: number;
-  images?: { image: { url: string; alt?: string } }[];
-  categories?: { name: string; id: string }[] | null;
-  brand?: string;
-  stockStatus?: string;
-  stockQuantity?: number;
-  attributes?: {
-    attribute: { name: string; id: string };
-    values: { value: string; id: string }[];
-  }[];
-  variations?: Variation[];
-}
+
 
 interface Variation {
   attributes: string[];
@@ -95,38 +80,157 @@ const fetcher = async (url: string) => {
 };
 
 const ProductDetailSkeleton = () => (
-  <div className="max-w-7xl mx-auto px-4 py-8 bg-gray-50">
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
-      <div className="space-y-6">
-        <div className="relative bg-white rounded-xl shadow-lg overflow-hidden animate-pulse">
-          <div className="w-full h-[600px] bg-gray-300" />
+  <div className="max-w-7xl mx-auto px-4 py-8">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-0 mb-12">
+      {/* 1st Column: Images */}
+      <div className="flex flex-col lg:flex-row gap-4 h-[450px] lg:h-[650px]">
+        <div className="w-full lg:w-24 flex-shrink-0 order-2 lg:order-1">
+          <div className="relative bg-white rounded-xl shadow-lg overflow-hidden h-[150px] lg:h-[600px]">
+            <div className="grid grid-cols-4 lg:grid-cols-1 gap-2 h-full">
+              {Array(4)
+                .fill(null)
+                .map((_, index) => (
+                  <div
+                    key={index}
+                    className="w-full h-16 bg-gray-300 rounded-lg animate-pulse"
+                  />
+                ))}
+            </div>
+          </div>
         </div>
-        <div className="grid grid-cols-4 gap-2">
-          {Array(4)
-            .fill(null)
-            .map((_, index) => (
-              <div
-                key={index}
-                className="w-full h-16 bg-gray-300 rounded-lg animate-pulse"
-              />
-            ))}
+        <div className="w-full lg:w-[calc(100%-5rem)] relative overflow-hidden aspect-[4/5] order-1 lg:order-2">
+          <div className="w-full h-full bg-gray-300 rounded-xl animate-pulse" />
         </div>
       </div>
-      <div className="space-y-6">
-        <div className="bg-white p-6 rounded-xl shadow-sm animate-pulse">
-          <div className="h-8 w-3/4 bg-gray-300 mb-4" />
-          <div className="flex items-center gap-3 mb-6">
-            <div className="h-10 w-20 bg-gray-300" />
-            <div className="h-8 w-16 bg-gray-300" />
+
+      {/* 2nd Column: Product Details */}
+      <div className="space-y-6 h-[650px] lg:h-[650px] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
+        <div className="p-6">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between mb-4">
+            <div className="h-8 w-3/4 bg-gray-300 rounded animate-pulse" />
+            <div className="flex items-center gap-3">
+              <div className="h-6 w-16 bg-gray-300 rounded animate-pulse" />
+              <div className="h-4 w-12 bg-gray-300 rounded animate-pulse" />
+            </div>
           </div>
+
+          <div className="flex items-baseline gap-3 mb-6">
+            <div className="h-10 w-20 bg-gray-300 rounded animate-pulse" />
+            <div className="h-8 w-16 bg-gray-300 rounded animate-pulse" />
+          </div>
+
+          {/* Coupons - Static Display */}
           <div className="grid grid-cols-2 gap-3 mb-6">
-            <div className="h-10 w-full bg-gray-300" />
-            <div className="h-10 w-full bg-gray-300" />
+            <div>
+              <div className="h-4 w-1/4 bg-gray-300 rounded animate-pulse mb-1" />
+              <div className="h-8 w-full bg-gray-100 border border-gray-300 rounded-lg animate-pulse" />
+            </div>
+            <div>
+              <div className="h-4 w-1/4 bg-gray-300 rounded animate-pulse mb-1" />
+              <div className="h-8 w-full bg-gray-100 border border-gray-300 rounded-lg animate-pulse" />
+            </div>
           </div>
-          <div className="h-12 w-full bg-gray-300 mb-6" />
-          <div className="h-10 w-1/2 bg-gray-300 mb-6" />
-          <div className="h-10 w-1/4 bg-gray-300 mb-6" />
-          <div className="h-12 w-full bg-gray-300 mb-6" />
+
+          {/* Quantity */}
+          <div className="flex items-center gap-4 mb-6">
+            <div className="h-6 w-16 bg-gray-300 rounded animate-pulse" />
+            <div className="flex items-center border border-gray-300 rounded-lg overflow-hidden">
+              <div className="h-10 w-12 bg-gray-100 rounded-l animate-pulse" />
+              <div className="h-10 w-16 bg-gray-50 rounded animate-pulse" />
+              <div className="h-10 w-12 bg-gray-100 rounded-r animate-pulse" />
+            </div>
+          </div>
+
+          {/* Choose Size - Button Format */}
+          <div className="mb-6">
+            <div className="h-6 w-20 bg-gray-300 rounded animate-pulse mb-3" />
+            <div className="flex flex-wrap gap-2">
+              {Array(3)
+                .fill(null)
+                .map((_, index) => (
+                  <div
+                    key={index}
+                    className="h-10 w-16 bg-gray-100 border border-gray-300 rounded-lg animate-pulse"
+                  />
+                ))}
+            </div>
+          </div>
+
+          {/* Choose Color - Swatches */}
+          <div className="mb-6">
+            <div className="h-6 w-20 bg-gray-300 rounded animate-pulse mb-3" />
+            <div className="flex gap-2">
+              {Array(3)
+                .fill(null)
+                .map((_, index) => (
+                  <div
+                    key={index}
+                    className="h-10 w-10 bg-gray-100 border border-gray-300 rounded-full animate-pulse"
+                  />
+                ))}
+            </div>
+          </div>
+
+          {/* Add to Cart */}
+          <div className="h-12 w-full bg-gray-300 rounded-lg animate-pulse mb-6" />
+
+          {/* Shipping Info */}
+          <div className="h-10 w-full bg-blue-50 border border-blue-200 rounded-lg animate-pulse mb-6" />
+
+          {/* Icons: Return & Exchange, Cash on Delivery, etc. */}
+          <div className="grid grid-cols-4 gap-4 text-center mb-6">
+            {Array(4)
+              .fill(null)
+              .map((_, index) => (
+                <div key={index} className="flex flex-col items-center gap-2">
+                  <div className="h-10 w-10 bg-gray-300 rounded-full animate-pulse" />
+                  <div className="h-4 w-16 bg-gray-300 rounded animate-pulse" />
+                </div>
+              ))}
+          </div>
+
+          {/* Key Highlights */}
+          <div className="bg-white p-6 border-[0.5px] border-[#C7CBD4] rounded-lg mb-6">
+            <div className="h-8 w-1/2 bg-gray-300 rounded animate-pulse mb-4" />
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              {Array(4)
+                .fill(null)
+                .map((_, index) => (
+                  <div
+                    key={index}
+                    className="flex flex-col space-y-1 border-b border-gray-100 pb-2 last:border-b-0"
+                  >
+                    <div className="h-4 w-1/3 bg-gray-300 rounded animate-pulse" />
+                    <div className="h-4 w-2/3 bg-gray-300 rounded animate-pulse" />
+                  </div>
+                ))}
+            </div>
+          </div>
+
+          {/* Product Information */}
+          <div className="space-y-6">
+            <div className="bg-white border-[0.5px] border-[#C7CBD4] rounded-lg">
+              <div className="p-4 flex items-center justify-between">
+                <div className="h-6 w-1/3 bg-gray-300 rounded animate-pulse" />
+                <div className="h-4 w-4 bg-gray-300 rounded animate-pulse" />
+              </div>
+              <div className="p-4 pt-4 h-16 bg-gray-200 border-t border-gray-200 animate-pulse" />
+            </div>
+            <div className="bg-white border-[0.5px] border-[#C7CBD4] rounded-lg">
+              <div className="p-4 flex items-center justify-between">
+                <div className="h-6 w-1/3 bg-gray-300 rounded animate-pulse" />
+                <div className="h-4 w-4 bg-gray-300 rounded animate-pulse" />
+              </div>
+              <div className="p-4 pt-4 h-16 bg-gray-200 border-t border-gray-200 animate-pulse" />
+            </div>
+            <div className="border-[0.5px] border-[#C7CBD4] rounded-lg">
+              <div className="p-4 flex items-center justify-between">
+                <div className="h-6 w-1/3 bg-gray-300 rounded animate-pulse" />
+                <div className="h-4 w-4 bg-gray-300 rounded animate-pulse" />
+              </div>
+              <div className="p-4 pt-4 h-16 bg-gray-200 border-t border-gray-200 animate-pulse" />
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -134,6 +238,8 @@ const ProductDetailSkeleton = () => (
 );
 
 export default function ProductPage({ params }: ProductPageProps) {
+  const { addToCart } = useCart();
+
   const { slug } = React.use(params);
   const mainSwiperRef = useRef<SwiperCore | null>(null);
   const [mainImage, setMainImage] = useState<string>("/placeholder.png");
@@ -291,12 +397,22 @@ export default function ProductPage({ params }: ProductPageProps) {
       ))}
     </div>
   );
+  const isImageWhite = (url: string) => {
+    // This is a simplified check; for accuracy, you'd need to analyze the image data
+    return url.toLowerCase().includes("white") || false; // Extend logic with image analysis if needed
+  };
+
+const handleAddToCart = () => {
+  if (!product) return;
+  addToCart(product);
+};
+
 
   return (
-    <div className="px-4 py-8 bg-gray-50">
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
+    <main className="px-4 py-8 ">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-0 lg:gap-8 mb-12">
         {/* 1st Column: Images */}
-        <div className="flex flex-col lg:flex-row gap-4" style={{height: '600px'}}>
+        <div className="flex flex-col lg:flex-row gap-4 h-[450px] lg:h-[650px] ">
           {/* Vertical Thumbnails */}
           <div className="w-full lg:w-24 flex-shrink-0 order-2 lg:order-1">
             <Swiper
@@ -352,8 +468,7 @@ export default function ProductPage({ params }: ProductPageProps) {
           </div>
 
           {/* Main Image */}
-          <div  className="flex-1 relative bg-white rounded-xl shadow-lg overflow-hidden aspect-[4/5] order-1 lg:order-2 "
->
+          <div className="w-full lg:w-[calc(100%-5rem)] relative overflow-hidden aspect-[4/5] order-1 lg:order-2">
             <Swiper
               zoom={true}
               modules={[Zoom]}
@@ -382,7 +497,13 @@ export default function ProductPage({ params }: ProductPageProps) {
                         height={600}
                         src={imgUrl}
                         alt={img.image.alt || product.name}
-                        className="w-full h-full object-contain bg-white"
+                        className="w-full h-full object-contain"
+                        style={{
+                          border:
+                            imgUrl.includes("white") || isImageWhite(imgUrl)
+                              ? "2px solid #e5e7eb" // Light gray border for white background
+                              : "none",
+                        }}
                       />
                     </div>
                   </SwiperSlide>
@@ -399,9 +520,9 @@ export default function ProductPage({ params }: ProductPageProps) {
         </div>
 
         {/* 2nd Column: Product Details */}
-        <div className="space-y-6">
-          <div className="bg-white p-6 rounded-xl shadow-sm">
-            <div className="flex items-center justify-between mb-4">
+        <div className="space-y-6 h-[650px] lg:h-[650px] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
+          <div className="">
+            <div className="flex flex-col lg:flex-row  lg:items-center justify-between mb-4">
               <h1 className="text-2xl font-bold text-gray-900">
                 {product.name}
               </h1>
@@ -526,8 +647,9 @@ export default function ProductPage({ params }: ProductPageProps) {
               </div>
             )}
 
-            {/* Add to Cart */}
-            <button className="w-full bg-orange-500 text-white py-4 rounded-lg mb-6 flex items-center justify-center gap-2 text-lg font-semibold shadow-lg hover:bg-orange-600 transition transform hover:scale-[1.02]">
+            {/* Add to Cart */} 
+            <button onClick={handleAddToCart}
+             className="w-full bg-orange-500 text-white py-2 rounded-lg mb-6 flex items-center justify-center gap-2 text-lg font-semibold shadow-lg hover:bg-orange-600 transition transform ">
               <svg
                 width="20"
                 height="20"
@@ -718,112 +840,112 @@ export default function ProductPage({ params }: ProductPageProps) {
                 <span className="text-sm">Secure Payments</span>
               </div>
             </div>
-          </div>
-        </div>
-      </div>
 
-      {/* Key Highlights and Product Information */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
-        {/* Key Highlights */}
-        <div className="bg-white p-6 rounded-xl shadow-sm">
-          <h2 className="text-lg font-semibold mb-4 text-gray-900">
-            Key Highlights
-          </h2>
-          <div className="grid grid-cols-2 gap-4 text-sm">
-            {attributes.slice(0, 8).map((attr, idx) => (
-              <div
-                key={attr.attribute.id}
-                className="flex flex-col space-y-1 border-b border-gray-100 pb-2 last:border-b-0"
-              >
-                <span className="font-bold text-gray-700">
-                  {attr.attribute.name}:
-                </span>
-                <span className="text-gray-600 ">
-                  {attr.values?.[0]?.value || "N/A"}
-                </span>
+            {/* Key Highlights */}
+            <div className="bg-white p-6 border-[0.5px] border-[#C7CBD4] rounded-lg mb-6">
+              <h2 className="text-lg font-semibold mb-4 text-gray-900">
+                Key Highlights
+              </h2>
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                {attributes.slice(0, 8).map((attr, idx) => (
+                  <div
+                    key={attr.attribute.id}
+                    className="flex flex-col space-y-1 border-b border-gray-100 pb-2 last:border-b-0"
+                  >
+                    <span className="font-bold text-gray-700">
+                      {attr.attribute.name}:
+                    </span>
+                    <span className="text-gray-600 ">
+                      {attr.values?.[0]?.value || "N/A"}
+                    </span>
+                  </div>
+                ))}
               </div>
-            ))}
+            </div>
+
+            {/* Product Information */}
+            <div className="space-y-6">
+              <details
+                open
+                className="bg-white border-[0.5px] border-[#C7CBD4] rounded-lg"
+              >
+                <summary className="p-4 cursor-pointer font-semibold text-gray-900 flex items-center justify-between">
+                  <span>Product Description</span>
+                  <svg
+                    className="w-4 h-4 transition-transform"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 9l-7 7-7-7"
+                    />
+                  </svg>
+                </summary>
+                <div className="p-4 pt-4 text-sm text-gray-700 border-t border-gray-200">
+                  {descriptionText}
+                </div>
+              </details>
+
+              <details className="bg-white border-[0.5px] border-[#C7CBD4] rounded-lg">
+                <summary className="p-4 cursor-pointer font-semibold text-gray-900 flex items-center justify-between">
+                  <span>Return & Exchange</span>
+                  <svg
+                    className="w-4 h-4 transition-transform"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 9l-7 7-7-7"
+                    />
+                  </svg>
+                </summary>
+                <div className="p-4 pt-4 text-sm text-gray-700 border-t border-gray-200">
+                  Free return within 30 days. Learn more about return & exchange
+                  policy.
+                </div>
+              </details>
+
+              <details className="border-[0.5px] border-[#C7CBD4] rounded-lg">
+                <summary className="p-4 cursor-pointer font-semibold text-gray-900 flex items-center justify-between">
+                  <span>Customer Reviews</span>
+                  <svg
+                    className="w-4 h-4 transition-transform"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 9l-7 7-7-7"
+                    />
+                  </svg>
+                </summary>
+                <div className="p-4 pt-4 text-sm text-gray-700 border-t border-gray-200">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Stars rating={4.7} />
+                    <span>Based on 4,712 reviews</span>
+                  </div>
+                </div>
+              </details>
+            </div>
           </div>
         </div>
-
-      {/* Product Information */}
-<div className="space-y-2">
-  <details open className="bg-white rounded-xl shadow-sm border border-gray-200">
-    <summary className="p-4 cursor-pointer font-semibold text-gray-900 flex items-center justify-between">
-      <span>Product Description</span>
-      <svg
-        className="w-4 h-4 transition-transform"
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-      >
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth={2}
-          d="M19 9l-7 7-7-7"
-        />
-      </svg>
-    </summary>
-    <div className="p-4 pt-4 text-sm text-gray-700 border-t border-gray-200">
-      {descriptionText}
-    </div>
-  </details>
-
-  <details className="bg-white rounded-xl shadow-sm border border-gray-200">
-    <summary className="p-4 cursor-pointer font-semibold text-gray-900 flex items-center justify-between">
-      <span>Return & Exchange</span>
-      <svg
-        className="w-4 h-4 transition-transform"
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-      >
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth={2}
-          d="M19 9l-7 7-7-7"
-        />
-      </svg>
-    </summary>
-    <div className="p-4 pt-4 text-sm text-gray-700 border-t border-gray-200">
-      Free return within 30 days. Learn more about return & exchange policy.
-    </div>
-  </details>
-
-  <details className="bg-white rounded-xl shadow-sm border border-gray-200">
-    <summary className="p-4 cursor-pointer font-semibold text-gray-900 flex items-center justify-between">
-      <span>Customer Reviews</span>
-      <svg
-        className="w-4 h-4 transition-transform"
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-      >
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth={2}
-          d="M19 9l-7 7-7-7"
-        />
-      </svg>
-    </summary>
-    <div className="p-4 pt-4 text-sm text-gray-700 border-t border-gray-200">
-      <div className="flex items-center gap-2 mb-2">
-        <Stars rating={4.7} />
-        <span>Based on 4,712 reviews</span>
-      </div>
-    </div>
-  </details>
-</div>
-
       </div>
 
-      {/* Frequently Bought Together */}
-      {relatedProducts.length > 0 && (
+      <div>
+        {/* Frequently Bought Together */}
         <div className="mt-16">
-          <h2 className="text-2xl font-semibold mb-8 text-gray-900">
+          <h2 className="text-2xl  text-center font-semibold mb-8 text-gray-900">
             Frequently Bought Together
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -861,8 +983,8 @@ export default function ProductPage({ params }: ProductPageProps) {
             })}
           </div>
         </div>
-      )}
-    </div>
+      </div>
+    </main>
   );
 }
 

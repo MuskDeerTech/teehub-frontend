@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo, useRef } from "react";
 import useSWR from "swr";
+import Image from "next/image";
 import ProductGrid from "@/components/ProductGrid";
 import ProductFilters from "@/components/ProductFilters";
 import { Product } from "@/types/Product";
@@ -54,8 +55,13 @@ export default function ProductsPageContent() {
 
   const sortedProducts = useMemo(() => {
     const list = [...(filteredProducts || [])];
-    if (sortBy === "priceAsc") return list.sort((a, b) => a.regularPrice - b.regularPrice);
-    if (sortBy === "priceDesc") return list.sort((a, b) => b.regularPrice - a.regularPrice);
+    if (sortBy === "priceAsc") {
+      list.sort((a, b) => {
+        const priceA = a.salePrice ?? a.regularPrice ?? 0;
+        const priceB = b.salePrice ?? b.regularPrice ?? 0;
+        return priceA - priceB;
+      });
+    }
     return list;
   }, [filteredProducts, sortBy]);
 
@@ -142,28 +148,8 @@ export default function ProductsPageContent() {
             className="text-black"
             onClick={() => setIsFilterOpen(!isFilterOpen)}
           >
-            <svg
-              className="w-10 h-10"
-              width="32"
-              height="24"
-              viewBox="0 0 32 24"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <rect
-                x="0.25"
-                y="0.25"
-                width="31.5"
-                height="23.5"
-                rx="4.75"
-                stroke="black"
-                strokeWidth="0.5"
-              />
-              <path
-                d="M8 5.90462H20.5856C20.7055 6.71366 21.4345 7.33333 22.2834 7.33333C23.2314 7.33333 24 6.58708 24 5.66667C24 4.74625 23.2314 4 22.2834 4C21.4366 4 20.7087 4.61968 20.5856 5.42568H8V5.90462Z"
-                fill="black"
-              />
-            </svg>
+          <Image src="/hamburger.svg" alt="Filter" width={24} height={24} />
+
           </button>
 
           {/* Sort dropdown for mobile */}

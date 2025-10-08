@@ -6,7 +6,7 @@ interface Props {
 }
 
 export default function ProductGrid({ products }: Props) {
-  if (!products.length) {
+ if (!products || !products.length) {
     return <p className="text-center text-gray-500">No products found.</p>;
   }
 

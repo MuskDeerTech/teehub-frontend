@@ -64,3 +64,15 @@ body {
   color: var(--discount-color);
 }
 
+.scrollbar-thin {
+  scrollbar-width: none;
+}
+.swiper-slide-active .swiper-slide-inner {
+  width: 80% !important; /* Ensure active slide width is reduced */
+  margin: 0 auto; /* Center the reduced-width slide */
+}
+
+.swiper-slide .swiper-slide-inner {
+  width: 100%; /* Default width for inactive slides */
+  transition: width 0.3s ease; /* Smooth transition for width change */
+}

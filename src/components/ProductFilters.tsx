@@ -49,7 +49,7 @@ const fetcher = async (url: string) => {
 };
 
 const FilterSkeleton = () => (
-  <aside className="p-3 sm:p-4 max-w-xs filter-sidebar animate-pulse">
+  <aside className="p-3 sm:p-4 w-full max-w-xs filter-sidebar animate-pulse">
     <div className="flex justify-between items-center mb-3 sm:mb-4">
       <div className="h-5 sm:h-6 w-1/3 bg-gray-300" />
       <div className="h-4 sm:h-5 w-1/4 bg-gray-300" />
@@ -64,7 +64,6 @@ const FilterSkeleton = () => (
       ))}
   </aside>
 );
-
 export default function ProductFilters({
   categories,
   products,
@@ -179,7 +178,9 @@ export default function ProductFilters({
         }
       }
       const price = product.salePrice ?? product.regularPrice;
-      if (price < minPrice || price > maxPrice) return false;
+      if (price === undefined || price < minPrice || price > maxPrice) {
+        return false;
+      }
       for (const [attrName, selectedVals] of Object.entries(selectedFilters)) {
         if (!selectedVals.length) continue;
         const attr = product.attributes?.find(
@@ -276,9 +277,10 @@ export default function ProductFilters({
 
   return (
     <>
-      {!attributesData || !attributeValuesData ? (
+      {(attributesData === undefined || attributeValuesData === undefined) && (
         <FilterSkeleton />
-      ) : (
+      )}
+      {attributesData !== undefined && attributeValuesData !== undefined && (
         <aside className="p-3 sm:p-4 w-full filter-sidebar">
           <div className="flex justify-between items-center mb-3 sm:mb-4">
             <h2 className="text-base sm:text-lg font-semibold">Filters</h2>
