@@ -63,14 +63,14 @@ export default function Cart() {
                     height={100}
                     src={imageUrl}
                     alt={item.name} // Use item.name directly
-                    className="w-24 h-24 object-cover rounded-lg"
+                    className="w-24 object-cover rounded-lg"
                   />
                   <div className="flex-1">
                     <h3 className="text-sm font-medium text-gray-800">
                       {item.name} {item.variation ? `(${item.variation})` : ""}
                     </h3>
                     <p className="text-xs text-gray-500">Price: ₹{price}</p>
-                    <div className="flex items-center gap-2 mt-2">
+                    <div className="flex items-center gap-2 mt-4">
                       <button
                         onClick={() =>
                           handleQuantityChange(index, item.quantity - 1)
@@ -89,7 +89,7 @@ export default function Cart() {
                         +
                       </button>
                     </div>
-                    <p className="text-sm font-semibold mt-1">Total: ₹{total}</p>
+                    <p className="text-sm font-semibold mt-4">Total: ₹{total}</p>
                   </div>
                   <button
                     onClick={() => handleRemoveItem(index)}
@@ -114,7 +114,7 @@ export default function Cart() {
             </div>
             <Link
               href="/checkout"
-              className="w-full bg-orange-600 text-white py-3 rounded-lg text-center hover:bg-orange-700 transition-colors"
+              className="w-full px-4 py-2 bg-orange-600 text-white  rounded-lg text-center hover:bg-orange-700 transition-colors"
             >
               Proceed to Checkout
             </Link>

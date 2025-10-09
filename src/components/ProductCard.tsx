@@ -6,6 +6,8 @@ import Image from "next/image";
 import useSWR from "swr";
 import { useState, useEffect } from "react";
 import { useCart } from "@/context/CartContext";
+import CartDrawer from "@/components/CartDrawer";
+
 
 interface ProductCardProps {
   product: Product | { slug: string }; // Allow either full product or just slug
@@ -21,6 +23,7 @@ const fetcher = async (url: string) => {
 export default function ProductCard({ product }: ProductCardProps) {
   const apiBase = (process.env.NEXT_PUBLIC_API_URL || "").replace(/\/api$/, "");
   const { addToCart, cartCount, addToWishlist, removeFromWishlist, wishlist } = useCart();
+const [isDrawerOpen, setDrawerOpen] = useState(false);
 
   // Use SWR to fetch product if only slug is provided, otherwise use prop
   const { data: fetchedProduct, error } = useSWR<Product>(
@@ -75,11 +78,14 @@ export default function ProductCard({ product }: ProductCardProps) {
   // Handle Add to Cart
   const handleAddToCart = () => {
     addToCart(displayProduct);
+    setDrawerOpen(true); // 👈 show drawer
     // Log after a slight delay to capture the updated state
     setTimeout(() => {
       console.log("Added to cart, updated cartCount:", cartCount);
     }, 0);
   };
+
+
 
   // Handle Add/Remove from Wishlist
   const handleWishlistToggle = () => {
@@ -95,6 +101,7 @@ export default function ProductCard({ product }: ProductCardProps) {
   };
 
   return (
+   <>
     <div className="rounded-lg overflow-hidden transition-all bg-white shadow-sm hover:shadow-md">
       <Link href={`/products/${displayProduct.slug}`}>
         <div className="relative">
@@ -193,5 +200,8 @@ export default function ProductCard({ product }: ProductCardProps) {
         </button>
       </div>
     </div>
+    <CartDrawer isOpen={isDrawerOpen} onClose={() => setDrawerOpen(false)} />
+   </>
+    
   );
 }

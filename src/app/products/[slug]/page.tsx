@@ -3,8 +3,12 @@
 
 import React, { useState, useEffect } from "react";
 import useSWR from "swr";
+import { Suspense } from "react";
 import Image from "next/image";
 import { useRef } from "react";
+import api from "@/lib/api";
+import ProductGrid from "@/components/ProductGrid";
+import Link from "next/link"; // Ensure this is imported at top
 import SwiperCore from "swiper";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Zoom } from "swiper/modules";
@@ -12,7 +16,6 @@ import "swiper/css";
 import "swiper/css/zoom";
 import { useCart } from "@/context/CartContext";
 import { Product } from "@/types/Product";
-
 
 // Import Swiper styles
 
@@ -48,8 +51,6 @@ interface LexicalRootNode {
   };
 }
 
-
-
 interface Variation {
   attributes: string[];
   sku: string;
@@ -78,6 +79,17 @@ const fetcher = async (url: string) => {
   const data = await res.json();
   return data?.docs || [];
 };
+
+async function getFeaturedProducts(): Promise<Product[]> {
+  const res = await fetch(
+    `${process.env.NEXT_PUBLIC_API_URL}/products?limit=8&sort=createdAt&order=-1&depth=2`,
+    { next: { revalidate: 60 } } // cache for 60s
+  );
+  if (!res.ok) return [];
+  const data = await res.json();
+  return data.docs || [];
+}
+
 
 const ProductDetailSkeleton = () => (
   <div className="max-w-7xl mx-auto px-4 py-8">
@@ -237,9 +249,42 @@ const ProductDetailSkeleton = () => (
   </div>
 );
 
-export default function ProductPage({ params }: ProductPageProps) {
-  const { addToCart } = useCart();
+const ProductGridSkeleton = () => (
+  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
+    {Array(8)
+      .fill(null)
+      .map((_, index) => (
+        <div
+          key={index}
+          className="rounded-lg overflow-hidden bg-white animate-pulse"
+        >
+          <div className="w-full h-64 bg-gray-300" />
+          <div className="p-3">
+            <div className="h-6 w-3/4 bg-gray-300 mt-2" />
+            <div className="flex items-center gap-2 mt-2">
+              <div className="h-5 w-16 bg-gray-300" />
+              <div className="h-5 w-12 bg-gray-300" />
+            </div>
+          </div>
+        </div>
+      ))}
+  </div>
+);
 
+export default  function ProductPage({ params }: ProductPageProps) {
+   // Fetch featured products with SWR
+const { data: featuredProductsData, error: featuredProductsError } = useSWR<Product[]>(
+  `${process.env.NEXT_PUBLIC_API_URL}/products?limit=8&sort=createdAt&order=-1&depth=2`,
+  fetcher,
+  {
+    dedupingInterval: 3600000, // Cache for 1 hour
+    revalidateOnFocus: false,
+    revalidateOnReconnect: true,
+  }
+);
+
+const featuredProducts = featuredProductsData || [];
+  const { addToCart, addToWishlist, removeFromWishlist, wishlist } = useCart();
   const { slug } = React.use(params);
   const mainSwiperRef = useRef<SwiperCore | null>(null);
   const [mainImage, setMainImage] = useState<string>("/placeholder.png");
@@ -298,6 +343,18 @@ export default function ProductPage({ params }: ProductPageProps) {
   const product = productData?.[0] || null;
   const relatedProducts =
     relatedProductsData?.filter((r) => r.id !== product?.id).slice(0, 3) || [];
+
+  // Wishlist state and effect
+  const [isInWishlist, setIsInWishlist] = useState(
+    product ? wishlist.some((item) => item.slug === product.slug) : false
+  );
+
+  // Sync local wishlist state with global state only when product is available
+  useEffect(() => {
+    if (product) {
+      setIsInWishlist(wishlist.some((item) => item.slug === product.slug));
+    }
+  }, [wishlist, product]);
 
   // Set initial state when product data is available
   useEffect(() => {
@@ -397,15 +454,15 @@ export default function ProductPage({ params }: ProductPageProps) {
       ))}
     </div>
   );
-  const isImageWhite = (url: string) => {
-    // This is a simplified check; for accuracy, you'd need to analyze the image data
-    return url.toLowerCase().includes("white") || false; // Extend logic with image analysis if needed
+
+
+  const handleAddToCart = () => {
+    if (!product) return;
+    addToCart(product);
   };
 
-const handleAddToCart = () => {
-  if (!product) return;
-  addToCart(product);
-};
+
+
 
 
   return (
@@ -458,7 +515,7 @@ const handleAddToCart = () => {
                         height={100}
                         src={thumbUrl}
                         alt={img.image.alt || product.name}
-                        className="w-full h-full object-cover rounded-lg"
+                        className="w-full object-cover rounded-lg border-[0.5px] border-[#C7CBD4]"
                       />
                     </div>
                   </SwiperSlide>
@@ -472,7 +529,7 @@ const handleAddToCart = () => {
             <Swiper
               zoom={true}
               modules={[Zoom]}
-              className="w-full h-full"
+              className="w-full "
               onSwiper={(swiper) => (mainSwiperRef.current = swiper)}
               onSlideChange={(swiper) => {
                 const activeIndex = swiper.activeIndex;
@@ -497,19 +554,48 @@ const handleAddToCart = () => {
                         height={600}
                         src={imgUrl}
                         alt={img.image.alt || product.name}
-                        className="w-full h-full object-contain"
-                        style={{
-                          border:
-                            imgUrl.includes("white") || isImageWhite(imgUrl)
-                              ? "2px solid #e5e7eb" // Light gray border for white background
-                              : "none",
-                        }}
+                        className="w-full rounded-lg  object-cover border-[0.5px] border-[#C7CBD4]"
+                      
                       />
                     </div>
                   </SwiperSlide>
                 );
               })}
             </Swiper>
+            {/* Wishlist Icon - Moved to right end */}
+          <button
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              if (isInWishlist) {
+                removeFromWishlist(product.slug);
+                setIsInWishlist(false);
+                console.log("Removed from wishlist:", product.name);
+              } else {
+                addToWishlist(product);
+                setIsInWishlist(true);
+                console.log("Added to wishlist:", product.name);
+              }
+            }}
+          className="absolute top-4 right-4 cursor-pointer z-10 p-1 bg-white rounded-full shadow-md hover:bg-gray-100 focus:outline-none"
+            aria-label={isInWishlist ? "Remove from wishlist" : "Add to wishlist"}
+          >
+            <svg
+              width="25"
+              height="25"
+              viewBox="0 0 32 28"
+              fill={isInWishlist ? "red" : "none"} // Black fill when in wishlist
+              stroke={isInWishlist ? "red" : "gray"}
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M9.43734 1.33399C5.00765 1.33399 1.4165 4.92513 1.4165 9.35482C1.4165 17.3757 10.8957 24.6673 15.9998 26.3634C21.104 24.6673 30.5832 17.3757 30.5832 9.35482C30.5832 4.92513 26.992 1.33399 22.5623 1.33399C19.8498 1.33399 17.4509 2.68076 15.9998 4.74211C15.2601 3.68875 14.2775 2.82907 13.1352 2.23584C11.9929 1.6426 10.7245 1.33326 9.43734 1.33399Z"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </button>
 
             {hasSale && (
               <div className="absolute top-4 left-4 bg-red-500 text-white px-3 py-1 rounded-full text-sm font-bold shadow-lg">
@@ -647,9 +733,11 @@ const handleAddToCart = () => {
               </div>
             )}
 
-            {/* Add to Cart */} 
-            <button onClick={handleAddToCart}
-             className="w-full bg-orange-500 text-white py-2 rounded-lg mb-6 flex items-center justify-center gap-2 text-lg font-semibold shadow-lg hover:bg-orange-600 transition transform ">
+            {/* Add to Cart */}
+            <button
+              onClick={handleAddToCart}
+              className="w-full bg-orange-500 text-white py-2 rounded-lg mb-6 flex items-center justify-center gap-2 text-lg font-semibold shadow-lg hover:bg-orange-600 transition transform "
+            >
               <svg
                 width="20"
                 height="20"
@@ -948,40 +1036,23 @@ const handleAddToCart = () => {
           <h2 className="text-2xl  text-center font-semibold mb-8 text-gray-900">
             Frequently Bought Together
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {relatedProducts.map((rel) => {
-              const relImage = rel.images?.[0]?.image?.url
-                ? rel.images[0].image.url.startsWith("http")
-                  ? rel.images[0].image.url
-                  : `${apiBase}${rel.images[0].image.url}`
-                : "/placeholder.png";
-              const relPrice = rel.salePrice || rel.regularPrice;
-              return (
-                <div
-                  key={rel.id}
-                  className="bg-white rounded-xl shadow-sm p-4 text-center hover:shadow-md transition"
-                >
-                  {relImage && (
-                    <Image
-                      width={150}
-                      height={150}
-                      src={relImage}
-                      alt={rel.name}
-                      className="mx-auto mb-3 rounded-lg object-cover"
-                      priority={true}
-                    />
-                  )}
-                  <h3 className="text-sm font-medium mb-2 text-gray-900 line-clamp-2">
-                    {rel.name}
-                  </h3>
-                  <p className="text-lg font-bold text-gray-900">₹{relPrice}</p>
-                  <button className="mt-3 text-orange-500 text-sm font-medium hover:underline transition">
-                    Add to Cart
-                  </button>
-                </div>
-              );
-            })}
+          <div className="max-w-7xl mx-auto px-4">
+          <div className="flex justify-between items-center mb-12">
+            <h2 className="text-3xl font-bold text-gray-900">
+              Featured Products
+            </h2>
+            <Link
+              prefetch={true}
+              href="/products"
+              className="text-blue-600 hover:underline font-medium"
+            >
+              View All →
+            </Link>
           </div>
+          <Suspense fallback={<ProductGridSkeleton />}>
+            <ProductGrid products={featuredProducts} />
+          </Suspense>
+        </div>
         </div>
       </div>
     </main>

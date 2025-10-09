@@ -47,12 +47,12 @@ export default function Wishlist() {
                   height={100}
                   src={imageUrl}
                   alt={item.images?.[0]?.image?.alt || item.name}
-                  className="w-24 h-24 object-cover rounded-lg"
+                  className="w-24  object-cover rounded-lg"
                 />
                 <div className="flex-1">
                   <h3 className="text-sm font-medium text-gray-800">{item.name}</h3>
                   <p className="text-xs text-gray-500">Price: ₹{price}</p>
-                  <div className="flex items-center gap-4 mt-2">
+                  <div className="flex items-center gap-4 mt-4">
                     <button
                       onClick={() => handleAddToCart(item)}
                       className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors"
