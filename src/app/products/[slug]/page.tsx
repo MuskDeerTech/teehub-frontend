@@ -460,31 +460,36 @@ export default function ProductPage({ params }: ProductPageProps) {
     </div>
   );
 
-  const handleAddToCart = () => {
-    if (!selectedSize) {
-      toast.warning("Please select a size before adding to cart!", {
-        position: "top-center",
-        autoClose: 2000,
-        hideProgressBar: true,
-        closeOnClick: true,
-        pauseOnHover: false,
-        draggable: false,
-        theme: "colored",
-      });
-      return; // stop here — don’t add to cart
-    }
-
-    if (!product) return;
-
-    addToCart(product);
-    toast.success("Added to cart successfully!", {
+const handleAddToCart = () => {
+  if (!selectedSize) {
+    toast.warning("Please select a size before adding to cart!", {
       position: "top-center",
-      autoClose: 1500,
+      autoClose: 2000,
       hideProgressBar: true,
+      closeOnClick: true,
+      pauseOnHover: false,
+      draggable: false,
       theme: "colored",
     });
-    setDrawerOpen(true); // 👈 show drawer
-  };
+    return; // ✅ prevents adding if no size selected
+  }
+
+  if (!product) return;
+
+  // ✅ Add to cart with size and quantity
+  addToCart(product, quantity, selectedSize);
+
+  toast.success("Added to cart successfully!", {
+    position: "top-center",
+    autoClose: 1500,
+    hideProgressBar: true,
+    theme: "colored",
+  });
+
+  // ✅ Immediately open cart drawer
+  setDrawerOpen(true);
+};
+
 
   return (
     <>

@@ -12,7 +12,7 @@ export default function CartDrawer({
   isOpen: boolean;
   onClose: () => void;
 }) {
-  const { cartItems, removeFromCart, updateQuantity } = useCart();
+  const { cartItems, removeFromCart, updateQuantity, updateSize } = useCart();
   const apiBase = (process.env.NEXT_PUBLIC_API_URL || "").replace(/\/api$/, "");
 
   // Calculate totals
@@ -100,11 +100,23 @@ export default function CartDrawer({
                   <div className="flex-1 text-sm">
                     <h3 className="font-semibold">{item.name}</h3>
                     {/* Display variation attributes if available */}
-                    {item.variation && (
-                      <p className="text-gray-500 text-xs">
-                        Variation: {item.variation}
-                      </p>
-                    )}
+                    {/* Size Selector */}
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {["XS", "S", "M", "L", "XL", "XXL"].map((size) => (
+                        <button
+                          key={size}
+                          onClick={() => updateSize(item.slug, size)}
+                          className={`px-3 py-1 border rounded-md text-xs transition-all ${
+                            item.variation === size
+                              ? "border-orange-500 bg-orange-50 text-orange-600"
+                              : "border-gray-300 text-gray-600 hover:border-gray-400"
+                          }`}
+                        >
+                          {size}
+                        </button>
+                      ))}
+                    </div>
+
                     <div className="mt-1 flex items-center gap-2">
                       <div>
                         <span className="font-bold text-gray-900">

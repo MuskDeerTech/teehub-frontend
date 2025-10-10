@@ -20,6 +20,7 @@ interface CartContextType {
   addToCart: (product: Product, quantity?: number, variation?: string) => void;
   removeFromCart: (productId: string) => void;
   updateQuantity: (productId: string, quantity: number) => void;
+  updateSize: (slug: string, newSize: string) => void;
   cartCount: number;
   wishlist: Product[];
   addToWishlist: (product: Product) => void;
@@ -32,6 +33,7 @@ const CartContext = createContext<CartContextType>({
   addToCart: () => {},
   removeFromCart: () => {},
   updateQuantity: () => {},
+  updateSize: () => {},
   cartCount: 0,
   wishlist: [],
   addToWishlist: () => {},
@@ -123,6 +125,14 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const cartCount = cartItems.reduce((total, item) => total + item.quantity, 0);
   const wishlistCount = wishlist.length;
 
+  const updateSize = (slug: string, newSize: string) => {
+    setCartItems((prevItems) =>
+      prevItems.map((item) =>
+        item.slug === slug ? { ...item, variation: newSize } : item
+      )
+    );
+  };
+
   return (
     <CartContext.Provider
       value={{
@@ -135,6 +145,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         addToWishlist,
         removeFromWishlist,
         wishlistCount,
+        updateSize, // 👈 add this
       }}
     >
       {children}
