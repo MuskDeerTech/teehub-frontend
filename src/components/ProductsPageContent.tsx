@@ -61,6 +61,12 @@ export default function ProductsPageContent() {
         const priceB = b.salePrice ?? b.regularPrice ?? 0;
         return priceA - priceB;
       });
+    } else if (sortBy === "priceDesc") {
+      list.sort((a, b) => {
+        const priceA = a.salePrice ?? a.regularPrice ?? 0;
+        const priceB = b.salePrice ?? b.regularPrice ?? 0;
+        return priceB - priceA;
+      });
     }
     return list;
   }, [filteredProducts, sortBy]);
@@ -125,7 +131,11 @@ export default function ProductsPageContent() {
                     strokeWidth="3"
                     viewBox="0 0 24 24"
                   >
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M5 13l4 4L19 7"
+                    />
                   </svg>
                 )}
               </span>
@@ -148,8 +158,7 @@ export default function ProductsPageContent() {
             className="text-black"
             onClick={() => setIsFilterOpen(!isFilterOpen)}
           >
-          <Image src="/hamburger.svg" alt="Filter" width={24} height={24} />
-
+            <Image src="/hamburger.svg" alt="Filter" width={24} height={24} />
           </button>
 
           {/* Sort dropdown for mobile */}

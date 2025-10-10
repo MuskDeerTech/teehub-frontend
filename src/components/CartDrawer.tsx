@@ -1,5 +1,5 @@
+// D:\teehub-frontend\src\components\CartDrawer.tsx
 "use client";
-
 import { useCart } from "@/context/CartContext";
 import Image from "next/image";
 import Link from "next/link";
@@ -13,27 +13,34 @@ export default function CartDrawer({
   onClose: () => void;
 }) {
   const { cartItems, removeFromCart, updateQuantity } = useCart();
-
   const apiBase = (process.env.NEXT_PUBLIC_API_URL || "").replace(/\/api$/, "");
 
+  // Calculate totals
   const subtotal = cartItems.reduce(
-    (total, item) => total + (item.price || 0) * item.quantity,
+    (total, item) => total + (item.regularPrice || 0) * item.quantity,
     0
   );
-  const discount = Math.round(subtotal * 0.45);
-  const totalPayable = subtotal - discount;
+  const originalTotal = cartItems.reduce(
+    (total, item) => total + (item.regularPrice || item.price) * item.quantity,
+    0
+  );
+  const savings = originalTotal - subtotal;
+  // Remove hardcoded 45% discount; use savings from salePrice vs regularPrice
+  const totalPayable = subtotal; // No additional hardcoded discount
 
   // Disable scrolling when open
   useEffect(() => {
     document.body.style.overflow = isOpen ? "hidden" : "auto";
+    return () => {
+      document.body.style.overflow = "auto";
+    };
   }, [isOpen]);
 
   return (
     <div
       className={`fixed inset-0 z-40 transition-opacity duration-300 backdrop-blur-sm ${
-  isOpen ? "opacity-90 bg-black/90" : "opacity-0 pointer-events-none"
-}`}
-
+        isOpen ? "opacity-90 bg-black/90" : "opacity-0 pointer-events-none"
+      }`}
       onClick={onClose}
     >
       <div
@@ -52,7 +59,6 @@ export default function CartDrawer({
             ×
           </button>
         </div>
-
         {/* Cart Items */}
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
           {cartItems.length === 0 ? (
@@ -66,7 +72,19 @@ export default function CartDrawer({
                   ? item.image
                   : `${apiBase}${item.image}`
                 : "/placeholder.png";
-              const price = item.price || 0;
+              const price = item.regularPrice || 0;
+              const hasDiscount =
+                item.salePrice &&
+                item.regularPrice &&
+                item.salePrice < item.regularPrice;
+              const discountPercent = hasDiscount
+                ? Math.round(
+                    ((item.regularPrice! - item.salePrice!) /
+                      item.regularPrice!) *
+                      100
+                  )
+                : 0;
+
               return (
                 <div
                   key={item.slug}
@@ -81,15 +99,32 @@ export default function CartDrawer({
                   />
                   <div className="flex-1 text-sm">
                     <h3 className="font-semibold">{item.name}</h3>
-                    <p className="text-gray-500 text-xs">Colour: Beige</p>
+                    {/* Display variation attributes if available */}
+                    {item.variation && (
+                      <p className="text-gray-500 text-xs">
+                        Variation: {item.variation}
+                      </p>
+                    )}
                     <div className="mt-1 flex items-center gap-2">
-                      <span className="font-bold text-gray-900">₹{price}</span>
-                      <span className="line-through text-gray-400 text-xs">
-                        ₹{Math.round(price / 0.55)}
-                      </span>
-                      <span className="text-green-600 text-xs">(45% OFF)</span>
+                      <div>
+                        <span className="font-bold text-gray-900">
+                          ₹{price}{" "}
+                        </span>
+                        <span className="line-through text-gray-400 text-xs">
+                          {item.salePrice}
+                        </span>
+                      </div>
+                      {hasDiscount && (
+                        <>
+                          <span className="line-through text-gray-400 text-xs">
+                            ₹{item.regularPrice}
+                          </span>
+                          <span className="text-green-600 text-xs">
+                            ({discountPercent}% OFF)
+                          </span>
+                        </>
+                      )}
                     </div>
-
                     {/* Quantity and Size */}
                     <div className="flex gap-2 mt-2">
                       <div className="flex items-center border rounded px-2">
@@ -111,9 +146,11 @@ export default function CartDrawer({
                           +
                         </button>
                       </div>
-                      <div className="border rounded px-2 py-1 text-xs flex items-center">
-                        Size: M
-                      </div>
+                      {item.variation && (
+                        <div className="border rounded px-2 py-1 text-xs flex items-center">
+                          Size: {item.variation}
+                        </div>
+                      )}
                     </div>
                   </div>
                   <button
@@ -127,24 +164,26 @@ export default function CartDrawer({
             })
           )}
         </div>
-
         {/* Free Delivery */}
-        <div className="bg-green-100 text-green-700 text-center text-sm py-2 font-medium">
-          Yay! Free Delivery On This Order!
-        </div>
-
+        {savings > 0 && (
+          <div className="bg-green-100 text-green-700 text-center text-sm py-2 font-medium">
+            Yay! You saved ₹{savings} on this order!
+          </div>
+        )}
         {/* Order Summary */}
         <div className="p-4 border-t text-sm">
           <h3 className="font-semibold mb-2 text-gray-800">Order Summary</h3>
           <div className="space-y-1">
             <div className="flex justify-between">
               <span>Total MRP (Incl. Of Taxes)</span>
-              <span>₹{subtotal}</span>
+              <span>₹{originalTotal}</span>
             </div>
-            <div className="flex justify-between text-green-600">
-              <span>Discount On MRP</span>
-              <span>-₹{discount}</span>
-            </div>
+            {savings > 0 && (
+              <div className="flex justify-between text-green-600">
+                <span>Discount on MRP</span>
+                <span>-₹{savings}</span>
+              </div>
+            )}
             <div className="flex justify-between">
               <span>Coupon Discount</span>
               <span>₹0</span>
@@ -160,28 +199,25 @@ export default function CartDrawer({
             <span>₹{totalPayable}</span>
           </div>
         </div>
-
         {/* Payment Footer */}
         <div className="border-t p-4 bg-white">
-          {/* <div className="flex justify-center gap-3 mb-3">
-            <Image src="/icons/visa.png" alt="Visa" width={40} height={20} />
-            <Image src="/icons/rupay.png" alt="RuPay" width={40} height={20} />
-            <Image src="/icons/gpay.png" alt="GPay" width={40} height={20} />
-            <Image src="/icons/paytm.png" alt="Paytm" width={40} height={20} />
-            <Image
-              src="/icons/mastercard.png"
-              alt="MasterCard"
-              width={40}
-              height={20}
-            />
-          </div> */}
           <div className="flex justify-between items-center">
             <div>
               <p className="font-semibold text-gray-900 text-base">
                 ₹{totalPayable}
               </p>
-              <p className="text-xs text-gray-400 line-through">₹{subtotal}</p>
+              {savings > 0 && (
+                <p className="text-xs text-gray-400 line-through">
+                  ₹{originalTotal}
+                </p>
+              )}
             </div>
+            {savings > 0 && (
+              <div className="flex justify-between text-green-600">
+                <span>You Saved</span>
+                <span>₹{savings}</span>
+              </div>
+            )}
             <Link
               href="/checkout"
               className="bg-orange-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-orange-700 transition text-sm"

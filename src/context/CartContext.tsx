@@ -8,6 +8,8 @@ interface CartItem {
   slug: string;
   name: string;
   price: number;
+  regularPrice?: number;
+  salePrice?: number;
   quantity: number;
   image?: string;
   variation?: string;
@@ -46,7 +48,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [wishlist, setWishlist] = useState<Product[]>([]);
 
   // ✅ Add to Cart
-  const addToCart = (product: Product, quantity: number = 1, variation?: string) => {
+  const addToCart = (
+    product: Product,
+    quantity: number = 1,
+    variation?: string
+  ) => {
     if (!product || !product.slug) {
       console.error("Invalid product provided to addToCart:", product);
       return;
@@ -73,6 +79,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
           slug: product.slug,
           name: product.name,
           price: product.salePrice || product.regularPrice || 0,
+          regularPrice: product.regularPrice || product.salePrice || 0,
+          salePrice: product.salePrice ?? undefined,
+
           quantity,
           image: product.images?.[0]?.image?.url,
           variation,
@@ -90,7 +99,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const updateQuantity = (productId: string, quantity: number) => {
     setCartItems((prev) =>
       prev.map((item) =>
-        item.slug === productId ? { ...item, quantity: Math.max(1, quantity) } : item
+        item.slug === productId
+          ? { ...item, quantity: Math.max(1, quantity) }
+          : item
       )
     );
   };
@@ -99,7 +110,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const addToWishlist = (product: Product) => {
     if (!product.slug) return;
     setWishlist((prev) =>
-      prev.some((item) => item.slug === product.slug) ? prev : [...prev, product]
+      prev.some((item) => item.slug === product.slug)
+        ? prev
+        : [...prev, product]
     );
   };
 
