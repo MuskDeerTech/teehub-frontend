@@ -38,14 +38,14 @@ export default function CartDrawer({
 
   return (
     <div
-      className={`fixed inset-0 z-40 transition-opacity duration-300 backdrop-blur-sm ${
-        isOpen ? "opacity-90 bg-black/90" : "opacity-0 pointer-events-none"
+      className={`fixed inset-0 bg-black/50 transition-opacity duration-300 z-[9998] ${
+        isOpen ? "opacity-100 visible" : "opacity-0 invisible"
       }`}
       onClick={onClose}
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className={`fixed right-0 top-0 z-50 h-full w-full sm:w-[420px] bg-white shadow-xl transform transition-transform duration-300 ${
+         className={`fixed top-0 right-0 w-full sm:w-[450px] h-full bg-white shadow-2xl z-[9999] transform transition-transform duration-300 ${
           isOpen ? "translate-x-0" : "translate-x-full"
         } flex flex-col`}
       >
