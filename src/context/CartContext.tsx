@@ -26,6 +26,7 @@ interface CartContextType {
   addToWishlist: (product: Product) => void;
   removeFromWishlist: (productId: string) => void;
   wishlistCount: number;
+  clearCart: () => void; // ✅ Add this line
 }
 
 const CartContext = createContext<CartContextType>({
@@ -39,6 +40,7 @@ const CartContext = createContext<CartContextType>({
   addToWishlist: () => {},
   removeFromWishlist: () => {},
   wishlistCount: 0,
+  clearCart: () => {}, // ✅ Add this line
 });
 
 export function useCart() {
@@ -133,6 +135,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
     );
   };
 
+    const clearCart = () => {
+    setCartItems([]);
+    localStorage.removeItem("cart"); // optional: clear from storage
+  };
+
   return (
     <CartContext.Provider
       value={{
@@ -146,6 +153,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         removeFromWishlist,
         wishlistCount,
         updateSize, // 👈 add this
+        clearCart, // ✅ Implement clearCart
       }}
     >
       {children}

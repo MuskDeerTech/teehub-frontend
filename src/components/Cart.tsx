@@ -13,7 +13,7 @@ export default function Cart() {
 
   // Calculate subtotal
   const subtotal = cartItems.reduce(
-    (total, item) => total + (item.price || 0) * item.quantity, // Use item.price directly
+    (total, item) => total + (item.regularPrice || 0) * item.quantity, // Use item.price directly
     0
   );
 
@@ -50,7 +50,7 @@ export default function Cart() {
                   ? item.image
                   : `${apiBase}${item.image}`
                 : "/placeholder.png"; // Use item.image directly
-              const price = item.price || 0; // Use item.price directly
+              const price = item.regularPrice || 0; // Use item.price directly
               const total = price * item.quantity;
 
               return (

@@ -31,7 +31,13 @@ export interface Product {
     name: string;
   }[];
 
-  // Lexical-style rich text
+  /** 👇 Add these missing fields **/
+  meta?: {
+    description?: string;
+    title?: string;
+  };
+
+  sizes?: string[]; // for size selector
   description?:
     | string
     | {
