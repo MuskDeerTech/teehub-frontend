@@ -4,6 +4,7 @@
 import React, { useState, useEffect } from "react";
 import useSWR from "swr";
 import { Suspense } from "react";
+import { useParams } from "next/navigation";
 import Image from "next/image";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -18,7 +19,9 @@ import "swiper/css";
 import "swiper/css/zoom";
 import { useCart } from "@/context/CartContext";
 import CartDrawer from "@/components/CartDrawer";
+import SizeChartModal from "@/components/SizeChartModal";
 import { Product } from "@/types/Product";
+import { Stars } from "@/components/Stars";
 
 // Import Swiper styles
 
@@ -71,8 +74,16 @@ interface RelatedProduct {
   images: { image: { url: string; alt?: string } }[];
 }
 
+interface Review {
+  id: string;
+  userName: string;
+  rating: number;
+  comment: string;
+  createdAt: string;
+}
+
 interface ProductPageProps {
-  params: Promise<{ slug: string }>;
+  params: { slug: string };
 }
 
 // SWR fetcher function
@@ -273,7 +284,19 @@ const ProductGridSkeleton = () => (
   </div>
 );
 
-export default function ProductPage({ params }: ProductPageProps) {
+export default function ProductPage() {
+  
+  const [showSizeChart, setShowSizeChart] = useState(false);
+  const [selectedChart, setSelectedChart] = useState<"men" | "women" | "kids">(
+    "men"
+  );
+  const [newReview, setNewReview] = useState({
+    userName: "",
+    rating: 0,
+    comment: "",
+  });
+  const [reviews, setReviews] = useState<Review[]>([]); // start empty
+
   // Fetch featured products with SWR
   const { data: featuredProductsData, error: featuredProductsError } = useSWR<
     Product[]
@@ -290,7 +313,8 @@ export default function ProductPage({ params }: ProductPageProps) {
   const featuredProducts = featuredProductsData || [];
   const { addToCart, addToWishlist, removeFromWishlist, wishlist } = useCart();
   const [isDrawerOpen, setDrawerOpen] = useState(false);
-  const { slug } = React.use(params);
+  const params = useParams();
+const slug = Array.isArray(params?.slug) ? params.slug[0] : params?.slug;
   const mainSwiperRef = useRef<SwiperCore | null>(null);
   const [mainImage, setMainImage] = useState<string>("/placeholder.png");
   const [selectedVariation, setSelectedVariation] = useState<Variation | null>(
@@ -317,18 +341,18 @@ export default function ProductPage({ params }: ProductPageProps) {
     // Add more as needed
   };
 
-  // Fetch product with SWR
-  const { data: productData, error: productError } = useSWR<Product[]>(
-    `${
-      process.env.NEXT_PUBLIC_API_URL
-    }/products?where[slug][equals]=${encodeURIComponent(slug)}&depth=2`,
-    fetcher,
-    {
-      dedupingInterval: 3600000, // Cache for 1 hour
-      revalidateOnFocus: false,
-      revalidateOnReconnect: true,
-    }
-  );
+  // Fetch product with reviews
+  const { data: productData, error: productError, mutate } = useSWR<Product[]>(
+  slug
+    ? `${process.env.NEXT_PUBLIC_API_URL}/products?where[slug][equals]=${encodeURIComponent(slug)}&depth=2`
+    : null, // SWR will not fetch if slug is undefined
+  fetcher,
+  {
+    dedupingInterval: 3600000,
+    revalidateOnFocus: false,
+    revalidateOnReconnect: true,
+  }
+);
 
   // Fetch related products with SWR
   const { data: relatedProductsData, error: relatedProductsError } = useSWR<
@@ -346,6 +370,74 @@ export default function ProductPage({ params }: ProductPageProps) {
   );
 
   const product = productData?.[0] || null;
+
+  // Calculate average rating
+  const averageRating = reviews.length
+    ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length
+    : 0;
+  const reviewCount = reviews.length;
+
+  // Handle review submission (client-side for now)
+  const handleReviewSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (newReview.rating === 0 || !newReview.comment.trim()) {
+      toast.error("Please provide a rating and comment!");
+      return;
+    }
+
+    if (!product) {
+      toast.error("Product data not available!");
+      return;
+    }
+
+    const reviewPayload = {
+      userName: newReview.userName || "Anonymous",
+      rating: newReview.rating,
+      comment: newReview.comment,
+      createdAt: new Date().toISOString(),
+    };
+
+    try {
+      // Optimistic update
+      const optimisticProduct = {
+        ...product,
+        reviews: [
+          ...(product.reviews || []),
+          { ...reviewPayload, id: Date.now().toString() },
+        ],
+      };
+      mutate([optimisticProduct], false); // Wrap in array
+
+      // Submit to server
+      const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/products/${product.id}`;
+      const response = await fetch(apiUrl, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          // Add authentication if required
+        },
+        body: JSON.stringify({
+          reviews: [...(product.reviews || []), reviewPayload],
+        }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Failed to submit review: ${errorText}`);
+      }
+
+      const updatedProduct = await response.json();
+      // Update cache with server response
+      mutate([updatedProduct], true); // Wrap in array
+      setNewReview({ userName: "", rating: 0, comment: "" });
+      toast.success("Review submitted successfully!");
+    } catch (error) {
+      console.error("Review submission error:", error);
+      mutate([product], true); // Revert to original data, wrap in array
+      toast.error("Failed to submit review. Please try again.");
+    }
+  };
+
   const relatedProducts =
     relatedProductsData?.filter((r) => r.id !== product?.id).slice(0, 3) || [];
 
@@ -370,10 +462,15 @@ export default function ProductPage({ params }: ProductPageProps) {
           : `${apiBase}${product.images[0].image.url}`
         : "/placeholder.png";
       setMainImage(firstImage);
+
       if (product.variations && product.variations.length > 0) {
         setSelectedVariation(product.variations[0]);
       }
     }
+  }, [product]);
+
+  useEffect(() => {
+    if (product?.reviews) setReviews(product.reviews);
   }, [product]);
 
   // Handle attribute selection for variations
@@ -447,49 +544,35 @@ export default function ProductPage({ params }: ProductPageProps) {
     setQuantity((prev) => Math.min(prev + 1, currentStock));
   const decrementQuantity = () => setQuantity((prev) => Math.max(prev - 1, 1));
 
-  const Stars = ({ rating }: { rating: number }) => (
-    <div className="flex">
-      {[...Array(5)].map((_, i) => (
-        <span
-          key={i}
-          className={i < rating ? "text-yellow-400" : "text-gray-300"}
-        >
-          ★
-        </span>
-      ))}
-    </div>
-  );
+  const handleAddToCart = () => {
+    if (!selectedSize) {
+      toast.warning("Please select a size before adding to cart!", {
+        position: "top-center",
+        autoClose: 2000,
+        hideProgressBar: true,
+        closeOnClick: true,
+        pauseOnHover: false,
+        draggable: false,
+        theme: "colored",
+      });
+      return; // ✅ prevents adding if no size selected
+    }
 
-const handleAddToCart = () => {
-  if (!selectedSize) {
-    toast.warning("Please select a size before adding to cart!", {
+    if (!product) return;
+
+    // ✅ Add to cart with size and quantity
+    addToCart(product, quantity, selectedSize);
+
+    toast.success("Added to cart successfully!", {
       position: "top-center",
-      autoClose: 2000,
+      autoClose: 1500,
       hideProgressBar: true,
-      closeOnClick: true,
-      pauseOnHover: false,
-      draggable: false,
       theme: "colored",
     });
-    return; // ✅ prevents adding if no size selected
-  }
 
-  if (!product) return;
-
-  // ✅ Add to cart with size and quantity
-  addToCart(product, quantity, selectedSize);
-
-  toast.success("Added to cart successfully!", {
-    position: "top-center",
-    autoClose: 1500,
-    hideProgressBar: true,
-    theme: "colored",
-  });
-
-  // ✅ Immediately open cart drawer
-  setDrawerOpen(true);
-};
-
+    // ✅ Immediately open cart drawer
+    setDrawerOpen(true);
+  };
 
   return (
     <>
@@ -641,8 +724,9 @@ const handleAddToCart = () => {
                   {product.name}
                 </h1>
                 <div className="flex items-center gap-1">
-                  <Stars rating={4.7} />
-                  <span className="text-sm text-gray-500">(4,712)</span>
+                  <span>
+                    {averageRating.toFixed(1)} ({reviewCount} reviews)
+                  </span>
                 </div>
               </div>
 
@@ -702,13 +786,37 @@ const handleAddToCart = () => {
                   </button>
                 </div>
               </div>
+              {/* Size Chart Button */}
+              <div className="flex items-center justify-between mb-3">
+                <label className="block text-sm font-semibold text-gray-700">
+                  Select Size
+                </label>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const category =
+                      product.categories?.[0]?.name?.toLowerCase() || "men";
+                    if (category.includes("women")) setSelectedChart("women");
+                    else if (category.includes("kid")) setSelectedChart("kids");
+                    else setSelectedChart("men");
+                    setShowSizeChart(true);
+                  }}
+                  className="text-gray-500 underline flex items-center gap-1 text-sm hover:text-orange-600"
+                >
+                  Size chart
+                </button>
+              </div>
+
+              {/* Common SizeChartModal */}
+              <SizeChartModal
+                isOpen={showSizeChart}
+                onClose={() => setShowSizeChart(false)}
+                chartType={selectedChart}
+              />
 
               {/* Choose Size - Button Format */}
               {sizeAttribute && (
                 <div className="mb-6">
-                  <label className="block text-sm font-semibold text-gray-700 mb-3">
-                    Choose Size
-                  </label>
                   <div className="flex flex-wrap gap-2">
                     {sizeAttribute.values.map((val) => {
                       const isSelected = selectedSize === val.value;
@@ -764,11 +872,11 @@ const handleAddToCart = () => {
 
               {/* Add to Cart */}
               <button
-                 onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              handleAddToCart();
-            }}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  handleAddToCart();
+                }}
                 className="w-full bg-orange-500 text-white py-2 rounded-lg mb-6 flex items-center justify-center gap-2 text-lg font-semibold shadow-lg hover:bg-orange-600 transition transform "
               >
                 <svg
@@ -1034,9 +1142,10 @@ const handleAddToCart = () => {
                   </div>
                 </details>
 
-                <details className="border-[0.5px] border-[#C7CBD4] rounded-lg">
+                {/* Reviews Section */}
+                <details className="border-[0.5px] border-[#C7CBD4] rounded-lg mb-6">
                   <summary className="p-4 cursor-pointer font-semibold text-gray-900 flex items-center justify-between">
-                    <span>Customer Reviews</span>
+                    <span>Customer Reviews ({reviewCount})</span>
                     <svg
                       className="w-4 h-4 transition-transform"
                       fill="none"
@@ -1052,17 +1161,94 @@ const handleAddToCart = () => {
                     </svg>
                   </summary>
                   <div className="p-4 pt-4 text-sm text-gray-700 border-t border-gray-200">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Stars rating={4.7} />
-                      <span>Based on 4,712 reviews</span>
+                    <div className="flex items-center gap-2 mb-4">
+                      <Stars rating={averageRating || 0} />
+                      <span>
+                        {averageRating.toFixed(1)} ({reviewCount} reviews)
+                      </span>
                     </div>
+                    {product?.reviews?.length ? (
+                      <div className="space-y-4">
+                        {product.reviews.map((review) => (
+                          <div
+                            key={review.id}
+                            className="border-b pb-4 last:border-b-0"
+                          >
+                            <div className="flex items-center gap-2 mb-2">
+                              <Stars rating={review.rating} />
+                              <span className="text-sm font-medium">
+                                {review.userName}
+                              </span>
+                              <span className="text-xs text-gray-500">
+                                {new Date(
+                                  review.createdAt
+                                ).toLocaleDateString()}
+                              </span>
+                            </div>
+                            <p className="text-gray-600">{review.comment}</p>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-gray-500">No reviews yet.</p>
+                    )}
+                    <form
+                      onSubmit={handleReviewSubmit}
+                      className="mt-4 space-y-2"
+                    >
+                      <input
+                        type="text"
+                        placeholder="Your Name (optional)"
+                        value={newReview.userName}
+                        onChange={(e) =>
+                          setNewReview({
+                            ...newReview,
+                            userName: e.target.value,
+                          })
+                        }
+                        className="w-full p-2 border rounded-md"
+                      />
+                      <select
+                        value={newReview.rating}
+                        onChange={(e) =>
+                          setNewReview({
+                            ...newReview,
+                            rating: Number(e.target.value),
+                          })
+                        }
+                        className="w-full p-2 border rounded-md"
+                      >
+                        <option value={0}>Rate this product</option>
+                        {[1, 2, 3, 4, 5].map((rating) => (
+                          <option key={rating} value={rating}>
+                            {rating} Star{rating > 1 ? "s" : ""}
+                          </option>
+                        ))}
+                      </select>
+                      <textarea
+                        placeholder="Write your review"
+                        value={newReview.comment}
+                        onChange={(e) =>
+                          setNewReview({
+                            ...newReview,
+                            comment: e.target.value,
+                          })
+                        }
+                        className="w-full p-2 border rounded-md h-24"
+                      />
+                      <button
+                        type="submit"
+                        className="w-full bg-orange-500 text-white py-2 rounded-md hover:bg-orange-600"
+                      >
+                        Submit Review
+                      </button>
+                    </form>
                   </div>
                 </details>
               </div>
             </div>
           </div>
         </div>
-
         <div>
           {/* Frequently Bought Together */}
           <div className="mt-16">
@@ -1094,16 +1280,3 @@ const handleAddToCart = () => {
     </>
   );
 }
-
-const Stars = ({ rating }: { rating: number }) => (
-  <div className="flex">
-    {[...Array(5)].map((_, i) => (
-      <span
-        key={i}
-        className={i < rating ? "text-yellow-400" : "text-gray-300"}
-      >
-        ★
-      </span>
-    ))}
-  </div>
-);

@@ -5,11 +5,14 @@ import Image from "next/image";
 import Link from "next/link";
 import { Product } from "@/types/Product";
 import { useCart } from "@/context/CartContext";
+import SizeChartModal from "@/components/SizeChartModal";
 import { Swiper, SwiperSlide } from "swiper/react";
 import "swiper/css";
 import "swiper/css/navigation";
 import "swiper/css/pagination";
 import { Navigation, Pagination } from "swiper/modules";
+import { toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 interface QuickViewModalProps {
   product: Product | null;
@@ -26,6 +29,11 @@ export default function QuickViewModal({
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
   const [quantity, setQuantity] = useState(1);
 
+  const [showSizeChart, setShowSizeChart] = useState(false);
+  const [selectedChart, setSelectedChart] = useState<"men" | "women" | "kids">(
+    "men"
+  );
+
   if (!product) return null;
 
   const apiBase = (process.env.NEXT_PUBLIC_API_URL || "").replace(/\/api$/, "");
@@ -38,7 +46,18 @@ export default function QuickViewModal({
     ) || [];
 
   const handleAddToCart = () => {
+    const hasSizes =
+      product.attributes?.some(
+        (attr) => attr.attribute.name.toLowerCase() === "sizes"
+      ) ?? false;
+
+    if (hasSizes && !selectedSize) {
+      toast.warning("Please select a size before adding to cart!");
+      return;
+    }
+
     addToCart(product, quantity, selectedSize || undefined);
+    toast.success("Added to cart successfully!");
     onClose();
   };
 
@@ -110,10 +129,32 @@ export default function QuickViewModal({
               {descriptionText || "No description available."}
             </p>
 
+            {/* Size Chart Button */}
+            <div className="flex items-center justify-between mb-3">
+              <label className="block text-sm font-semibold text-gray-700">
+                Select Size
+              </label>
+              <button
+                type="button"
+                onClick={() => {
+                  const category =
+                    product.categories?.[0]?.name?.toLowerCase() || "men";
+                  if (category.includes("women")) setSelectedChart("women");
+                  else if (category.includes("kid")) setSelectedChart("kids");
+                  else setSelectedChart("men");
+                  setShowSizeChart(true);
+                }}
+                className="text-gray-500 underline flex items-center gap-1 text-sm hover:text-orange-600"
+              >
+                Size chart
+              </button>
+            </div>
+
+         
+
             {/* Size Selector */}
             {product.attributes && product.attributes.length > 0 && (
               <div className="mb-4">
-                <h4 className="text-sm font-semibold mb-2">Select Size:</h4>
                 <div className="flex flex-wrap gap-2">
                   {product.attributes
                     .find(
@@ -125,8 +166,8 @@ export default function QuickViewModal({
                         onClick={() => setSelectedSize(val.value)}
                         className={`px-3 py-1 border rounded-md text-sm ${
                           selectedSize === val.value
-                           ? "border-orange-500 bg-orange-50 text-orange-600"
-                              : "border-gray-300 text-gray-600 hover:border-gray-400"
+                            ? "border-orange-500 bg-orange-50 text-orange-600"
+                            : "border-gray-300 text-gray-600 hover:border-gray-400"
                         }`}
                       >
                         {val.value}
@@ -137,6 +178,7 @@ export default function QuickViewModal({
                 </div>
               </div>
             )}
+
             {/* Quantity Selector */}
             <div className="flex items-center gap-3 mb-4">
               <h4 className="text-sm font-semibold">Quantity:</h4>
@@ -176,6 +218,17 @@ export default function QuickViewModal({
           </div>
         </div>
       </div>
+
+         {/* Common SizeChartModal */}
+            {showSizeChart && (
+              <div className="fixed inset-0 z-[10000] flex items-center justify-center">
+                <SizeChartModal
+                  isOpen={showSizeChart}
+                  onClose={() => setShowSizeChart(false)}
+                  chartType={selectedChart}
+                />
+              </div>
+            )}
     </>
   );
 }

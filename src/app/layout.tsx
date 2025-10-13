@@ -3,6 +3,8 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { CartProvider } from "@/context/CartContext";
 import Header from "@/components/Header";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -19,10 +21,20 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={inter.className}>
-        {/* CartProvider must wrap Header and children */}
         <CartProvider>
           <Header />
           {children}
+
+          {/* ✅ Toastify Container (Global) */}
+          <ToastContainer
+            position="top-center"
+            autoClose={2000}
+            hideProgressBar
+            newestOnTop
+            closeOnClick
+            pauseOnHover={false}
+            theme="colored"
+          />
         </CartProvider>
       </body>
     </html>

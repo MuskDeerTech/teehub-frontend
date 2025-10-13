@@ -1,3 +1,11 @@
+export interface Review {
+  id: string;
+  userName: string;
+  rating: number;
+  comment: string;
+  createdAt: string;
+}
+
 export interface Product {
   id: string;
   name: string;
@@ -31,13 +39,14 @@ export interface Product {
     name: string;
   }[];
 
-  /** 👇 Add these missing fields **/
+  reviews?: Review[];
+
   meta?: {
     description?: string;
     title?: string;
   };
 
-  sizes?: string[]; // for size selector
+  sizes?: string[];
   description?:
     | string
     | {
@@ -47,6 +56,5 @@ export interface Product {
           }[];
         };
       };
-
-  [key: string]: unknown;
 }
+

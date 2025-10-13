@@ -45,7 +45,7 @@ export default function CartDrawer({
     >
       <div
         onClick={(e) => e.stopPropagation()}
-         className={`fixed top-0 right-0 w-full sm:w-[450px] h-full bg-white shadow-2xl z-[9999] transform transition-transform duration-300 ${
+        className={`fixed top-0 right-0 w-full sm:w-[450px] h-full bg-white shadow-2xl z-[9999] transform transition-transform duration-300 ${
           isOpen ? "translate-x-0" : "translate-x-full"
         } flex flex-col`}
       >
