@@ -1,10 +1,8 @@
+// D:\teehub-frontend\src\app\layout.tsx
 import type { Metadata } from "next";
 import "./globals.css";
 import { CartProvider } from "@/context/CartContext";
-import Header from "@/components/Header";
-import { ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
-import Footer from "@/components/Footer";
+import LayoutClient from "@/components/LayoutClient";
 
 export const metadata: Metadata = {
   title: "TeeHub - Ties From Town",
@@ -18,22 +16,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body >
+      <body>
         <CartProvider>
-          <Header />
-          {children}
-
-          {/* ✅ Toastify Container (Global) */}
-          <ToastContainer
-            position="top-center"
-            autoClose={2000}
-            hideProgressBar
-            newestOnTop
-            closeOnClick
-            pauseOnHover={false}
-            theme="colored"
-          />
-          <Footer />
+        <LayoutClient>{children}</LayoutClient>
         </CartProvider>
       </body>
     </html>
