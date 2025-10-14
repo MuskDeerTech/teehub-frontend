@@ -28,34 +28,41 @@ export default function Header() {
                 className="object-contain"
               />
             </Link>
-            <Link
-              href="/account"
+            <Link href="/login" 
               className="hidden lg:flex items-center gap-2 text-sm text-gray-700 hover:text-gray-900 transition-colors"
             >
               <svg
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
+                width="30"
+                height="30"
+                viewBox="0 0 40 40"
                 fill="none"
-                className="opacity-90"
                 xmlns="http://www.w3.org/2000/svg"
               >
-                <path
-                  d="M12 12c2.761 0 5-2.239 5-5s-2.239-5-5-5-5 2.239-5 5 2.239 5 5 5z"
-                  stroke="currentColor"
-                  strokeWidth="1.2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-                <path
-                  d="M3 21c0-3 4-5 9-5s9 2 9 5"
-                  stroke="currentColor"
-                  strokeWidth="1.2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
+                <g clip-path="url(#clip0_153_1708)">
+                  <path
+                    d="M25.8334 17.0833C25.8334 20.3063 23.223 22.9167 20.0001 22.9167C16.7772 22.9167 14.1667 20.3063 14.1667 17.0833C14.1667 13.8604 16.7772 11.25 20.0001 11.25C23.223 11.25 25.8334 13.8604 25.8334 17.0833Z"
+                    fill="black"
+                  />
+                  <path
+                    fill-rule="evenodd"
+                    clip-rule="evenodd"
+                    d="M20 37.5C29.6688 37.5 37.5 29.6688 37.5 20C37.5 10.3313 29.6688 2.5 20 2.5C10.3313 2.5 2.5 10.3313 2.5 20C2.5 29.6688 10.3313 37.5 20 37.5ZM29.1438 33.1833C33.3146 30.2813 36.0417 25.4688 36.0417 20C36.0417 11.1333 28.8667 3.95833 20 3.95833C11.1333 3.95833 3.95833 11.1333 3.95833 20C3.95833 25.4688 6.68542 30.2813 10.8562 33.1833C11.8844 31.2583 15.2021 25.8333 20 25.8333C24.7979 25.8333 28.1083 31.2583 29.1438 33.1833Z"
+                    fill="black"
+                  />
+                </g>
+                <defs>
+                  <clipPath id="clip0_153_1708">
+                    <rect
+                      width="35"
+                      height="35"
+                      fill="white"
+                      transform="translate(2.5 2.5)"
+                    />
+                  </clipPath>
+                </defs>
               </svg>
-              <span>Sign in / Register</span>
+
+              <span className="font-bold">Sign in to create an account</span>
             </Link>
             {/* Mobile hamburger */}
             <button
@@ -144,11 +151,11 @@ export default function Header() {
                 href="/wishlist"
                 className="relative p-2 rounded-full hover:bg-gray-100 focus:outline-none"
               >
-                 <svg
+                <svg
                   width="22"
                   height="18"
                   viewBox="0 0 32 28"
-                   fill={isWishlistNotEmpty ? "black" : "none"} // Red fill when wishlist is not empty
+                  fill={isWishlistNotEmpty ? "black" : "none"} // Red fill when wishlist is not empty
                   stroke={isWishlistNotEmpty ? "black" : "currentColor"}
                   xmlns="http://www.w3.org/2000/svg"
                 >

@@ -1255,7 +1255,7 @@ const slug = Array.isArray(params?.slug) ? params.slug[0] : params?.slug;
             <h2 className="text-2xl  text-center font-semibold mb-8 text-gray-900">
               Frequently Bought Together
             </h2>
-            <div className="max-w-7xl mx-auto px-4">
+            <div className="max-w-7xl mx-auto ">
               <div className="flex justify-between items-center mb-12">
                 <h2 className="text-3xl font-bold text-gray-900">
                   Featured Products

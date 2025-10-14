@@ -1,12 +1,10 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
 import "./globals.css";
 import { CartProvider } from "@/context/CartContext";
 import Header from "@/components/Header";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-
-const inter = Inter({ subsets: ["latin"] });
+import Footer from "@/components/Footer";
 
 export const metadata: Metadata = {
   title: "TeeHub - Ties From Town",
@@ -20,7 +18,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={inter.className}>
+      <body >
         <CartProvider>
           <Header />
           {children}
@@ -35,6 +33,7 @@ export default function RootLayout({
             pauseOnHover={false}
             theme="colored"
           />
+          <Footer />
         </CartProvider>
       </body>
     </html>
