@@ -16,7 +16,7 @@ export default function LayoutClient({
   // Hide Header & Footer for login/signup pages
   const hideLayout =
     pathname === "/login" ||
-    pathname === "/signup" ||
+    pathname === "/register" ||
     pathname?.startsWith("/auth");
 
   return (

@@ -11,16 +11,38 @@ export default function OTPLoginPage() {
   const [otp, setOtp] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-    const router = useRouter(); // ✅ initialize router
+  const router = useRouter(); // ✅ initialize router
 
   const sendOTP = async () => {
     setError("");
     setLoading(true);
     try {
+      // First check if user exists before sending OTP
+      const checkRes = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/checkUser`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email: tab === "email" ? email : "",
+            phone: tab === "phone" ? phone : "",
+          }),
+        }
+      );
+      const checkData = await checkRes.json();
+      if (!checkRes.ok) {
+        setError(checkData.message || "User not found. Please register first.");
+        return;
+      }
+
+      // Send OTP if user exists
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/sendOTP`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: tab === "email" ? email : "", phone: tab === "phone" ? phone : "" }),
+        body: JSON.stringify({
+          email: tab === "email" ? email : "",
+          phone: tab === "phone" ? phone : "",
+        }),
       });
 
       if (!res.ok) {
@@ -68,7 +90,7 @@ export default function OTPLoginPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-       <button
+      <button
         onClick={() => router.back()}
         className="absolute top-6 left-6 text-gray-600 hover:text-gray-800 transition"
       >
@@ -185,6 +207,17 @@ export default function OTPLoginPage() {
             </p>
           </>
         )}
+
+        {/* Add this at the very end inside the card div, after Step 2 */}
+        <p className="text-sm text-gray-500 mt-6">
+          Don’t have an account?{" "}
+          <button
+            onClick={() => router.push("/register")}
+            className="text-orange-600 font-medium hover:underline"
+          >
+            Create one
+          </button>
+        </p>
       </div>
     </div>
   );
