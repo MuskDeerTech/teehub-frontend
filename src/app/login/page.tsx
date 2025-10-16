@@ -6,22 +6,17 @@ import {
   RecaptchaVerifier,
   signInWithPhoneNumber,
 } from "@/firebase/config";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import PhoneInput from "react-phone-input-2";
 import "react-phone-input-2/lib/style.css";
 import type { User as FirebaseUser, ConfirmationResult } from "firebase/auth";
+
 declare global {
   interface Window {
     recaptchaVerifier: RecaptchaVerifier;
-    confirmationResult: ConfirmationResult; // ✅ no more 'any'
+    confirmationResult: ConfirmationResult;
   }
-}
-
-interface User {
-  uid: string;
-  phone: string;
-  name?: string;
-  address?: string;
 }
 
 export default function LoginPage() {
@@ -29,13 +24,10 @@ export default function LoginPage() {
   const [otp, setOtp] = useState("");
   const [name, setName] = useState("");
   const [address, setAddress] = useState("");
-
-const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
-const [user, setUser] = useState<{ phone: string; name: string; address: string } | null>(null);
+  const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [timer, setTimer] = useState(30);
-
   const router = useRouter();
 
   useEffect(() => {
@@ -61,7 +53,6 @@ const [user, setUser] = useState<{ phone: string; name: string; address: string 
     if (!phone) return alert("Please enter phone number");
     setLoading(true);
     setupRecaptcha();
-
     try {
       const confirmationResult = await signInWithPhoneNumber(
         auth,
@@ -81,12 +72,10 @@ const [user, setUser] = useState<{ phone: string; name: string; address: string 
   const verifyOTP = async () => {
     if (!otp) return alert("Please enter OTP");
     setLoading(true);
-
     try {
-    const result = await window.confirmationResult.confirm(otp);
-setFirebaseUser(result.user); // ✅ correct type
-setStep(3);
-
+      const result = await window.confirmationResult.confirm(otp);
+      setFirebaseUser(result.user);
+      setStep(3);
     } catch (err) {
       console.error(err);
       alert("Invalid OTP");
@@ -114,8 +103,8 @@ setStep(3);
       const data = await res.json();
       if (res.ok) {
         localStorage.setItem("user", JSON.stringify(data.user));
-        setStep(4); // ✅ Show success screen
-        setTimeout(() => router.push("/"), 2000); // Redirect after 2s
+        setStep(4);
+        setTimeout(() => router.push("/"), 2000);
       } else {
         alert(data.message);
       }
@@ -126,118 +115,190 @@ setStep(3);
   };
 
   return (
-    <div className="min-h-screen flex justify-center items-center bg-gray-50">
-      <div className="bg-white p-6 rounded-lg shadow-md w-full max-w-sm text-center">
-        {step !== 4 && (
-          <h2 className="text-lg font-semibold text-center mb-6">
-            Login with Phone
-          </h2>
-        )}
-
-        {/* Step 1: Phone */}
-        {step === 1 && (
-          <>
-            <PhoneInput
-              country={"in"}
-              value={phone}
-              onChange={(phone) => setPhone(phone)}
-              inputClass="w-full border rounded-lg px-4 py-2 mb-4"
-              containerClass="mb-4"
-              enableSearch
-              countryCodeEditable={false}
-            />
-            <div id="recaptcha-container"></div>
+    <div className="min-h-screen flex flex-col justify-center items-center px-4 bg-[#fff9f6]">
+      {/* Header with Back Arrow - always visible except step 4 */}
+      {step !== 4 && (
+        <div className="flex items-center justify-between w-full max-w-xs mb-4">
+          {step > 1 ? (
             <button
-              onClick={sendOTP}
-              disabled={loading}
-              className="w-full bg-orange-600 text-white py-2 rounded-lg"
+              onClick={() => setStep(step - 1)}
+              className="text-gray-600 hover:text-orange-500 transition pl-2"
             >
-              {loading ? "Sending..." : "Next"}
-            </button>
-          </>
-        )}
-
-        {/* Step 2: OTP */}
-        {step === 2 && (
-          <>
-            <p className="text-sm text-gray-500 mb-2">
-              OTP sent to +{phone}. {timer}s remaining
-            </p>
-            <input
-              type="text"
-              placeholder="Enter OTP"
-              value={otp}
-              onChange={(e) => setOtp(e.target.value)}
-              className="w-full border rounded-lg px-4 py-2 mb-4"
-            />
-            <button
-              onClick={verifyOTP}
-              disabled={loading || timer === 0}
-              className="w-full bg-orange-600 text-white py-2 rounded-lg mb-2"
-            >
-              {loading ? "Verifying..." : "Verify OTP"}
-            </button>
-            {timer === 0 && (
-              <button
-                onClick={sendOTP}
-                className="w-full bg-gray-300 text-gray-700 py-2 rounded-lg"
-              >
-                Resend OTP
-              </button>
-            )}
-          </>
-        )}
-
-        {/* Step 3: Name & Address */}
-        {step === 3 && (
-          <>
-            <input
-              type="text"
-              placeholder="Enter your name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="w-full border rounded-lg px-4 py-2 mb-4"
-            />
-            <textarea
-              placeholder="Enter your address"
-              value={address}
-              onChange={(e) => setAddress(e.target.value)}
-              className="w-full border rounded-lg px-4 py-2 mb-4"
-            />
-            <button
-              onClick={saveUserDetails}
-              className="w-full bg-orange-600 text-white py-2 rounded-lg"
-            >
-              Save & Continue
-            </button>
-          </>
-        )}
-
-        {/* ✅ Step 4: Success Tick */}
-        {step === 4 && (
-          <div className="flex flex-col items-center justify-center space-y-3">
-            <div className="w-16 h-16 flex items-center justify-center rounded-full bg-green-100 animate-bounce">
               <svg
-                className="w-10 h-10 text-green-600"
+                width="18"
+                height="16"
+                viewBox="0 0 18 16"
                 fill="none"
-                stroke="currentColor"
-                strokeWidth={3}
-                viewBox="0 0 24 24"
+                xmlns="http://www.w3.org/2000/svg"
               >
                 <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M5 13l4 4L19 7"
+                  fillRule="evenodd"
+                  clipRule="evenodd"
+                  d="M4.51297 9.12526H16.755C18.415 9.12526 18.415 6.42786 16.755 6.42786H4.51297L8.73199 2.278C9.90778 1.03304 8.04035 -0.834392 6.79539 0.410565L0.363111 6.84284C-0.121038 7.32699 -0.121038 8.15696 0.363111 8.71028L6.79539 15.1426C8.04035 16.3875 9.90778 14.4509 8.73199 13.2751L4.51297 9.12526Z"
+                  fill="#FF6633"
                 />
               </svg>
+            </button>
+          ) : (
+            <div />
+          )}
+          <h2 className="text-lg font-semibold text-[#f97316]">Sign Up</h2>
+          <div />
+        </div>
+      )}
+
+      {step !== 4 && (
+        <div className="bg-white shadow-xl rounded-2xl w-full max-w-xs p-6 relative overflow-hidden">
+          {/* Step 1 */}
+          {step === 1 && (
+            <div className="text-left">
+              <h3 className="font-medium text-gray-700 mb-4">Phone Number</h3>
+              <PhoneInput
+                country={"in"}
+                value={phone}
+                onChange={(phone) => setPhone(phone)}
+                inputClass="!w-full !border !border-[#f97316]/30 !rounded-lg !focus:border-[#f97316]"
+                containerClass="mb-4"
+                enableSearch
+                countryCodeEditable={false}
+              />
+              <div id="recaptcha-container"></div>
+              <button
+                onClick={sendOTP}
+                disabled={loading}
+                className="w-full bg-[#f97316] text-white font-medium py-2 rounded-md hover:bg-[#ea580c] transition"
+              >
+                {loading ? "Sending..." : "Get OTP"}
+              </button>
+              <p className="text-[12px] text-gray-400 mt-2">
+                *No spam, no calls — just a quick OTP to verify you.
+              </p>
             </div>
-            <h3 className="text-lg font-medium text-green-600">
-              Logged in successfully!
-            </h3>
-            <p className="text-gray-500 text-sm">Redirecting to home...</p>
+          )}
+
+          {/* Step 2 */}
+          {step === 2 && (
+            <div className="text-center">
+              <h3 className="font-medium text-gray-700 mb-4">
+                Enter the 6-digit OTP
+              </h3>
+
+              {/* Timer */}
+              <div className="text-[#f97316] font-medium mb-4">
+                00:{timer.toString().padStart(2, "0")}
+              </div>
+
+              {/* OTP Boxes */}
+              <div className="flex items-center justify-center gap-2 mb-4">
+                {Array.from({ length: 6 }, (_, i) => (
+                  <input
+                    key={i}
+                    type="text"
+                    maxLength={1}
+                    value={otp[i] || ""}
+                    onChange={(e) => {
+                      const newOtp = [...otp];
+                      newOtp[i] = e.target.value.replace(/\D/g, ""); // Only allow digits
+                      setOtp(newOtp.join(""));
+
+                      // Auto-focus next box if digit entered
+                      if (e.target.value && i < 5) {
+                        const nextInput = document.getElementById(
+                          `otp-${i + 1}`
+                        );
+                        nextInput?.focus();
+                      }
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Backspace" && !otp[i] && i > 0) {
+                        const prevInput = document.getElementById(
+                          `otp-${i - 1}`
+                        );
+                        prevInput?.focus();
+                      }
+                    }}
+                    id={`otp-${i}`}
+                    className="w-8 h-8 text-center text-xl font-medium border border-[#f97316]/30 rounded-md focus:outline-none focus:border-[#f97316] bg-[#fff9f6]"
+                    autoFocus={i === 0} // Focus first box on render
+                    aria-label={`OTP digit ${i + 1}`} // ✅ Accessible label
+                  />
+                ))}
+              </div>
+
+              <button
+                onClick={verifyOTP}
+                disabled={loading || otp.length !== 6}
+                className="w-full bg-[#f97316] text-white font-medium py-2 rounded-lg hover:bg-[#ea580c] transition disabled:opacity-70 disabled:cursor-not-allowed"
+              >
+                {loading ? "Verifying..." : "Submit"}
+              </button>
+
+              <p className="text-sm text-gray-500 mt-2">
+                Didn’t receive OTP?{" "}
+                <button onClick={sendOTP} className="text-[#f97316] underline">
+                  Resend
+                </button>
+              </p>
+            </div>
+          )}
+
+          {/* Step 3 */}
+          {step === 3 && (
+            <div className="text-center">
+              <Image
+                src="/teehub_logo.png"
+                alt="TeeHub Logo"
+                width={120}
+                height={40}
+                className="object-contain  mx-auto"
+              />
+              <input
+                type="text"
+                placeholder="Your Name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="mt-4 w-full border border-[#f97316]/30 rounded-lg px-3 py-2 mb-3 focus:outline-none focus:border-[#f97316]"
+              />
+              <textarea
+                placeholder="Your Address"
+                value={address}
+                onChange={(e) => setAddress(e.target.value)}
+                className="w-full border border-[#f97316]/30 rounded-lg px-3 py-2 mb-3 focus:outline-none focus:border-[#f97316]"
+              />
+              <button
+                onClick={saveUserDetails}
+                className="w-full bg-[#f97316] text-white font-medium py-2 rounded-lg hover:bg-[#ea580c] transition"
+              >
+                Continue
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Step 4 */}
+      {step === 4 && (
+        <div className="flex flex-col items-center justify-center min-h-screen ">
+          <div className="w-48 h-48 bg-[#ff6633] rounded-full flex flex-col items-center justify-center shadow-lg border border-white/40">
+            <p className="text-white text-center text-md font-medium mb-2">
+              Signed Up <br /> Successfully!
+            </p>
+            <svg
+              className="w-8 h-8 text-white"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={3}
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M5 13l4 4L19 7"
+              />
+            </svg>
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }
