@@ -21,7 +21,7 @@ export default function AccountLayout({ children }: { children: React.ReactNode 
   };
 
   return (
-    <div className="max-w-6xl mx-auto p-6 flex gap-8">
+    <div className="max-w-6xl mx-auto p-6 flex gap-8 ">
       <aside className="w-64 border-r">
         <h2 className="font-bold mb-4">My Account</h2>
         <nav className="flex flex-col gap-2">

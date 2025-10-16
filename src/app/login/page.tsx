@@ -39,13 +39,9 @@ export default function LoginPage() {
 
   const setupRecaptcha = () => {
     if (!window.recaptchaVerifier) {
-      window.recaptchaVerifier = new RecaptchaVerifier(
-        auth,
-        "recaptcha-container",
-        {
-          size: "invisible",
-        }
-      );
+      window.recaptchaVerifier = new RecaptchaVerifier(auth, "recaptcha-container", {
+        size: "invisible",
+      });
     }
   };
 
@@ -76,6 +72,9 @@ export default function LoginPage() {
       const result = await window.confirmationResult.confirm(otp);
       setFirebaseUser(result.user);
       setStep(3);
+
+      // ✅ After success message, go to name/address form
+      setTimeout(() => setStep(4), 2000);
     } catch (err) {
       console.error(err);
       alert("Invalid OTP");
@@ -87,24 +86,21 @@ export default function LoginPage() {
     if (!name || !address) return alert("Please enter name and address");
 
     try {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/saveUserDetails`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            phone: "+" + phone,
-            name,
-            address,
-          }),
-        }
-      );
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/saveUserDetails`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          phone: "+" + phone,
+          name,
+          address,
+        }),
+      });
 
       const data = await res.json();
       if (res.ok) {
         localStorage.setItem("user", JSON.stringify(data.user));
-        setStep(4);
-        setTimeout(() => router.push("/"), 2000);
+        console.log("Details saved successfully!");
+        router.push("/");
       } else {
         alert(data.message);
       }
@@ -116,10 +112,10 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex flex-col justify-center items-center px-4 bg-[#fff9f6]">
-      {/* Header with Back Arrow - always visible except step 4 */}
-      {step !== 4 && (
+      {/* Header with Back Arrow - visible except step 3 (success) */}
+      {step !== 3 && (
         <div className="flex items-center justify-between w-full max-w-xs mb-4">
-          {step > 1 ? (
+          {step > 1 && step < 4 ? (
             <button
               onClick={() => setStep(step - 1)}
               className="text-gray-600 hover:text-orange-500 transition pl-2"
@@ -142,143 +138,97 @@ export default function LoginPage() {
           ) : (
             <div />
           )}
-          <h2 className="text-lg font-semibold text-[#f97316]">Sign Up</h2>
+          <h2 className="text-lg font-semibold text-[#f97316]">
+            {step <= 2 ? "Sign Up" : "Welcome"}
+          </h2>
           <div />
         </div>
       )}
 
-      {step !== 4 && (
-        <div className="bg-white shadow-xl rounded-2xl w-full max-w-xs p-6 relative overflow-hidden">
-          {/* Step 1 */}
-          {step === 1 && (
-            <div className="text-left">
-              <h3 className="font-medium text-gray-700 mb-4">Phone Number</h3>
-              <PhoneInput
-                country={"in"}
-                value={phone}
-                onChange={(phone) => setPhone(phone)}
-                inputClass="!w-full !border !border-[#f97316]/30 !rounded-lg !focus:border-[#f97316]"
-                containerClass="mb-4"
-                enableSearch
-                countryCodeEditable={false}
-              />
-              <div id="recaptcha-container"></div>
-              <button
-                onClick={sendOTP}
-                disabled={loading}
-                className="w-full bg-[#f97316] text-white font-medium py-2 rounded-md hover:bg-[#ea580c] transition"
-              >
-                {loading ? "Sending..." : "Get OTP"}
-              </button>
-              <p className="text-[12px] text-gray-400 mt-2">
-                *No spam, no calls — just a quick OTP to verify you.
-              </p>
-            </div>
-          )}
-
-          {/* Step 2 */}
-          {step === 2 && (
-            <div className="text-center">
-              <h3 className="font-medium text-gray-700 mb-4">
-                Enter the 6-digit OTP
-              </h3>
-
-              {/* Timer */}
-              <div className="text-[#f97316] font-medium mb-4">
-                00:{timer.toString().padStart(2, "0")}
-              </div>
-
-              {/* OTP Boxes */}
-              <div className="flex items-center justify-center gap-2 mb-4">
-                {Array.from({ length: 6 }, (_, i) => (
-                  <input
-                    key={i}
-                    type="text"
-                    maxLength={1}
-                    value={otp[i] || ""}
-                    onChange={(e) => {
-                      const newOtp = [...otp];
-                      newOtp[i] = e.target.value.replace(/\D/g, ""); // Only allow digits
-                      setOtp(newOtp.join(""));
-
-                      // Auto-focus next box if digit entered
-                      if (e.target.value && i < 5) {
-                        const nextInput = document.getElementById(
-                          `otp-${i + 1}`
-                        );
-                        nextInput?.focus();
-                      }
-                    }}
-                    onKeyDown={(e) => {
-                      if (e.key === "Backspace" && !otp[i] && i > 0) {
-                        const prevInput = document.getElementById(
-                          `otp-${i - 1}`
-                        );
-                        prevInput?.focus();
-                      }
-                    }}
-                    id={`otp-${i}`}
-                    className="w-8 h-8 text-center text-xl font-medium border border-[#f97316]/30 rounded-md focus:outline-none focus:border-[#f97316] bg-[#fff9f6]"
-                    autoFocus={i === 0} // Focus first box on render
-                    aria-label={`OTP digit ${i + 1}`} // ✅ Accessible label
-                  />
-                ))}
-              </div>
-
-              <button
-                onClick={verifyOTP}
-                disabled={loading || otp.length !== 6}
-                className="w-full bg-[#f97316] text-white font-medium py-2 rounded-lg hover:bg-[#ea580c] transition disabled:opacity-70 disabled:cursor-not-allowed"
-              >
-                {loading ? "Verifying..." : "Submit"}
-              </button>
-
-              <p className="text-sm text-gray-500 mt-2">
-                Didn’t receive OTP?{" "}
-                <button onClick={sendOTP} className="text-[#f97316] underline">
-                  Resend
-                </button>
-              </p>
-            </div>
-          )}
-
-          {/* Step 3 */}
-          {step === 3 && (
-            <div className="text-center">
-              <Image
-                src="/teehub_logo.png"
-                alt="TeeHub Logo"
-                width={120}
-                height={40}
-                className="object-contain  mx-auto"
-              />
-              <input
-                type="text"
-                placeholder="Your Name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className="mt-4 w-full border border-[#f97316]/30 rounded-lg px-3 py-2 mb-3 focus:outline-none focus:border-[#f97316]"
-              />
-              <textarea
-                placeholder="Your Address"
-                value={address}
-                onChange={(e) => setAddress(e.target.value)}
-                className="w-full border border-[#f97316]/30 rounded-lg px-3 py-2 mb-3 focus:outline-none focus:border-[#f97316]"
-              />
-              <button
-                onClick={saveUserDetails}
-                className="w-full bg-[#f97316] text-white font-medium py-2 rounded-lg hover:bg-[#ea580c] transition"
-              >
-                Continue
-              </button>
-            </div>
-          )}
+      {/* Step 1 - Phone Input */}
+      {step === 1 && (
+        <div className="bg-white shadow-xl rounded-2xl w-full max-w-xs p-6 relative overflow-hidden text-left">
+          <h3 className="font-medium text-gray-700 mb-4">Phone Number</h3>
+          <PhoneInput
+            country={"in"}
+            value={phone}
+            onChange={(phone) => setPhone(phone)}
+            inputClass="!w-full !border !border-[#f97316]/30 !rounded-lg !focus:border-[#f97316]"
+            containerClass="mb-4"
+            enableSearch
+            countryCodeEditable={false}
+          />
+          <div id="recaptcha-container"></div>
+          <button
+            onClick={sendOTP}
+            disabled={loading}
+            className="w-full bg-[#f97316] text-white font-medium py-2 rounded-md hover:bg-[#ea580c] transition"
+          >
+            {loading ? "Sending..." : "Get OTP"}
+          </button>
+          <p className="text-[12px] text-gray-400 mt-2">
+            *No spam, no calls — just a quick OTP to verify you.
+          </p>
         </div>
       )}
 
-      {/* Step 4 */}
-      {step === 4 && (
-        <div className="flex flex-col items-center justify-center min-h-screen ">
+      {/* Step 2 - OTP Input */}
+      {step === 2 && (
+        <div className="bg-white shadow-xl rounded-2xl w-full max-w-xs p-6 text-center">
+          <h3 className="font-medium text-gray-700 mb-4">Enter the 6-digit OTP</h3>
+          <div className="text-[#f97316] font-medium mb-4">
+            00:{timer.toString().padStart(2, "0")}
+          </div>
+          <div className="flex items-center justify-center gap-2 mb-4">
+            {Array.from({ length: 6 }, (_, i) => (
+              <input
+                key={i}
+                type="text"
+                maxLength={1}
+                value={otp[i] || ""}
+                onChange={(e) => {
+                  const newOtp = [...otp];
+                  newOtp[i] = e.target.value.replace(/\D/g, "");
+                  setOtp(newOtp.join(""));
+                  if (e.target.value && i < 5) {
+                    const nextInput = document.getElementById(`otp-${i + 1}`);
+                    nextInput?.focus();
+                  }
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Backspace" && !otp[i] && i > 0) {
+                    const prevInput = document.getElementById(`otp-${i - 1}`);
+                    prevInput?.focus();
+                  }
+                }}
+                id={`otp-${i}`}
+                className="w-8 h-8 text-center text-xl font-medium border border-[#f97316]/30 rounded-md focus:outline-none focus:border-[#f97316] bg-[#fff9f6]"
+                autoFocus={i === 0}
+                aria-label={""}
+              />
+            ))}
+          </div>
+
+          <button
+            onClick={verifyOTP}
+            disabled={loading || otp.length !== 6}
+            className="w-full bg-[#f97316] text-white font-medium py-2 rounded-lg hover:bg-[#ea580c] transition disabled:opacity-70 disabled:cursor-not-allowed"
+          >
+            {loading ? "Verifying..." : "Submit"}
+          </button>
+
+          <p className="text-sm text-gray-500 mt-2">
+            Didn’t receive OTP?{" "}
+            <button onClick={sendOTP} className="text-[#f97316] underline">
+              Resend
+            </button>
+          </p>
+        </div>
+      )}
+
+      {/* Step 3 - Success message */}
+      {step === 3 && (
+        <div className="flex flex-col items-center justify-center min-h-screen">
           <div className="w-48 h-48 bg-[#ff6633] rounded-full flex flex-col items-center justify-center shadow-lg border border-white/40">
             <p className="text-white text-center text-md font-medium mb-2">
               Signed Up <br /> Successfully!
@@ -290,13 +240,41 @@ export default function LoginPage() {
               strokeWidth={3}
               viewBox="0 0 24 24"
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M5 13l4 4L19 7"
-              />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
             </svg>
           </div>
+        </div>
+      )}
+
+      {/* Step 4 - Name & Address */}
+      {step === 4 && (
+        <div className="text-center bg-white shadow-xl rounded-2xl w-full max-w-xs p-6">
+          <Image
+            src="/teehub_logo.png"
+            alt="TeeHub Logo"
+            width={120}
+            height={40}
+            className="object-contain mx-auto"
+          />
+          <input
+            type="text"
+            placeholder="Your Name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            className="mt-4 w-full border border-[#f97316]/30 rounded-lg px-3 py-2 mb-3 focus:outline-none focus:border-[#f97316]"
+          />
+          <textarea
+            placeholder="Your Address"
+            value={address}
+            onChange={(e) => setAddress(e.target.value)}
+            className="w-full border border-[#f97316]/30 rounded-lg px-3 py-2 mb-3 focus:outline-none focus:border-[#f97316]"
+          />
+          <button
+            onClick={saveUserDetails}
+            className="w-full bg-[#f97316] text-white font-medium py-2 rounded-lg hover:bg-[#ea580c] transition"
+          >
+            Continue
+          </button>
         </div>
       )}
     </div>
