@@ -99,7 +99,7 @@ export default function ProductFilters({
 
   // Fetch attributes with SWR
   const { data: attributesData, error: attributesError } = useSWR(
-    `${process.env.NEXT_PUBLIC_API_URL}/attributes?limit=100`,
+    `${process.env.NEXT_PUBLIC_API_URL}/api/attributes?limit=100`,
     fetcher,
     {
       dedupingInterval: 3600000,
@@ -110,7 +110,7 @@ export default function ProductFilters({
 
   // Fetch all attribute values with SWR
   const { data: attributeValuesData, error: attributeValuesError } = useSWR(
-    `${process.env.NEXT_PUBLIC_API_URL}/attribute-values?limit=1000`,
+    `${process.env.NEXT_PUBLIC_API_URL}/api/attribute-values?limit=1000`,
     fetcher,
     {
       dedupingInterval: 3600000,

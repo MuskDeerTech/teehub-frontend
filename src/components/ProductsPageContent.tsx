@@ -34,13 +34,13 @@ export default function ProductsPageContent() {
   }, []);
 
   const { data: allProducts, error: productsError } = useSWR(
-    `${process.env.NEXT_PUBLIC_API_URL}/products?limit=100&depth=2`,
+    `${process.env.NEXT_PUBLIC_API_URL}/api/products?limit=100&depth=2`,
     fetcher,
     { dedupingInterval: 300000, revalidateOnFocus: false }
   );
 
   const { data: categories, error: categoriesError } = useSWR(
-    `${process.env.NEXT_PUBLIC_API_URL}/categories`,
+    `${process.env.NEXT_PUBLIC_API_URL}/api/categories`,
     fetcher,
     { dedupingInterval: 3600000, revalidateOnFocus: false }
   );

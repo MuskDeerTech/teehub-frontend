@@ -32,7 +32,7 @@ export default function ProductCard({ product }: ProductCardProps) {
     product && "slug" in product && !("id" in product)
       ? `${
           process.env.NEXT_PUBLIC_API_URL
-        }/products?where[slug][equals]=${encodeURIComponent(
+        }/api/products?where[slug][equals]=${encodeURIComponent(
           product.slug
         )}&depth=2`
       : null,

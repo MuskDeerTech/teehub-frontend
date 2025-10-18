@@ -74,16 +74,18 @@ interface RelatedProduct {
   images: { image: { url: string; alt?: string } }[];
 }
 
-interface Review {
-  id: string;
-  userName: string;
-  rating: number;
-  comment: string;
-  createdAt: string;
-}
-
 interface ProductPageProps {
   params: { slug: string };
+}
+
+interface Review {
+  _id: string;
+  title?: string;
+  product: string;
+  user?: string;
+  rating: number;
+  review: string;
+  createdAt?: string;
 }
 
 // SWR fetcher function
@@ -96,7 +98,7 @@ const fetcher = async (url: string) => {
 
 async function getFeaturedProducts(): Promise<Product[]> {
   const res = await fetch(
-    `${process.env.NEXT_PUBLIC_API_URL}/products?limit=8&sort=createdAt&order=-1&depth=2`,
+    `${process.env.NEXT_PUBLIC_API_URL}/api/products?limit=8&sort=createdAt&order=-1&depth=2`,
     { next: { revalidate: 60 } } // cache for 60s
   );
   if (!res.ok) return [];
@@ -285,51 +287,26 @@ const ProductGridSkeleton = () => (
 );
 
 export default function ProductPage() {
-  
+  // ====== Base States ======
   const [showSizeChart, setShowSizeChart] = useState(false);
-  const [selectedChart, setSelectedChart] = useState<"men" | "women" | "kids">(
-    "men"
-  );
-  const [newReview, setNewReview] = useState({
-    userName: "",
-    rating: 0,
-    comment: "",
-  });
-  const [reviews, setReviews] = useState<Review[]>([]); // start empty
-
-  // Fetch featured products with SWR
-  const { data: featuredProductsData, error: featuredProductsError } = useSWR<
-    Product[]
-  >(
-    `${process.env.NEXT_PUBLIC_API_URL}/products?limit=8&sort=createdAt&order=-1&depth=2`,
-    fetcher,
-    {
-      dedupingInterval: 3600000, // Cache for 1 hour
-      revalidateOnFocus: false,
-      revalidateOnReconnect: true,
-    }
-  );
-
-  const featuredProducts = featuredProductsData || [];
-  const { addToCart, addToWishlist, removeFromWishlist, wishlist } = useCart();
+  const [selectedChart, setSelectedChart] = useState<"men" | "women" | "kids">("men");
   const [isDrawerOpen, setDrawerOpen] = useState(false);
-  const params = useParams();
-const slug = Array.isArray(params?.slug) ? params.slug[0] : params?.slug;
-  const mainSwiperRef = useRef<SwiperCore | null>(null);
   const [mainImage, setMainImage] = useState<string>("/placeholder.png");
-  const [selectedVariation, setSelectedVariation] = useState<Variation | null>(
-    null
-  );
-  const [selectedAttributes, setSelectedAttributes] = useState<
-    Record<string, string>
-  >({});
+  const [selectedVariation, setSelectedVariation] = useState<Variation | null>(null);
+  const [selectedAttributes, setSelectedAttributes] = useState<Record<string, string>>({});
   const [quantity, setQuantity] = useState(1);
   const [coupon1, setCoupon1] = useState("");
   const [coupon2, setCoupon2] = useState("");
   const [selectedSize, setSelectedSize] = useState<string>("");
+  const [showAllReviews, setShowAllReviews] = useState(false);
+
+  const { addToCart, addToWishlist, removeFromWishlist, wishlist } = useCart();
+  const params = useParams();
+  const slug = Array.isArray(params?.slug) ? params.slug[0] : params?.slug;
+  const mainSwiperRef = useRef<SwiperCore | null>(null);
   const apiBase = (process.env.NEXT_PUBLIC_API_URL || "").replace(/\/api$/, "");
 
-  // Color map for swatches
+  // ====== Color Map ======
   const colorMap: Record<string, string> = {
     White: "#FFFFFF",
     Black: "#000000",
@@ -338,122 +315,80 @@ const slug = Array.isArray(params?.slug) ? params.slug[0] : params?.slug;
     Purple: "#6F42C1",
     Orange: "#FD7E14",
     Beige: "#F5F5DC",
-    // Add more as needed
   };
 
-  // Fetch product with reviews
-  const { data: productData, error: productError, mutate } = useSWR<Product[]>(
-  slug
-    ? `${process.env.NEXT_PUBLIC_API_URL}/products?where[slug][equals]=${encodeURIComponent(slug)}&depth=2`
-    : null, // SWR will not fetch if slug is undefined
-  fetcher,
-  {
-    dedupingInterval: 3600000,
-    revalidateOnFocus: false,
-    revalidateOnReconnect: true,
-  }
-);
-
-  // Fetch related products with SWR
-  const { data: relatedProductsData, error: relatedProductsError } = useSWR<
-    RelatedProduct[]
-  >(
-    productData?.[0]?.categories && productData[0].categories.length > 0
-      ? `${process.env.NEXT_PUBLIC_API_URL}/products?where[categories][in]=${productData[0].categories[0].id}&limit=3&depth=1`
-      : null,
+  // ====== Featured Products ======
+  const { data: featuredProductsData } = useSWR<Product[]>(
+    `${process.env.NEXT_PUBLIC_API_URL}/api/products?limit=8&sort=createdAt&order=-1&depth=2`,
     fetcher,
     {
-      dedupingInterval: 3600000, // Cache for 1 hour
+      dedupingInterval: 3600000,
       revalidateOnFocus: false,
       revalidateOnReconnect: true,
     }
   );
+  const featuredProducts = featuredProductsData || [];
 
+  // ====== Main Product ======
+  const {
+    data: productData,
+    error: productError,
+  } = useSWR<Product[]>(
+    slug
+      ? `${process.env.NEXT_PUBLIC_API_URL}/api/products?where[slug][equals]=${encodeURIComponent(
+          slug
+        )}&depth=2`
+      : null,
+    fetcher,
+    {
+      dedupingInterval: 3600000,
+      revalidateOnFocus: false,
+      revalidateOnReconnect: true,
+    }
+  );
   const product = productData?.[0] || null;
 
-  // Calculate average rating
-  const averageRating = reviews.length
-    ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length
-    : 0;
-  const reviewCount = reviews.length;
-
-  // Handle review submission (client-side for now)
-  const handleReviewSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (newReview.rating === 0 || !newReview.comment.trim()) {
-      toast.error("Please provide a rating and comment!");
-      return;
+  // ====== Related Products ======
+  const { data: relatedProductsData, error: relatedProductsError } = useSWR<
+    RelatedProduct[]
+  >(
+    product?.categories && product.categories.length > 0
+      ? `${process.env.NEXT_PUBLIC_API_URL}/api/products?where[categories][in]=${
+          product.categories[0].id
+        }&limit=3&depth=1`
+      : null,
+    fetcher,
+    {
+      dedupingInterval: 3600000,
+      revalidateOnFocus: false,
+      revalidateOnReconnect: true,
     }
-
-    if (!product) {
-      toast.error("Product data not available!");
-      return;
-    }
-
-    const reviewPayload = {
-      userName: newReview.userName || "Anonymous",
-      rating: newReview.rating,
-      comment: newReview.comment,
-      createdAt: new Date().toISOString(),
-    };
-
-    try {
-      // Optimistic update
-      const optimisticProduct = {
-        ...product,
-        reviews: [
-          ...(product.reviews || []),
-          { ...reviewPayload, id: Date.now().toString() },
-        ],
-      };
-      mutate([optimisticProduct], false); // Wrap in array
-
-      // Submit to server
-      const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/products/${product.id}`;
-      const response = await fetch(apiUrl, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          // Add authentication if required
-        },
-        body: JSON.stringify({
-          reviews: [...(product.reviews || []), reviewPayload],
-        }),
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Failed to submit review: ${errorText}`);
-      }
-
-      const updatedProduct = await response.json();
-      // Update cache with server response
-      mutate([updatedProduct], true); // Wrap in array
-      setNewReview({ userName: "", rating: 0, comment: "" });
-      toast.success("Review submitted successfully!");
-    } catch (error) {
-      console.error("Review submission error:", error);
-      mutate([product], true); // Revert to original data, wrap in array
-      toast.error("Failed to submit review. Please try again.");
-    }
-  };
-
+  );
   const relatedProducts =
     relatedProductsData?.filter((r) => r.id !== product?.id).slice(0, 3) || [];
 
-  // Wishlist state and effect
-  const [isInWishlist, setIsInWishlist] = useState(
-    product ? wishlist.some((item) => item.slug === product.slug) : false
-  );
+  // ====== Reviews (MUST come before conditional return) ======
+  const reviewsKey = product
+    ? `${process.env.NEXT_PUBLIC_API_URL}/api/reviews?where[product][equals]=${
+        product.id
+      }&limit=10&sort=createdAt&order=-1`
+    : null;
+  const { data: reviewsData } = useSWR<Review[] | []>(reviewsKey, fetcher, {
+    revalidateOnFocus: false,
+    dedupingInterval: 3600000,
+  });
+  const reviews: Review[] = reviewsData || [];
+  const reviewCount = reviews.length;
 
-  // Sync local wishlist state with global state only when product is available
+  // ====== Wishlist ======
+  const [isInWishlist, setIsInWishlist] = useState(false);
   useEffect(() => {
     if (product) {
       setIsInWishlist(wishlist.some((item) => item.slug === product.slug));
     }
   }, [wishlist, product]);
 
-  // Set initial state when product data is available
+  // ====== Initialize Images and Variations ======
   useEffect(() => {
     if (product) {
       const firstImage = product.images?.[0]?.image?.url
@@ -469,21 +404,17 @@ const slug = Array.isArray(params?.slug) ? params.slug[0] : params?.slug;
     }
   }, [product]);
 
-  useEffect(() => {
-    if (product?.reviews) setReviews(product.reviews);
-  }, [product]);
-
-  // Handle attribute selection for variations
+  // ====== Variation Selection ======
   useEffect(() => {
     if (!product?.variations) return;
 
-    const matchingVariation = product.variations.find((varn) => {
-      return varn.attributes.every((attrVal: string, idx: number) => {
+    const matchingVariation = product.variations.find((v) =>
+      v.attributes.every((attrVal: string, idx: number) => {
         const attrName =
           product.attributes?.[idx]?.attribute.name.toLowerCase() || "";
         return selectedAttributes[attrName] === attrVal;
-      });
-    });
+      })
+    );
 
     if (matchingVariation) {
       setSelectedVariation(matchingVariation);
@@ -496,32 +427,28 @@ const slug = Array.isArray(params?.slug) ? params.slug[0] : params?.slug;
     }
   }, [selectedAttributes, product]);
 
-  if (productError || relatedProductsError) {
-    console.error("Error fetching data:", productError || relatedProductsError);
-    return <div>Error loading product...</div>;
-  }
-
+  // ====== Early Returns ======
+  if (productError || relatedProductsError) return <div>Error loading product...</div>;
   if (!product) return <ProductDetailSkeleton />;
 
+  // ====== Product Data ======
   const descriptionText =
     typeof product.description === "object" &&
     product.description?.root?.children?.[0]?.children?.[0]?.text
       ? product.description.root.children[0].children[0].text
       : "No description available";
 
-  const thumbnailImages = product.images || [];
   const attributes = product.attributes || [];
   const variations = product.variations || [];
+  const thumbnailImages = product.images || [];
   const currentPrice = selectedVariation?.price || product.regularPrice || 0;
   const currentStock = selectedVariation?.stock || product.stockQuantity || 0;
-  const hasSale =
-    !!product.salePrice && currentPrice < (product.regularPrice || 0);
+  const hasSale = !!product.salePrice && currentPrice < (product.regularPrice || 0);
   const discountPercent = hasSale
-    ? Math.round(
-        ((product.regularPrice! - currentPrice) / product.regularPrice!) * 100
-      )
+    ? Math.round(((product.regularPrice! - currentPrice) / product.regularPrice!) * 100)
     : 0;
 
+  // ====== Handlers ======
   const handleAttributeSelect = (attrName: string, value: string) => {
     setSelectedAttributes((prev) => ({
       ...prev,
@@ -529,52 +456,36 @@ const slug = Array.isArray(params?.slug) ? params.slug[0] : params?.slug;
     }));
   };
 
-  const handleSizeSelect = (value: string) => {
-    setSelectedSize(value);
-  };
+  const incrementQuantity = () => setQuantity((p) => Math.min(p + 1, currentStock));
+  const decrementQuantity = () => setQuantity((p) => Math.max(p - 1, 1));
 
-  const colorAttribute = attributes.find(
-    (attr) => attr.attribute.name.toLowerCase() === "colors"
-  );
-  const sizeAttribute = attributes.find(
-    (attr) => attr.attribute.name.toLowerCase() === "sizes"
-  );
-
-  const incrementQuantity = () =>
-    setQuantity((prev) => Math.min(prev + 1, currentStock));
-  const decrementQuantity = () => setQuantity((prev) => Math.max(prev - 1, 1));
+  const handleSizeSelect = (value: string) => { setSelectedSize(value); }; 
+  
+  const colorAttribute = attributes.find( (attr) => attr.attribute.name.toLowerCase() === "colors" ); 
+  
+  const sizeAttribute = attributes.find( (attr) => attr.attribute.name.toLowerCase() === "sizes" );
 
   const handleAddToCart = () => {
     if (!selectedSize) {
       toast.warning("Please select a size before adding to cart!", {
         position: "top-center",
         autoClose: 2000,
-        hideProgressBar: true,
-        closeOnClick: true,
-        pauseOnHover: false,
-        draggable: false,
         theme: "colored",
       });
-      return; // ✅ prevents adding if no size selected
+      return;
     }
 
     if (!product) return;
 
-    // ✅ Add to cart with size and quantity
     addToCart(product, quantity, selectedSize);
-
     toast.success("Added to cart successfully!", {
       position: "top-center",
       autoClose: 1500,
-      hideProgressBar: true,
       theme: "colored",
     });
-
-    // ✅ Immediately open cart drawer
     setDrawerOpen(true);
   };
-
-  return (
+  return(
     <>
       <main className="px-4 py-8 ">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-0 lg:gap-8 mb-12">
@@ -724,9 +635,7 @@ const slug = Array.isArray(params?.slug) ? params.slug[0] : params?.slug;
                   {product.name}
                 </h1>
                 <div className="flex items-center gap-1">
-                  <span>
-                    {averageRating.toFixed(1)} ({reviewCount} reviews)
-                  </span>
+                  <span>{/* //Rating count */}</span>
                 </div>
               </div>
 
@@ -1143,7 +1052,10 @@ const slug = Array.isArray(params?.slug) ? params.slug[0] : params?.slug;
                 </details>
 
                 {/* Reviews Section */}
-                <details className="border-[0.5px] border-[#C7CBD4] rounded-lg mb-6">
+                <details
+                  className="border-[0.5px] border-[#C7CBD4] rounded-lg mb-6"
+                  open
+                >
                   <summary className="p-4 cursor-pointer font-semibold text-gray-900 flex items-center justify-between">
                     <span>Customer Reviews ({reviewCount})</span>
                     <svg
@@ -1160,89 +1072,43 @@ const slug = Array.isArray(params?.slug) ? params.slug[0] : params?.slug;
                       />
                     </svg>
                   </summary>
-                  <div className="p-4 pt-4 text-sm text-gray-700 border-t border-gray-200">
-                    <div className="flex items-center gap-2 mb-4">
-                      <Stars rating={averageRating || 0} />
-                      <span>
-                        {averageRating.toFixed(1)} ({reviewCount} reviews)
-                      </span>
-                    </div>
-                    {product?.reviews?.length ? (
-                      <div className="space-y-4">
-                        {product.reviews.map((review) => (
-                          <div
-                            key={review.id}
-                            className="border-b pb-4 last:border-b-0"
-                          >
-                            <div className="flex items-center gap-2 mb-2">
-                              <Stars rating={review.rating} />
-                              <span className="text-sm font-medium">
-                                {review.userName}
-                              </span>
-                              <span className="text-xs text-gray-500">
-                                {new Date(
-                                  review.createdAt
-                                ).toLocaleDateString()}
-                              </span>
-                            </div>
-                            <p className="text-gray-600">{review.comment}</p>
+
+                  <div className="p-4 pt-2 border-t border-gray-200 space-y-4">
+                    {(showAllReviews ? reviews : reviews.slice(0, 2)).map(
+                      (r: Review) => (
+                        <div
+                          key={r._id}
+                          className="border-b pb-2 last:border-b-0"
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="font-semibold">
+                              {r.title || "Review"}
+                            </span>
+                            <Stars rating={r.rating} />{" "}
+                            {/* Your existing Stars component */}
                           </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="text-gray-500">No reviews yet.</p>
+                          <p className="text-gray-600 text-sm">{r.review}</p>
+                        </div>
+                      )
                     )}
-                    <form
-                      onSubmit={handleReviewSubmit}
-                      className="mt-4 space-y-2"
-                    >
-                      <input
-                        type="text"
-                        placeholder="Your Name (optional)"
-                        value={newReview.userName}
-                        onChange={(e) =>
-                          setNewReview({
-                            ...newReview,
-                            userName: e.target.value,
-                          })
-                        }
-                        className="w-full p-2 border rounded-md"
-                      />
-                      <select
-                        value={newReview.rating}
-                        onChange={(e) =>
-                          setNewReview({
-                            ...newReview,
-                            rating: Number(e.target.value),
-                          })
-                        }
-                        className="w-full p-2 border rounded-md"
-                      >
-                        <option value={0}>Rate this product</option>
-                        {[1, 2, 3, 4, 5].map((rating) => (
-                          <option key={rating} value={rating}>
-                            {rating} Star{rating > 1 ? "s" : ""}
-                          </option>
-                        ))}
-                      </select>
-                      <textarea
-                        placeholder="Write your review"
-                        value={newReview.comment}
-                        onChange={(e) =>
-                          setNewReview({
-                            ...newReview,
-                            comment: e.target.value,
-                          })
-                        }
-                        className="w-full p-2 border rounded-md h-24"
-                      />
+
+                    {reviews.length > 2 && !showAllReviews && (
                       <button
-                        type="submit"
-                        className="w-full bg-orange-500 text-white py-2 rounded-md hover:bg-orange-600"
+                        className="text-orange-500 mt-2 underline text-sm"
+                        onClick={() => setShowAllReviews(true)}
                       >
-                        Submit Review
+                        View more
                       </button>
-                    </form>
+                    )}
+
+                    {showAllReviews && reviews.length > 2 && (
+                      <Link
+                        href={`/products/${slug}/reviews`}
+                        className="text-orange-500 mt-2 underline text-sm block"
+                      >
+                        See all reviews
+                      </Link>
+                    )}
                   </div>
                 </details>
               </div>

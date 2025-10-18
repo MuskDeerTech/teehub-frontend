@@ -70,7 +70,7 @@ export default function AddAddressModal({ open, onClose, onSaved }: Props) {
       };
 
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL ?? ""}/addresses`,
+        `${process.env.NEXT_PUBLIC_API_URL ?? ""}/api/addresses`,
         {
           method: "POST",
           credentials: "include",

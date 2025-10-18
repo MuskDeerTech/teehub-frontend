@@ -32,7 +32,7 @@ export default function AddressesPage() {
     const fetchAddresses = async () => {
       try {
         const res = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL ?? ""}/addresses`,
+          `${process.env.NEXT_PUBLIC_API_URL ?? ""}/api/addresses`,
           { credentials: "include" }
         );
         if (!res.ok) return;

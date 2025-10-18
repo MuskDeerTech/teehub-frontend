@@ -10,7 +10,7 @@ import next from "next";
 
 async function getFeaturedProducts(): Promise<Product[]> {
   const res = await fetch(
-    `${process.env.NEXT_PUBLIC_API_URL}/products?limit=8&sort=createdAt&order=-1&depth=2`,
+    `${process.env.NEXT_PUBLIC_API_URL}/api/products?limit=8&sort=createdAt&order=-1&depth=2`,
     { next: { revalidate: 60 } } // cache for 60s
   );
   if (!res.ok) return [];

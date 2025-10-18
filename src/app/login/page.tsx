@@ -86,7 +86,7 @@ export default function LoginPage() {
     if (!name || !address) return alert("Please enter name and address");
 
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/saveUserDetails`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/saveUserDetails`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
