@@ -1,283 +1,135 @@
+// src/app/account/addresses/page.tsx
 "use client";
 
 import React, { useEffect, useState } from "react";
-import Image from "next/image";
-import { useRouter } from "next/navigation";
+import AddAddressModal from "@/components/AddAddressModal";
 
-const containerStyle = {
-  width: "100%",
-  height: "400px",
-};
-
-const center = {
-  lat: 12.9344, // Default latitude for Bengaluru
-  lng: 77.6168, // Default longitude for Bengaluru
-};
 type Address = {
+  _id?: string;
   name: string;
-  phone: string;
-  flatHouse: string;
-  areaLocality: string;
-  landmark: string;
-  lat: number;
-  lng: number;
-  floor?: string;
-  type: string;
+  label: string;
+  phone?: string;
+  flatHouse?: string;
+  areaLocality?: string;
+  landmark?: string;
+  lat?: number;
+  lng?: number;
+  type?: string;
   address?: string;
 };
 
 export default function AddressesPage() {
   const [addresses, setAddresses] = useState<Address[]>([]);
-
-  const [showAddForm, setShowAddForm] = useState(false);
-  const [newAddress, setNewAddress] = useState({
-    name: "",
-    phone: "",
-    flatHouse: "",
-    areaLocality: "",
-    landmark: "",
-    lat: center.lat,
-    lng: center.lng,
-    floor: "", // ✅ added
-    type: "Home", // ✅ added
-  });
-
-  const router = useRouter();
+  const [openModal, setOpenModal] = useState(false);
 
   useEffect(() => {
-    async function fetchAddresses() {
+  console.log(window.innerWidth); // safe
+}, []);
+
+
+  useEffect(() => {
+    // fetch addresses from your backend
+    const fetchAddresses = async () => {
       try {
         const res = await fetch(
-          "https://ecommerce-backend-psi-rose.vercel.app/api/addresses",
-          {
-            credentials: "include",
-          }
+          `${process.env.NEXT_PUBLIC_API_URL ?? ""}/addresses`,
+          { credentials: "include" }
         );
+        if (!res.ok) return;
         const data = await res.json();
         setAddresses(data?.docs || []);
       } catch (err) {
-        console.error("Failed to fetch addresses:", err);
+        console.error(err);
       }
-    }
+    };
     fetchAddresses();
   }, []);
 
-  const handleAddAddress = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      const res = await fetch(
-        "https://ecommerce-backend-psi-rose.vercel.app/api/addresses",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-          body: JSON.stringify({
-            ...newAddress,
-            address: `${newAddress.flatHouse}, ${newAddress.areaLocality}, ${newAddress.landmark}`,
-          }),
-        }
-      );
-      const data = await res.json();
-      if (res.ok) {
-        setAddresses([...addresses, data.doc]);
-        setShowAddForm(false);
-        setNewAddress({
-          name: "",
-          phone: "",
-          flatHouse: "",
-          areaLocality: "",
-          landmark: "",
-          lat: center.lat,
-          lng: center.lng,
-          floor: "", // ✅ add this
-          type: "Home", // ✅ add this
-        });
-      } else {
-        alert(data.message);
-      }
-    } catch (err) {
-      console.error("Failed to save address:", err);
-      alert("Failed to save address");
-    }
+  const onSaved = (addr: Address) => {
+    // add saved address to list (backend returns doc ideally)
+    setAddresses((prev) => [addr, ...prev]);
   };
-
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-4xl mx-auto">
-        {/* Main Content */}
-        <div className="bg-white rounded-lg shadow-sm p-6 text-center">
-          {addresses.length === 0 && !showAddForm ? (
-            <>
-              <h2 className="font-semibold text-lg mb-1">
-                You have no saved addresses
-              </h2>
-              <p className="text-gray-500 mb-4">
-                Tell us where you want your orders delivered
-              </p>
+      <div>
+        <div className="bg-white rounded-md shadow-sm p-6">
+          <div className="flex items-center justify-between">
+            <h2 className="text-2xl font-semibold">My addresses</h2>
+            <button
+              onClick={() => setOpenModal(true)}
+              className="text-green-600"
+            >
+              + Add new address
+            </button>
+          </div>
+
+          {addresses.length === 0 ? (
+            <div className="text-center py-10">
+              <p className="text-gray-500">You have no saved addresses</p>
               <button
-                onClick={() => setShowAddForm(true)}
-                className="bg-green-600 text-white px-6 py-2 rounded-md hover:bg-green-700 transition"
+                onClick={() => setOpenModal(true)}
+                className="mt-4 bg-green-600 text-white px-4 py-2 rounded-md"
               >
                 Add New Address
               </button>
-            </>
-          ) : addresses.length > 0 ? (
-            <div className="w-full">
-              <h2 className="font-semibold text-lg mb-4">Saved Addresses</h2>
-              <ul className="space-y-3">
-                {addresses.map((addr, i) => (
-                  <li
-                    key={i}
-                    className="p-4 border rounded-md flex justify-between items-center"
-                  >
-                    <div>
-                      <p className="font-medium">{addr.name}</p>
-                      <p className="text-sm text-gray-600">
-                        {addr.address || addr.areaLocality}
-                      </p>
+            </div>
+          ) : (
+            <ul className="mt-6 space-y-4">
+              {addresses.map((a, i) => (
+                <li
+                  key={a._id ?? i}
+                  className="p-4 border rounded-md flex items-start gap-4"
+                >
+                  <div className="w-12 h-12 bg-gray-100 rounded-md flex items-center justify-center">
+                    <svg
+                      width="50px"
+                      height="50px"
+                      viewBox="0 -398 1820 1820"
+                      version="1.1"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        d="M521.481481 860.254815h245.191112L803.081481 709.783704l-201.481481 24.272592zM1045.807407 624.82963l104.296297-12.136297-31.478519-53.475555h-92.254815zM1179.306667 666.074074L924.444444 695.182222l4.835556 165.072593h368.924444z"
+                        fill="#5FFFBA"
+                      />
+                      <path
+                        d="M1023.905185 229.167407C977.825185 182.992593 921.979259 161.185185 858.832593 161.185185s-118.897778 21.807407-165.072593 67.982222c-46.08 46.08-67.982222 99.555556-67.982222 162.607408 0 58.216296 26.737778 114.062222 77.653333 172.373333l2.465185 2.465185 70.352593 84.954074c12.136296 19.437037 24.272593 36.408889 33.943704 55.845926 19.437037 38.874074 36.408889 89.78963 51.01037 155.306667 14.601481-65.517037 31.573333-116.527407 51.01037-155.306667 19.437037-38.874074 48.545185-80.118519 87.41926-123.828148l14.601481-19.437037c51.01037-58.216296 77.653333-114.062222 77.653333-172.373333 0-63.146667-21.807407-118.897778-67.982222-162.607408zM856.462222 510.672593c-67.982222 0-123.828148-55.845926-123.828148-123.828149s55.845926-123.828148 123.828148-123.828148 123.828148 55.845926 123.828148 123.828148S924.444444 510.672593 856.462222 510.672593z"
+                        fill="#FFA28D"
+                      />
+                      <path
+                        d="M642.844444 666.074074l133.49926-14.601481-70.352593-84.954074z"
+                        fill="#5FFFBA"
+                      />
+                    </svg>
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="font-medium">
+                          {a.label
+                            ? a.label.charAt(0).toUpperCase() + a.label.slice(1)
+                            : "Other"}
+                        </div>
+
+                        {/* Capitalize label */}
+                        <div className="text-sm text-gray-600">{`${a.name},${a.flatHouse}, ${a.areaLocality}`}</div>
+                      </div>
+                      <div className="text-sm text-gray-400">⋮</div>
                     </div>
-                    <button className="text-blue-600 text-sm hover:underline">
-                      Edit
-                    </button>
-                  </li>
-                ))}
-              </ul>
-              <button
-                onClick={() => setShowAddForm(true)}
-                className="mt-4 bg-green-600 text-white px-6 py-2 rounded-md hover:bg-green-700 transition"
-              >
-                Add New Address
-              </button>
-            </div>
-          ) : null}
-
-          {showAddForm && (
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-              <div className="bg-white rounded-lg shadow-lg w-full max-w-4xl max-h-[90vh] overflow-y-auto p-6">
-                <div className="flex flex-col md:flex-row gap-6">
-                  {/* Map Section */}
-                  <div className="w-full md:w-1/2">
-               
-                    <p className="text-sm text-gray-500 mt-2">
-                      Click on the map to select your location
-                    </p>
                   </div>
-
-                  {/* Form Section */}
-                  <div className="w-full md:w-1/2 space-y-4">
-                    <h2 className="font-semibold text-lg mb-4">
-                      Enter complete address
-                    </h2>
-                    <form onSubmit={handleAddAddress} className="space-y-4">
-                      <select
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:border-green-600"
-                        onChange={(e) =>
-                          setNewAddress({ ...newAddress, type: e.target.value })
-                        }
-                        required
-                      >
-                        <option value="Home">Home</option>
-                        <option value="Work">Work</option>
-                        <option value="Hotel">Hotel</option>
-                        <option value="Other">Other</option>
-                      </select>
-                      <input
-                        type="text"
-                        placeholder="Flat / House no / Building name *"
-                        value={newAddress.flatHouse}
-                        onChange={(e) =>
-                          setNewAddress({
-                            ...newAddress,
-                            flatHouse: e.target.value,
-                          })
-                        }
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:border-green-600"
-                        required
-                      />
-                      <input
-                        type="text"
-                        placeholder="Floor (optional)"
-                        value={newAddress.floor || ""}
-                        onChange={(e) =>
-                          setNewAddress({
-                            ...newAddress,
-                            floor: e.target.value,
-                          })
-                        }
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:border-green-600"
-                      />
-                      <input
-                        type="text"
-                        placeholder="Area / Sector / Locality *"
-                        value={newAddress.areaLocality}
-                        onChange={(e) =>
-                          setNewAddress({
-                            ...newAddress,
-                            areaLocality: e.target.value,
-                          })
-                        }
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:border-green-600"
-                        required
-                      />
-                      <input
-                        type="text"
-                        placeholder="Nearby landmark (optional)"
-                        value={newAddress.landmark}
-                        onChange={(e) =>
-                          setNewAddress({
-                            ...newAddress,
-                            landmark: e.target.value,
-                          })
-                        }
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:border-green-600"
-                      />
-                      <p className="text-sm text-gray-500">
-                        Enter your details for seamless delivery experience
-                      </p>
-                      <input
-                        type="text"
-                        placeholder="Your name *"
-                        value={newAddress.name}
-                        onChange={(e) =>
-                          setNewAddress({ ...newAddress, name: e.target.value })
-                        }
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:border-green-600"
-                        required
-                      />
-                      <input
-                        type="tel"
-                        placeholder="Your phone number (optional)"
-                        value={newAddress.phone}
-                        onChange={(e) =>
-                          setNewAddress({
-                            ...newAddress,
-                            phone: e.target.value,
-                          })
-                        }
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:border-green-600"
-                      />
-                      <button
-                        type="submit"
-                        className="w-full bg-orange-600 text-white px-6 py-2 rounded-md hover:bg-green-700 transition"
-                      >
-                        Save Address
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setShowAddForm(false)}
-                        className="w-full text-gray-600 hover:underline"
-                      >
-                        Cancel
-                      </button>
-                    </form>
-                  </div>
-                </div>
-              </div>
-            </div>
+                </li>
+              ))}
+            </ul>
           )}
         </div>
       </div>
+
+      <AddAddressModal
+        open={openModal}
+        onClose={() => setOpenModal(false)}
+        onSaved={onSaved}
+      />
     </div>
   );
 }
