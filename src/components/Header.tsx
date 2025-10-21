@@ -5,7 +5,12 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import { useCart } from "@/context/CartContext";
 
-const navItems = ["Cricket", "IPL", "Football", "Movie", "Purpose"];
+interface Category {
+  id: string;
+  name: string;
+  parent?: string | null;
+}
+
 interface User {
   uid: string;
   phone: string;
@@ -16,7 +21,7 @@ interface User {
 export default function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [user, setUser] = useState<User | null>(null);
-
+    const [categories, setCategories] = useState<Category[]>([]);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const { cartCount, wishlist, wishlistCount } = useCart();
 
@@ -26,6 +31,20 @@ export default function Header() {
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
     if (storedUser) setUser(JSON.parse(storedUser));
+  }, []);
+
+    // ✅ Fetch categories dynamically from Payload
+  useEffect(() => {
+    async function fetchCategories() {
+      try {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/categories?depth=0`);
+        const data = await res.json();
+        setCategories(data.docs || []);
+      } catch (error) {
+        console.error("Failed to fetch categories:", error);
+      }
+    }
+    fetchCategories();
   }, []);
 
   const handleLogout = () => {
@@ -179,19 +198,23 @@ export default function Header() {
           <div className="flex items-center justify-between gap-4">
             {/* Desktop Nav */}
             <nav className="hidden lg:flex gap-6">
-              {navItems.map((item) => (
-                <Link
-                  key={item}
-                  href={`/category/${item.toLowerCase()}`}
-                  className="text-sm font-medium text-gray-700 hover:text-orange-600 transition-colors"
-                >
-                  {item}
-                </Link>
-              ))}
+             {categories.length > 0 ? (
+                categories.map((cat) => (
+                  <Link
+                    key={cat.id}
+                    href={`/category/${cat.name.toLowerCase()}`}
+                    className="text-sm font-medium text-gray-700 hover:text-orange-600 transition-colors"
+                  >
+                    {cat.name}
+                  </Link>
+                ))
+              ) : (
+                <span className="text-gray-400 text-sm">Loading...</span>
+              )}
             </nav>
 
             {/* Search */}
-            <div className="w-full max-w-xl">
+            <div className="w-full max-w-md">
               <form role="search" className="w-full">
                 <div className="relative">
                   <input
@@ -313,16 +336,19 @@ export default function Header() {
         {mobileOpen && (
           <div className="md:hidden bg-[#E7E1E1] py-2 px-4 border-t border-gray-200">
             <nav className="flex flex-col gap-2">
-              {navItems.map((item) => (
-                <Link
-                  key={item}
-                  href={`/category/${item.toLowerCase()}`}
-                  className="py-2 px-3 rounded-lg hover:bg-gray-100 text-sm font-medium text-gray-700 transition-colors"
-                  onClick={() => setMobileOpen(false)}
-                >
-                  {item}
-                </Link>
-              ))}
+               {categories.length > 0 ? (
+                categories.map((cat) => (
+                  <Link
+                    key={cat.id}
+                    href={`/category/${cat.name.toLowerCase()}`}
+                    className="text-sm font-medium text-gray-700 hover:text-orange-600 transition-colors"
+                  >
+                    {cat.name}
+                  </Link>
+                ))
+              ) : (
+                <span className="text-gray-400 text-sm">Loading...</span>
+              )}
               {!user ? (
                 <Link
                   href="/login"

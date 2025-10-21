@@ -1,15 +1,22 @@
 "use client";
 
 import { useCart } from "@/context/CartContext";
-import { useState } from "react";
+import { useState , useEffect, use} from "react";
 import Link from "next/link";
 
+interface User {
+  uid: string;
+  phone: string;
+  name?: string;
+  address?: string;
+}
+
 export default function CheckoutPage() {
+  const { cartItems, clearCart } = useCart();
   const [coupon, setCoupon] = useState("");
   const [discount, setDiscount] = useState(0);
   const [couponMessage, setCouponMessage] = useState("");
-
-  const { cartItems, clearCart } = useCart();
+  const [user, setUser] = useState<User | null>(null);
   const [form, setForm] = useState({
     name: "",
     email: "",
@@ -18,6 +25,21 @@ export default function CheckoutPage() {
     pincode: "",
     phone: "",
   });
+
+  // ✅ Auto-fill user data if logged in
+  useEffect(() => {
+    const storedUser = localStorage.getItem("user");
+    if (storedUser) {
+      const userData = JSON.parse(storedUser);
+      setUser(userData);
+      setForm((prev) => ({
+        ...prev,
+        name: userData.name || "",
+        phone: userData.phone || "",
+        address: userData.address || "",
+      }));
+    }
+  }, []);
 
   const subtotal = cartItems.reduce(
     (total, item) => total + (item.regularPrice || 0) * item.quantity,
@@ -31,38 +53,57 @@ export default function CheckoutPage() {
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
+    e.preventDefault();
 
-  const orderData = {
-    orderId: "ORD-" + Date.now(),
-    total: subtotal - discount,
-    status: "pending",
-    products: cartItems.map((item) => ({
-      product: item.id, // use actual product ID from Payload
-      quantity: item.quantity,
-    })),
-    user: null, // optional if no login
-  };
-
-  try {
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/orders`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
+    const orderData = {
+      orderId: "ORD-" + Date.now(),
+      total: subtotal - discount,
+      status: "pending",
+      products: cartItems.map((item) => ({
+        product: item.id,
+        quantity: item.quantity,
+      })),
+      billingDetails: {
+        name: form.name,
+        email: form.email,
+        address: form.address,
+        city: form.city,
+        pincode: form.pincode,
+        phone: form.phone,
       },
-      body: JSON.stringify(orderData),
-    });
+     user: user ? user.uid : null,
+    };
 
-    if (!res.ok) throw new Error("Failed to create order");
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/orders`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(orderData),
+      });
 
-    alert("✅ Order placed successfully!");
-    clearCart();
-  } catch (error) {
-    console.error(error);
-    alert("❌ Failed to place order. Please try again.");
-  }
-};
+      if (!res.ok) throw new Error("Failed to create order");
 
+      if (user) {
+        await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/users/${user.uid}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: form.name,
+            phone: form.phone,
+            address: form.address,
+          }),
+        });
+      }
+
+      alert("✅ Order placed successfully!");
+      clearCart();
+    } catch (error) {
+      console.error(error);
+      alert("❌ Failed to place order. Please try again.");
+    }
+  };
 
   const handleApplyCoupon = () => {
     const code = coupon.trim().toUpperCase();
