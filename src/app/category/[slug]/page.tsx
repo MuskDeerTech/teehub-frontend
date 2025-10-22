@@ -2,12 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import Link from "next/link";
-import Image from "next/image";
 import { Product } from "@/types/Product";
+import ProductCard from "@/components/ProductCard";
 
 export default function CategoryPage() {
-  const apiBase = (process.env.NEXT_PUBLIC_API_URL || "").replace(/\/api$/, "");
   const { slug } = useParams();
   const [products, setProducts] = useState<Product[]>([]);
   const [categoryName, setCategoryName] = useState<string>("");
@@ -18,8 +16,7 @@ export default function CategoryPage() {
 
     const fetchCategoryProducts = async () => {
       try {
-        // 1️⃣ Fetch category by name (not slug)
-        // 1️⃣ Change the category fetch query:
+        // Fetch category by name (case-insensitive)
         const categoryRes = await fetch(
           `${
             process.env.NEXT_PUBLIC_API_URL
@@ -39,13 +36,13 @@ export default function CategoryPage() {
           return;
         }
 
-        // 2️⃣ Fetch products linked to this category ID
+        // Fetch products for this category
         const res = await fetch(
           `${process.env.NEXT_PUBLIC_API_URL}/api/products?where[categories.id][equals]=${categoryId}&depth=2`
         );
         const data = await res.json();
 
-        setCategoryName(category.name || slug);
+        setCategoryName(category.name || slug.toString().replace(/-/g, " "));
         setProducts(data.docs || []);
       } catch (error) {
         console.error("Error loading category:", error);
@@ -72,37 +69,10 @@ export default function CategoryPage() {
       {products.length === 0 ? (
         <p className="text-gray-500">No products found in this category.</p>
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
-          {products.map((product) => {
-            const imageUrl = product.images?.[0]?.image?.url
-              ? product.images[0].image.url.startsWith("http")
-                ? product.images[0].image.url
-                : `${apiBase}${product.images[0].image.url}`
-              : "/placeholder.png";
-
-            return (
-              <Link
-                href={`/products/${product.slug}`}
-                key={product.id}
-                className="border rounded-lg p-3 hover:shadow-lg transition"
-              >
-                <div className="aspect-square relative mb-2">
-                  <Image
-                    src={imageUrl}
-                    alt={product.name}
-                    fill
-                    className="object-cover rounded-md"
-                  />
-                </div>
-                <h2 className="text-sm font-medium text-gray-900 truncate">
-                  {product.name}
-                </h2>
-                <p className="text-sm text-gray-600">
-                  ₹{product.salePrice || product.regularPrice}
-                </p>
-              </Link>
-            );
-          })}
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6">
+          {products.map((product) => (
+            <ProductCard key={product.id} product={product} />
+          ))}
         </div>
       )}
     </div>
