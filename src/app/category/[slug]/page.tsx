@@ -18,10 +18,16 @@ export default function CategoryPage() {
 
     const fetchCategoryProducts = async () => {
       try {
-        // 1️⃣ Fetch category details by slug
+        // 1️⃣ Fetch category by name (not slug)
+        // 1️⃣ Change the category fetch query:
         const categoryRes = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/api/categories?where[slug][equals]=${slug}`
+          `${
+            process.env.NEXT_PUBLIC_API_URL
+          }/api/categories?where[name][like]=${decodeURIComponent(
+            slug.toString().replace(/-/g, " ")
+          )}`
         );
+
         const categoryData = await categoryRes.json();
         const category = categoryData?.docs?.[0];
         const categoryId = category?.id;
@@ -33,7 +39,7 @@ export default function CategoryPage() {
           return;
         }
 
-        // ✅ 2️⃣ Correct query: match by nested relationship id
+        // 2️⃣ Fetch products linked to this category ID
         const res = await fetch(
           `${process.env.NEXT_PUBLIC_API_URL}/api/products?where[categories.id][equals]=${categoryId}&depth=2`
         );

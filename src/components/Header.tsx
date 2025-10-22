@@ -21,7 +21,7 @@ interface User {
 export default function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [user, setUser] = useState<User | null>(null);
-    const [categories, setCategories] = useState<Category[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const { cartCount, wishlist, wishlistCount } = useCart();
 
@@ -33,11 +33,13 @@ export default function Header() {
     if (storedUser) setUser(JSON.parse(storedUser));
   }, []);
 
-    // ✅ Fetch categories dynamically from Payload
+  // ✅ Fetch categories dynamically from Payload
   useEffect(() => {
     async function fetchCategories() {
       try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/categories?depth=0`);
+        const res = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/api/categories?depth=0`
+        );
         const data = await res.json();
         setCategories(data.docs || []);
       } catch (error) {
@@ -198,7 +200,7 @@ export default function Header() {
           <div className="flex items-center justify-between gap-4">
             {/* Desktop Nav */}
             <nav className="hidden lg:flex gap-6">
-             {categories.length > 0 ? (
+              {categories.length > 0 ? (
                 categories.map((cat) => (
                   <Link
                     key={cat.id}
@@ -249,24 +251,28 @@ export default function Header() {
             </div>
             {/* 🟠 New: Deliver to section */}
             {user?.name && (
-              <div className="hidden md:flex items-center gap-2 bg-orange-50 border border-orange-200 rounded-lg px-3 py-1.5 text-sm text-gray-700 max-w-[280px] truncate">
-                <svg
-                  width="11"
-                  height="16"
-                  viewBox="0 0 11 16"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    d="M5.5 0.5C2.46753 0.5 0 2.85539 0 5.75005C0 7.29054 0.458151 8.79931 1.31994 10.1023L4.56529 15.0078C4.76785 15.313 5.1214 15.5 5.5 15.5C5.8786 15.5 6.23215 15.3137 6.43471 15.0078L9.68006 10.1023C10.5418 8.79944 11 7.29061 11 5.75005C11 2.85539 8.53247 0.5 5.5 0.5ZM5.5 1.25021C8.1082 1.25021 10.2141 3.26038 10.2141 5.75005C10.2141 7.14921 9.79791 8.5196 9.01566 9.70216L5.7703 14.6077C5.71138 14.697 5.61047 14.7497 5.49998 14.7497C5.38949 14.7497 5.28858 14.697 5.22966 14.6077L1.9843 9.70216C1.20207 8.51955 0.785892 7.14914 0.785892 5.75005C0.785892 3.26038 2.8918 1.25021 5.5 1.25021Z"
-                    fill="#424242"
-                  />
-                  <path
-                    d="M5.5 1.5C3.57124 1.5 2 3.29562 2 5.5C2 7.70438 3.57117 9.5 5.5 9.5C7.42883 9.5 9 7.70438 9 5.5C9 3.29562 7.42883 1.5 5.5 1.5ZM5.5 2.30031C7.05082 2.30031 8.3004 3.7284 8.3004 5.50077C8.3004 7.27314 7.05082 8.70123 5.5 8.70123C3.94918 8.70048 2.6996 7.27239 2.6996 5.5C2.6996 3.72761 3.94918 2.29954 5.5 2.29954V2.30031Z"
-                    fill="#424242"
-                  />
-                </svg>
+              <div className="hidden md:flex items-center gap-2 bg-orange-50 border border-orange-200 rounded-lg px-3 py-1.5 text-sm text-gray-700 max-w-[250px]">
+                {/* 📍 Keep icon fixed size and not affected by truncate */}
+                <div className="flex-shrink-0">
+                  <svg
+                    width="12"
+                    height="17"
+                    viewBox="0 0 11 16"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M5.5 0.5C2.46753 0.5 0 2.85539 0 5.75005C0 7.29054 0.458151 8.79931 1.31994 10.1023L4.56529 15.0078C4.76785 15.313 5.1214 15.5 5.5 15.5C5.8786 15.5 6.23215 15.3137 6.43471 15.0078L9.68006 10.1023C10.5418 8.79944 11 7.29061 11 5.75005C11 2.85539 8.53247 0.5 5.5 0.5ZM5.5 1.25021C8.1082 1.25021 10.2141 3.26038 10.2141 5.75005C10.2141 7.14921 9.79791 8.5196 9.01566 9.70216L5.7703 14.6077C5.71138 14.697 5.61047 14.7497 5.49998 14.7497C5.38949 14.7497 5.28858 14.697 5.22966 14.6077L1.9843 9.70216C1.20207 8.51955 0.785892 7.14914 0.785892 5.75005C0.785892 3.26038 2.8918 1.25021 5.5 1.25021Z"
+                      fill="#424242"
+                    />
+                    <path
+                      d="M5.5 1.5C3.57124 1.5 2 3.29562 2 5.5C2 7.70438 3.57117 9.5 5.5 9.5C7.42883 9.5 9 7.70438 9 5.5C9 3.29562 7.42883 1.5 5.5 1.5ZM5.5 2.30031C7.05082 2.30031 8.3004 3.7284 8.3004 5.50077C8.3004 7.27314 7.05082 8.70123 5.5 8.70123C3.94918 8.70048 2.6996 7.27239 2.6996 5.5C2.6996 3.72761 3.94918 2.29954 5.5 2.29954V2.30031Z"
+                      fill="#424242"
+                    />
+                  </svg>
+                </div>
 
+                {/* 🟠 Only text truncates, not the icon */}
                 <span className="truncate">
                   Deliver to{" "}
                   <span className="font-medium text-gray-900">{user.name}</span>
@@ -274,6 +280,7 @@ export default function Header() {
                 </span>
               </div>
             )}
+
             {/* Icons */}
             <div className="flex items-center gap-3">
               {/* Wishlist */}
@@ -336,7 +343,7 @@ export default function Header() {
         {mobileOpen && (
           <div className="md:hidden bg-[#E7E1E1] py-2 px-4 border-t border-gray-200">
             <nav className="flex flex-col gap-2">
-               {categories.length > 0 ? (
+              {categories.length > 0 ? (
                 categories.map((cat) => (
                   <Link
                     key={cat.id}
