@@ -1,9 +1,30 @@
 "use client";
 
+import localFont from "next/font/local";
+
+const monument = localFont({
+  src: [
+    {
+      path: "../../public/fonts/MonumentExtended-Regular.otf",
+      weight: "400",
+      style: "normal",
+    },
+    {
+      path: "../../public/fonts/MonumentExtended-Ultrabold.otf",
+      weight: "800",
+      style: "normal",
+    },
+  ],
+  variable: "--font-monument",
+});
+
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
+import Slider from "react-slick";
+import "slick-carousel/slick/slick.css";
+import "slick-carousel/slick/slick-theme.css";
 import ProductCard from "@/components/ProductCard";
 import { Product } from "@/types/Product";
 
@@ -110,7 +131,7 @@ export default function HomePage() {
   );
 
   return (
-    <div className="flex flex-col">
+    <div className={`${monument.className} flex flex-col`}>
       {/* 🔶 HERO + SIDE CARDS */}
       <section className="grid grid-cols-1 md:grid-cols-3 gap-6 px-6 py-10">
         <motion.div
@@ -127,14 +148,14 @@ export default function HomePage() {
             priority
           />
           <div className="absolute inset-0 flex flex-col justify-between p-8 md:p-12">
-            <h1 className="text-3xl md:text-5xl font-bold leading-tight max-w-lg">
+            <h1 className="text-2xl md:text-5xl font-regular leading-tight max-w-lg">
               Custom Tees & Jerseys that speak your style
             </h1>
             <div className="flex justify-end">
               <Link href="/custom-design">
                 <motion.button
                   whileHover={{ scale: 1.05 }}
-                  className="bg-white text-black font-semibold px-6 py-3 rounded-full shadow-md hover:bg-gray-200"
+                  className="bg-black text-white font-semibold px-6 py-3 rounded-full shadow-md "
                 >
                   Design Yours
                 </motion.button>
@@ -160,7 +181,7 @@ export default function HomePage() {
                 className="object-cover group-hover:opacity-80 transition"
               />
               <div className="absolute inset-0 flex items-start justify-start p-6">
-                <p className="text-lg md:text-xl font-semibold text-black">
+                <p className="text-lg md:text-xl font-regular text-black  md:max-w-[150px]">
                   {item.title}
                 </p>
               </div>
@@ -169,59 +190,64 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* 🔶 3-COLUMN SECTION */}
-      <section className="grid grid-cols-1 md:grid-cols-3 gap-4 px-6 ">
-        <div className="flex items-center justify-center">
-          <h2 className="text-4xl md:text-5xl font-extrabold text-gray-900 leading-snug">
-            Wear What You Stand For
-          </h2>
-        </div>
-        {[
-          { title: "Gear Up Game On", img: "/Gear-Up-Game-On.png" },
-          { title: "Sport Your Spirit", img: "/Sport-Your-Spirit.png" },
-        ].map((item) => (
-          <motion.div
-            key={item.title}
-            whileHover={{ scale: 1.03 }}
-            className="relative rounded-3xl overflow-hidden h-[300px] group cursor-pointer"
+   {/* 🔶 3-COLUMN SECTION */}
+<section className="grid grid-cols-1 md:grid-cols-[20%_80%] gap-4 px-6">
+  {/* Left column — 20% */}
+  <div className="flex items-start justify-start">
+    <h2 className="text-4xl md:text-5xl font-regular text-gray-900 leading-snug md:max-w-[100px]">
+      Wear What You Stand For
+    </h2>
+  </div>
+
+  {/* Right column — 80% */}
+  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    {[
+      { title: "Gear Up Game On", img: "/Gear-Up-Game-On.png" },
+      { title: "Sport Your Spirit", img: "/Sport-Your-Spirit.png" },
+    ].map((item) => (
+      <motion.div
+        key={item.title}
+        whileHover={{ scale: 1.03 }}
+        className="relative rounded-3xl overflow-hidden h-[300px] group cursor-pointer"
+      >
+        <Image
+          src={item.img}
+          alt={item.title}
+          fill
+          className="object-cover group-hover:opacity-80 transition"
+        />
+        <div className="absolute inset-0 flex items-end justify-between p-6">
+          <p className="text-lg md:text-xl font-regular text-white md:max-w-[150px]">
+            {item.title}
+          </p>
+          <svg
+            width="40"
+            height="40"
+            viewBox="0 0 50 50"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
           >
-            <Image
-              src={item.img}
-              alt={item.title}
-              fill
-              className="object-cover group-hover:opacity-80 transition"
+            <path
+              d="M32.617 20.3292L32.6318 30.8916H36.786V13.2139H19.1083L19.1083 17.3682L29.6708 17.3829L11.7426 35.311L14.6889 38.2573L32.617 20.3292Z"
+              fill="white"
             />
-            <div className="absolute inset-0 flex items-end justify-between p-6">
-              <p className="text-lg md:text-xl font-semibold text-white">
-                {item.title}
-              </p>
-              <svg
-                width="40"
-                height="40"
-                viewBox="0 0 50 50"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="M32.617 20.3292L32.6318 30.8916H36.786V13.2139H19.1083L19.1083 17.3682L29.6708 17.3829L11.7426 35.311L14.6889 38.2573L32.617 20.3292Z"
-                  fill="white"
-                />
-              </svg>
-            </div>
-          </motion.div>
-        ))}
-      </section>
+          </svg>
+        </div>
+      </motion.div>
+    ))}
+  </div>
+</section>
 
       {/* 🔶 TRENDING SECTION */}
       <section className="py-12 px-6">
         <div className="flex justify-between mb-8 flex-wrap gap-4">
-          <h2 className="text-3xl font-bold">Trending</h2>
+          <h2 className="text-3xl font-regular">Trending</h2>
           <div className="flex gap-3 flex-wrap">
             {tabs.map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                className={`px-4 py-2 rounded-full font-medium transition ${
+                className={`px-4 py-2 rounded-full font-regular transition ${
                   activeTab === tab
                     ? "bg-black text-white"
                     : "border border-gray-300 text-gray-700 hover:bg-black hover:text-white"
@@ -233,7 +259,7 @@ export default function HomePage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 font-regular">
           {filteredProducts.length > 0 ? (
             filteredProducts.map((p) => <ProductCard key={p.id} product={p} />)
           ) : (
@@ -246,7 +272,7 @@ export default function HomePage() {
 
       {/* 🔶 EXPLORE BY COLORS */}
       <section className="py-12 border-t border-[#C7CBD4] px-6 grid-col-1 grid md:grid-cols-[30%_70%] items-start gap-6">
-        <h2 className="text-3xl md:text-4xl font-extrabold mb-6 leading-tight md:max-w-[100px]">
+        <h2 className="text-3xl md:text-4xl font-regular mb-6 leading-tight md:max-w-[100px]">
           Explore by Colors
         </h2>
 
@@ -270,7 +296,7 @@ export default function HomePage() {
                     }`}
                     style={{ backgroundColor: bg }}
                   ></span>
-                  <span className="font-medium uppercase">{color.value}</span>
+                  <span className="font-regular uppercase">{color.value}</span>
                 </Link>
               );
             })
@@ -282,43 +308,45 @@ export default function HomePage() {
 
       {/* 🔶 WHAT THE BUZZ IS ABOUT */}
       <section className="py-12 border-t-[0.5px] border-[#C7CBD4] px-6 text-center">
-        <h2 className="text-3xl md:text-4xl font-extrabold mb-10">
+        <h2 className="text-3xl md:text-4xl font-regular mb-10">
           What the Buzz Is About
         </h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 ">
+        <div className=" ">
           {reviews.length > 0 ? (
-            reviews.map((r) => (
-              <div
-                key={r.id}
-                className="bg-white shadow-md rounded-2xl p-6 text-left flex flex-col justify-between"
-              >
-                {/* Stars */}
-                <div className="flex text-yellow-400 mb-4">
-                  {Array.from({ length: r.rating }).map((_, i) => (
-                    <svg
-                      key={i}
-                      xmlns="http://www.w3.org/2000/svg"
-                      viewBox="0 0 20 20"
-                      fill="currentColor"
-                      className="w-5 h-5"
-                    >
-                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.286 3.965a1 1 0 00.95.69h4.175c.969 0 1.371 1.24.588 1.81l-3.385 2.46a1 1 0 00-.364 1.118l1.286 3.965c.3.921-.755 1.688-1.54 1.118l-3.385-2.46a1 1 0 00-1.175 0l-3.385 2.46c-.784.57-1.838-.197-1.539-1.118l1.285-3.965a1 1 0 00-.364-1.118L2.05 9.392c-.783-.57-.38-1.81.588-1.81h4.175a1 1 0 00.95-.69l1.286-3.965z" />
-                    </svg>
-                  ))}
-                </div>
-                <p className="text-gray-700 mb-6">{r.review}</p>
-                <div className="flex items-center gap-3 mt-auto">
-                  {r.user?.image ? (
-                    <img
-                      src={`${process.env.NEXT_PUBLIC_API_URL}${r.user.image.url}`}
-                      alt={r.user.name}
-                      className="w-10 h-10 rounded-full"
-                    />
-                  ) : (
-                    <div className="w-10 h-10 rounded-full bg-gray-300"></div>
-                  )}
-                  <div>
-                    <p className="font-semibold">
+            <Slider
+              dots={false}
+              infinite={true}
+              speed={800}
+              slidesToShow={3}
+              slidesToScroll={1}
+              autoplay={true}
+              autoplaySpeed={3000}
+              responsive={[
+                { breakpoint: 1024, settings: { slidesToShow: 2 } },
+                { breakpoint: 640, settings: { slidesToShow: 1 } },
+              ]}
+            >
+              {reviews.map((r) => (
+                <div key={r.id} className="px-3 py-6">
+                  <div
+                    className="bg-white drop-shadow-md
+ items-center rounded-2xl p-6 text-left flex flex-col justify-between h-[200px]"
+                  >
+                    <div className="flex text-yellow-400 mb-4">
+                      {Array.from({ length: r.rating }).map((_, i) => (
+                        <svg
+                          key={i}
+                          xmlns="http://www.w3.org/2000/svg"
+                          viewBox="0 0 20 20"
+                          fill="currentColor"
+                          className="w-5 h-5"
+                        >
+                          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.286 3.965a1 1 0 00.95.69h4.175c.969 0 1.371 1.24.588 1.81l-3.385 2.46a1 1 0 00-.364 1.118l1.286 3.965c.3.921-.755 1.688-1.54 1.118l-3.385-2.46a1 1 0 00-1.175 0l-3.385 2.46c-.784.57-1.838-.197-1.539-1.118l1.285-3.965a1 1 0 00-.364-1.118L2.05 9.392c-.783-.57-.38-1.81.588-1.81h4.175a1 1 0 00.95-.69l1.286-3.965z" />
+                        </svg>
+                      ))}
+                    </div>
+                    <p className="text-gray-700 mb-2 text-center">{r.review}</p>
+                    <p className="font-regular mb-2">
                       {r.user?.name || "Anonymous"}
                     </p>
                     <p className="text-sm text-gray-500">
@@ -326,8 +354,8 @@ export default function HomePage() {
                     </p>
                   </div>
                 </div>
-              </div>
-            ))
+              ))}
+            </Slider>
           ) : (
             <p className="text-gray-500 col-span-full">No reviews yet</p>
           )}
@@ -336,7 +364,7 @@ export default function HomePage() {
 
       {/* 🔶 WHAT MAKES SHOPPING SPECIAL */}
       <section className="py-16 px-6  border-t border-[#C7CBD4]">
-        <h2 className="text-3xl md:text-4xl font-extrabold mb-12 ">
+        <h2 className="text-3xl md:text-4xl font-regular mb-12 ">
           What Makes Shopping with Us Special
         </h2>
 
@@ -416,8 +444,11 @@ export default function HomePage() {
           ].map((item) => (
             <div key={item.title} className="flex flex-col  px-4 ">
               {item.icon}
-              <h3 className="text-xl font-semibold mb-2 mt-4">{item.title}</h3>
-              <p className="text-gray-600 text-sm leading-relaxed">
+              <h3 className="text-xl font-regular mb-2 mt-4">{item.title}</h3>
+              <p
+                style={{ fontFamily: "poppins" }}
+                className="text-gray-600 text-sm leading-relaxed"
+              >
                 {item.desc}
               </p>
             </div>
@@ -437,15 +468,15 @@ export default function HomePage() {
           />
         </div>
         <div>
-          <h2 className="text-3xl md:text-4xl font-extrabold mb-4">
+          <h2 className="text-3xl md:text-4xl font-regular mb-4">
             Wear Your Team, Own the Game
           </h2>
-          <p className="text-gray-700 mb-6">
+          <p style={{ fontFamily: "poppins" }} className="text-gray-700 mb-6">
             From stadium cheers to street style, our IPL T-shirts keep your
             spirit alive.
           </p>
           <Link href="/collections/ipl" className="inline-block">
-            <button className="border border-black px-6 py-2 rounded-full font-medium hover:bg-black hover:text-white transition">
+            <button className="border border-black px-6 py-2 rounded-full font-regular hover:bg-black hover:text-white transition">
               View More
             </button>
           </Link>

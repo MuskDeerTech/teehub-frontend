@@ -50,6 +50,17 @@ export default function OrdersPage() {
     5: "Excellent 🤩",
   };
 
+  const [userId, setUserId] = useState<string | null>(null);
+
+useEffect(() => {
+  const storedUser = localStorage.getItem("user");
+  if (storedUser) {
+    const parsed = JSON.parse(storedUser);
+    setUserId(parsed.id); // or parsed._id depending on your backend
+  }
+}, []);
+
+
   // 🟠 Fetch orders and reviews
   useEffect(() => {
     const fetchData = async () => {
@@ -86,6 +97,7 @@ export default function OrdersPage() {
       product: productId,
       rating: reviewData.rating,
       review: reviewData.review,
+      user: userId, // ✅ Must include this
     };
 
     try {
