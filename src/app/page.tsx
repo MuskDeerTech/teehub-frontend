@@ -131,9 +131,9 @@ export default function HomePage() {
   );
 
   return (
-    <div className={`${monument.className} flex flex-col`}>
+    <div className={` flex flex-col`}>
       {/* 🔶 HERO + SIDE CARDS */}
-      <section className="grid grid-cols-1 md:grid-cols-3 gap-6 px-6 py-10">
+      <section className={`grid grid-cols-1 md:grid-cols-3 gap-6 px-6 py-10 ${monument.className}`}>
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
@@ -190,58 +190,58 @@ export default function HomePage() {
         </div>
       </section>
 
-   {/* 🔶 3-COLUMN SECTION */}
-<section className="grid grid-cols-1 md:grid-cols-[20%_80%] gap-4 px-6">
-  {/* Left column — 20% */}
-  <div className="flex items-start justify-start">
-    <h2 className="text-4xl md:text-5xl font-regular text-gray-900 leading-snug md:max-w-[100px]">
-      Wear What You Stand For
-    </h2>
-  </div>
-
-  {/* Right column — 80% */}
-  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-    {[
-      { title: "Gear Up Game On", img: "/Gear-Up-Game-On.png" },
-      { title: "Sport Your Spirit", img: "/Sport-Your-Spirit.png" },
-    ].map((item) => (
-      <motion.div
-        key={item.title}
-        whileHover={{ scale: 1.03 }}
-        className="relative rounded-3xl overflow-hidden h-[300px] group cursor-pointer"
-      >
-        <Image
-          src={item.img}
-          alt={item.title}
-          fill
-          className="object-cover group-hover:opacity-80 transition"
-        />
-        <div className="absolute inset-0 flex items-end justify-between p-6">
-          <p className="text-lg md:text-xl font-regular text-white md:max-w-[150px]">
-            {item.title}
-          </p>
-          <svg
-            width="40"
-            height="40"
-            viewBox="0 0 50 50"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              d="M32.617 20.3292L32.6318 30.8916H36.786V13.2139H19.1083L19.1083 17.3682L29.6708 17.3829L11.7426 35.311L14.6889 38.2573L32.617 20.3292Z"
-              fill="white"
-            />
-          </svg>
+      {/* 🔶 3-COLUMN SECTION */}
+      <section className={`${monument.className} grid grid-cols-1 md:grid-cols-[20%_80%] gap-4 px-6 `}>
+        {/* Left column — 20% */}
+        <div className="flex items-start justify-start">
+          <h2 className="text-4xl md:text-5xl font-regular text-gray-900 leading-snug md:max-w-[100px]">
+            Wear What You Stand For
+          </h2>
         </div>
-      </motion.div>
-    ))}
-  </div>
-</section>
+
+        {/* Right column — 80% */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {[
+            { title: "Gear Up Game On", img: "/Gear-Up-Game-On.png" },
+            { title: "Sport Your Spirit", img: "/Sport-Your-Spirit.png" },
+          ].map((item) => (
+            <motion.div
+              key={item.title}
+              whileHover={{ scale: 1.03 }}
+              className="relative rounded-3xl overflow-hidden h-[300px] group cursor-pointer"
+            >
+              <Image
+                src={item.img}
+                alt={item.title}
+                fill
+                className="object-cover group-hover:opacity-80 transition"
+              />
+              <div className="absolute inset-0 flex items-end justify-between p-6">
+                <p className="text-lg md:text-xl font-regular text-white md:max-w-[150px]">
+                  {item.title}
+                </p>
+                <svg
+                  width="40"
+                  height="40"
+                  viewBox="0 0 50 50"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M32.617 20.3292L32.6318 30.8916H36.786V13.2139H19.1083L19.1083 17.3682L29.6708 17.3829L11.7426 35.311L14.6889 38.2573L32.617 20.3292Z"
+                    fill="white"
+                  />
+                </svg>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      </section>
 
       {/* 🔶 TRENDING SECTION */}
       <section className="py-12 px-6">
-        <div className="flex justify-between mb-8 flex-wrap gap-4">
-          <h2 className="text-3xl font-regular">Trending</h2>
+        <div className={`flex justify-between mb-8 flex-wrap gap-4 ${monument.className}`}>
+          <h2 className={`text-3xl font-regular ${monument.className}`}>Trending</h2>
           <div className="flex gap-3 flex-wrap">
             {tabs.map((tab) => (
               <button
@@ -259,7 +259,7 @@ export default function HomePage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 font-regular">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 font-regular product-home">
           {filteredProducts.length > 0 ? (
             filteredProducts.map((p) => <ProductCard key={p.id} product={p} />)
           ) : (
@@ -272,7 +272,7 @@ export default function HomePage() {
 
       {/* 🔶 EXPLORE BY COLORS */}
       <section className="py-12 border-t border-[#C7CBD4] px-6 grid-col-1 grid md:grid-cols-[30%_70%] items-start gap-6">
-        <h2 className="text-3xl md:text-4xl font-regular mb-6 leading-tight md:max-w-[100px]">
+        <h2 className={`text-3xl md:text-4xl font-regular mb-6 leading-tight md:max-w-[100px] ${monument.className}`}>
           Explore by Colors
         </h2>
 
@@ -308,7 +308,7 @@ export default function HomePage() {
 
       {/* 🔶 WHAT THE BUZZ IS ABOUT */}
       <section className="py-12 border-t-[0.5px] border-[#C7CBD4] px-6 text-center">
-        <h2 className="text-3xl md:text-4xl font-regular mb-10">
+        <h2 className={`text-3xl md:text-4xl font-regular mb-10 ${monument.className}`}>
           What the Buzz Is About
         </h2>
         <div className=" ">
@@ -346,7 +346,7 @@ export default function HomePage() {
                       ))}
                     </div>
                     <p className="text-gray-700 mb-2 text-center">{r.review}</p>
-                    <p className="font-regular mb-2">
+                    <p className={`font-regular  mb-2 ${monument.className} text-sm`}>
                       {r.user?.name || "Anonymous"}
                     </p>
                     <p className="text-sm text-gray-500">
@@ -364,7 +364,7 @@ export default function HomePage() {
 
       {/* 🔶 WHAT MAKES SHOPPING SPECIAL */}
       <section className="py-16 px-6  border-t border-[#C7CBD4]">
-        <h2 className="text-3xl md:text-4xl font-regular mb-12 ">
+        <h2 className={`text-3xl md:text-4xl font-regular mb-12 ${monument.className}`}>
           What Makes Shopping with Us Special
         </h2>
 
@@ -444,7 +444,8 @@ export default function HomePage() {
           ].map((item) => (
             <div key={item.title} className="flex flex-col  px-4 ">
               {item.icon}
-              <h3 className="text-xl font-regular mb-2 mt-4">{item.title}</h3>
+              <h3 className={`text-xl font-regular mb-2 mt-4 ${monument.className}`}>
+              {item.title}</h3>
               <p
                 style={{ fontFamily: "poppins" }}
                 className="text-gray-600 text-sm leading-relaxed"
@@ -457,7 +458,12 @@ export default function HomePage() {
       </section>
 
       {/* 🔶 CURRENTLY IN FASHION */}
-      <section className="py-16 px-6 border-t border-[#C7CBD4] grid grid-cols-1 md:grid-cols-2 items-center gap-10 ">
+      <section className="py-16 px-6 border-t border-[#C7CBD4] ">
+         <h2 className={`text-md md:text-xl font-regular mb-12 ${monument.className}`}>
+         Currently in fashion
+        </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 items-center gap-10 ">
+       
         <div className="relative rounded-2xl overflow-hidden">
           <Image
             src="/fashion.png"
@@ -468,19 +474,20 @@ export default function HomePage() {
           />
         </div>
         <div>
-          <h2 className="text-3xl md:text-4xl font-regular mb-4">
+          <h2 className={`text-3xl md:text-4xl font-regular mb-4 ${monument.className}`}>
             Wear Your Team, Own the Game
           </h2>
-          <p style={{ fontFamily: "poppins" }} className="text-gray-700 mb-6">
+          <p style={{ fontFamily: "poppins" }} className={`text-gray-700 mb-6 ${monument.className}`}>
             From stadium cheers to street style, our IPL T-shirts keep your
             spirit alive.
           </p>
           <Link href="/collections/ipl" className="inline-block">
-            <button className="border border-black px-6 py-2 rounded-full font-regular hover:bg-black hover:text-white transition">
+            <button className={`border border-black px-6 py-2 rounded-full font-regular  text-sm hover:bg-black hover:text-white transition ${monument.className}`}>
               View More
             </button>
           </Link>
         </div>
+      </div>
       </section>
     </div>
   );

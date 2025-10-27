@@ -45,21 +45,29 @@ export default function QuickViewModal({
         : `${apiBase}${img.image.url}`
     ) || [];
 
-  const handleAddToCart = () => {
-    const hasSizes =
-      product.attributes?.some(
-        (attr) => attr.attribute.name.toLowerCase() === "sizes"
-      ) ?? false;
+const handleAddToCart = () => {
+  const user = localStorage.getItem("user");
 
-    if (hasSizes && !selectedSize) {
-      toast.warning("Please select a size before adding to cart!");
-      return;
-    }
+  if (!user) {
+    toast.error("Please login first!");
+    return;
+  }
 
-    addToCart(product, quantity, selectedSize || undefined);
-    toast.success("Added to cart successfully!");
-    onClose();
-  };
+  const hasSizes =
+    product.attributes?.some(
+      (attr) => attr.attribute.name.toLowerCase() === "sizes"
+    ) ?? false;
+
+  if (hasSizes && !selectedSize) {
+    toast.warning("Please select a size before adding to cart!");
+    return;
+  }
+
+  addToCart(product, quantity, selectedSize || undefined);
+  toast.success("Added to cart successfully!");
+  onClose();
+};
+
 
   const descriptionText =
     typeof product.description === "object" &&

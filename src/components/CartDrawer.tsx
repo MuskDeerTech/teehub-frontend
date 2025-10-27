@@ -4,6 +4,10 @@ import { useCart } from "@/context/CartContext";
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect } from "react";
+import { toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import { useRouter } from "next/navigation";
+
 
 export default function CartDrawer({
   isOpen,
@@ -14,7 +18,7 @@ export default function CartDrawer({
 }) {
   const { cartItems, removeFromCart, updateQuantity, updateSize } = useCart();
   const apiBase = (process.env.NEXT_PUBLIC_API_URL || "").replace(/\/api$/, "");
-
+  const router = useRouter();
   // Calculate totals
   const subtotal = cartItems.reduce(
     (total, item) => total + (item.regularPrice || 0) * item.quantity,
@@ -36,6 +40,16 @@ export default function CartDrawer({
     };
   }, [isOpen]);
 
+  const handleProceedToBuy = () => {
+  const user = localStorage.getItem("user");
+
+  if (!user) {
+    toast.error("Please login first!");
+    return;
+  }
+
+  router.push("/checkout");
+};
   return (
     <div
       className={`fixed inset-0 bg-black/50 transition-opacity duration-300 z-[9998] ${
@@ -230,12 +244,13 @@ export default function CartDrawer({
                 <span>₹{savings}</span>
               </div>
             )}
-            <Link
-              href="/checkout"
-              className="bg-orange-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-orange-700 transition text-sm"
-            >
-              PROCEED TO BUY
-            </Link>
+           <button
+  onClick={handleProceedToBuy}
+  className="bg-orange-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-orange-700 transition text-sm"
+>
+  PROCEED TO BUY
+</button>
+
           </div>
         </div>
       </div>

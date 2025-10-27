@@ -3,6 +3,8 @@
 import { useCart } from "@/context/CartContext";
 import { useState , useEffect, use} from "react";
 import Link from "next/link";
+import { toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 interface User {
   uid: string;
@@ -97,11 +99,11 @@ export default function CheckoutPage() {
         });
       }
 
-      alert("✅ Order placed successfully!");
+      toast.success("Order placed successfully!");
       clearCart();
     } catch (error) {
       console.error(error);
-      alert("❌ Failed to place order. Please try again.");
+      toast.error("Failed to place order. Please try again.");
     }
   };
 
