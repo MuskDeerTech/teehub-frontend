@@ -11,6 +11,7 @@ export default function Footer() {
         <div className="grid md:grid-cols-4 grid-cols-1 gap-8">
           <div className="col-span-1">
             <Image
+              unoptimized
               src="/teehub_logo.png"
               alt="TeeHub Logo"
               width={130}

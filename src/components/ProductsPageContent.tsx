@@ -158,7 +158,7 @@ export default function ProductsPageContent() {
             className="text-black"
             onClick={() => setIsFilterOpen(!isFilterOpen)}
           >
-            <Image src="/hamburger.svg" alt="Filter" width={24} height={24} />
+            <Image unoptimized src="/hamburger.svg" alt="Filter" width={24} height={24} />
           </button>
 
           {/* Sort dropdown for mobile */}

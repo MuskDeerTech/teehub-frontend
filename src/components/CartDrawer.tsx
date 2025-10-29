@@ -105,6 +105,7 @@ export default function CartDrawer({
                   className="flex gap-3 border rounded-lg p-3"
                 >
                   <Image
+                    unoptimized
                     src={imageUrl}
                     alt={item.name}
                     width={80}

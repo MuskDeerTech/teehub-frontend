@@ -532,6 +532,7 @@ export default function ProductPage() {
                         }}
                       >
                         <Image
+                          unoptimized
                           width={100}
                           height={100}
                           src={thumbUrl}
@@ -571,6 +572,7 @@ export default function ProductPage() {
                     <SwiperSlide key={idx}>
                       <div className="swiper-zoom-container">
                         <Image
+                          unoptimized
                           width={600}
                           height={600}
                           src={imgUrl}

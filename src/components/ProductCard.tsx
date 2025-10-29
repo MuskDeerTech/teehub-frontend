@@ -21,7 +21,8 @@ const fetcher = async (url: string) => {
 };
 
 export default function ProductCard({ product }: ProductCardProps) {
-  const apiBase = (process.env.NEXT_PUBLIC_API_URL || "").replace(/\/api$/, "");
+  const apiBase = process.env.NEXT_PUBLIC_API_URL || "";
+
   const { addToCart, cartCount, addToWishlist, removeFromWishlist, wishlist } =
     useCart();
   const [isDrawerOpen, setDrawerOpen] = useState(false);
@@ -57,10 +58,11 @@ export default function ProductCard({ product }: ProductCardProps) {
   }, [wishlist, displayProduct.slug]);
 
   // Image URL with fallback
+  const normalizedBase = apiBase.endsWith("/") ? apiBase.slice(0, -1) : apiBase;
   const imageUrl = displayProduct.images?.[0]?.image?.url
     ? displayProduct.images[0].image.url.startsWith("http")
       ? displayProduct.images[0].image.url
-      : `${apiBase}${displayProduct.images[0].image.url}`
+      : `${normalizedBase}${displayProduct.images[0].image.url}`
     : "/placeholder.png";
 
   const Skeleton = () => (
@@ -110,14 +112,12 @@ export default function ProductCard({ product }: ProductCardProps) {
           <div className="relative">
             {imageUrl && (
               <Image
-                style={{ borderRadius: "8px" }}
+                unoptimized // 👈 add this
                 width={300}
                 height={300}
                 src={imageUrl}
-                alt={
-                  displayProduct.images?.[0]?.image?.alt || displayProduct.name
-                }
-                className="w-full border-[0.5px] border-[#C7CBD4] object-cover"
+                alt={displayProduct.name}
+                className="w-full border-[0.5px] border-[#C7CBD4] object-cover rounded-lg"
               />
             )}
             {/* Wishlist Icon */}

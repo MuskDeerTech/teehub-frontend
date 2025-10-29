@@ -39,6 +39,7 @@ export default function SizeChartModal({
           </h2>
 
           <Image
+            unoptimized
             src={chartImage}
             alt={`Size Chart - ${chartType}`}
             width={800}

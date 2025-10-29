@@ -53,6 +53,7 @@ export default function ProductGallery({
       {/* Main Image */}
       <div className="relative w-full h-[500px] border rounded-lg overflow-hidden shadow-md">
         <Image
+          unoptimized
           width={800}
           height={800}
           src={mainImage}
@@ -76,6 +77,7 @@ export default function ProductGallery({
                 onClick={() => setMainImage(thumbUrl)}
               >
                 <Image
+                  unoptimized
                   width={100}
                   height={100}
                   src={thumbUrl}

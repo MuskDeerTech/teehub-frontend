@@ -110,6 +110,7 @@ const handleAddToCart = () => {
               {images.map((src, i) => (
                 <SwiperSlide key={i}>
                   <Image
+                    unoptimized
                     src={src}
                     alt={product.name}
                     width={300}

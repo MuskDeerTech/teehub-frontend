@@ -59,6 +59,7 @@ export default function Cart() {
                   className="flex flex-col sm:flex-row items-center gap-4 p-4 bg-white rounded-lg shadow-sm"
                 >
                   <Image
+                    unoptimized
                     width={100}
                     height={100}
                     src={imageUrl}
