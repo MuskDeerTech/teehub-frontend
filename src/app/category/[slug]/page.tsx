@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { Product } from "@/types/Product";
 import ProductCard from "@/components/ProductCard";
+import { transformWordPressProducts } from "@/utils/transformers";
 
 export default function CategoryPage() {
   const { slug } = useParams();
@@ -11,48 +12,55 @@ export default function CategoryPage() {
   const [categoryName, setCategoryName] = useState<string>("");
   const [loading, setLoading] = useState(true);
 
+  const wpApiBase = process.env.NEXT_PUBLIC_WP_API_URL || "https://teehubshop.com/wp-json/wp/v2";
+
   useEffect(() => {
     if (!slug) return;
 
     const fetchCategoryProducts = async () => {
       try {
-        // Fetch category by name (case-insensitive)
+        // Decode and format slug
+        const categorySlug = Array.isArray(slug) ? slug[0] : slug;
+        const formattedName = decodeURIComponent(categorySlug.toString())
+          .replace(/-/g, " ")
+          .replace(/\b\w/g, (l) => l.toUpperCase());
+
+        // Find category by slug
         const categoryRes = await fetch(
-          `${
-            process.env.NEXT_PUBLIC_API_URL
-          }/api/categories?where[name][like]=${decodeURIComponent(
-            slug.toString().replace(/-/g, " ")
-          )}`
+          `${wpApiBase}/product_cat?slug=${categorySlug}`
         );
+        const categories = await categoryRes.json();
+        const category = categories[0];
 
-        const categoryData = await categoryRes.json();
-        const category = categoryData?.docs?.[0];
-        const categoryId = category?.id;
-
-        if (!categoryId) {
+        if (!category) {
           setCategoryName("Category not found");
           setProducts([]);
           setLoading(false);
           return;
         }
 
-        // Fetch products for this category
-        const res = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/api/products?where[categories.id][equals]=${categoryId}&depth=2`
-        );
-        const data = await res.json();
+        setCategoryName(category.name || formattedName);
 
-        setCategoryName(category.name || slug.toString().replace(/-/g, " "));
-        setProducts(data.docs || []);
+        // Fetch products in this category
+        const productsRes = await fetch(
+          `${wpApiBase}/product?product_cat=${category.id}&per_page=100`
+        );
+        const wpProducts = await productsRes.json();
+
+        // Transform to app format
+        const transformedProducts = transformWordPressProducts(wpProducts);
+        setProducts(transformedProducts);
       } catch (error) {
         console.error("Error loading category:", error);
+        setCategoryName("Error loading category");
+        setProducts([]);
       } finally {
         setLoading(false);
       }
     };
 
     fetchCategoryProducts();
-  }, [slug]);
+  }, [slug, wpApiBase]);
 
   if (loading) {
     return (

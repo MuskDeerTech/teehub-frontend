@@ -34,65 +34,46 @@ export default function QuickViewModal({
     "men"
   );
 
-  if (!product) return null;
+  if (!product || !isOpen) return null;
 
-  const apiBase = (process.env.NEXT_PUBLIC_API_URL || "").replace(/\/api$/, "");
+  const images = product.images?.map((img) => img.image.url) || [];
 
-  const images =
-    product.images?.map((img) =>
-      img.image.url.startsWith("http")
-        ? img.image.url
-        : `${apiBase}${img.image.url}`
-    ) || [];
+  const handleAddToCart = () => {
+    const user = localStorage.getItem("user");
 
-const handleAddToCart = () => {
-  const user = localStorage.getItem("user");
+    if (!user) {
+      toast.error("Please login first!");
+      return;
+    }
 
-  if (!user) {
-    toast.error("Please login first!");
-    return;
-  }
+    const hasSizes =
+      product.attributes?.some(
+        (attr) =>
+          attr.attribute.name.toLowerCase() === "sizes" ||
+          attr.attribute.name.toLowerCase() === "size"
+      ) ?? false;
 
-  const hasSizes =
-    product.attributes?.some(
-      (attr) => attr.attribute.name.toLowerCase() === "sizes"
-    ) ?? false;
+    if (hasSizes && !selectedSize) {
+      toast.warning("Please select a size before adding to cart!");
+      return;
+    }
 
-  if (hasSizes && !selectedSize) {
-    toast.warning("Please select a size before adding to cart!");
-    return;
-  }
+    addToCart(product, quantity, selectedSize || undefined);
+    toast.success("Added to cart successfully!");
+    onClose();
+  };
 
-  addToCart(product, quantity, selectedSize || undefined);
-  toast.success("Added to cart successfully!");
-  onClose();
-};
-
-
-  const descriptionText =
-    typeof product.description === "object" &&
-    product.description?.root?.children?.[0]?.children?.[0]?.text
-      ? product.description.root.children[0].children[0].text
-      : "No description available";
+  // ✅ FIX: WordPress returns HTML string, just strip tags
+  const descriptionText = product.description
+    ? product.description.replace(/<[^>]*>/g, "").trim()
+    : "No description available";
 
   return (
     <>
-      {/* Overlay */}
-      <div
-        className={`fixed inset-0 bg-black/50 transition-opacity duration-300 z-[9998] ${
-          isOpen ? "opacity-100 visible" : "opacity-0 invisible"
-        }`}
-        onClick={onClose}
-      ></div>
+      <div className="fixed inset-0 bg-black/50 z-[9998]" onClick={onClose} />
 
-      {/* Right Drawer */}
-      <div
-        className={`fixed top-0 right-0 w-full sm:w-[450px] h-full bg-white shadow-2xl z-[9999] transform transition-transform duration-300 ${
-          isOpen ? "translate-x-0" : "translate-x-full"
-        }`}
-      >
+      <div className="fixed top-0 right-0 w-full sm:w-[450px] h-full bg-white shadow-2xl z-[9999] transform transition-transform duration-300">
         <div className="flex flex-col h-full">
-          {/* Header */}
           <div className="flex justify-between items-center border-b px-4 py-3">
             <h2 className="text-lg font-semibold text-gray-800">Quick View</h2>
             <button
@@ -103,42 +84,50 @@ const handleAddToCart = () => {
             </button>
           </div>
 
-          {/* Content */}
           <div className="flex-1 overflow-y-auto p-4">
-            {/* Images */}
-            <Swiper spaceBetween={10} slidesPerView={2} className="mb-4">
-              {images.map((src, i) => (
-                <SwiperSlide key={i}>
-                  <Image
-                    unoptimized
-                    src={src}
-                    alt={product.name}
-                    width={300}
-                    height={300}
-                    className="rounded-lg border border-gray-200 object-cover w-64 h-64"
-                  />
-                </SwiperSlide>
-              ))}
-            </Swiper>
+            {images.length > 0 && (
+              <Swiper spaceBetween={10} slidesPerView={2} className="mb-4">
+                {images.map((src, i) => (
+                  <SwiperSlide key={i}>
+                    <Image
+                      unoptimized
+                      src={src}
+                      alt={product.name}
+                      width={300}
+                      height={300}
+                      className="rounded-lg border border-gray-200 object-cover w-64 h-64"
+                    />
+                  </SwiperSlide>
+                ))}
+              </Swiper>
+            )}
 
-            {/* Info */}
             <h2 className="text-xl font-semibold mb-2">{product.name}</h2>
             <div className="flex items-center gap-2 mb-3">
               <p className="text-lg font-bold text-gray-800">
                 ₹{product.regularPrice}
               </p>
               {product.salePrice && (
-                <p className="text-sm text-gray-500 line-through">
-                  ₹{product.salePrice}
-                </p>
+                <>
+                  <p className="text-sm text-gray-500 line-through">
+                    ₹{product.salePrice}
+                  </p>
+                  <span className="text-green-600 text-sm font-semibold">
+                    {Math.round(
+                      ((product.regularPrice - product.salePrice) /
+                        product.regularPrice) *
+                        100
+                    )}
+                    % OFF
+                  </span>
+                </>
               )}
             </div>
 
             <p className="text-gray-600 text-sm mb-4 line-clamp-3">
-              {descriptionText || "No description available."}
+              {descriptionText}
             </p>
 
-            {/* Size Chart Button */}
             <div className="flex items-center justify-between mb-3">
               <label className="block text-sm font-semibold text-gray-700">
                 Select Size
@@ -159,15 +148,14 @@ const handleAddToCart = () => {
               </button>
             </div>
 
-         
-
-            {/* Size Selector */}
             {product.attributes && product.attributes.length > 0 && (
               <div className="mb-4">
                 <div className="flex flex-wrap gap-2">
                   {product.attributes
                     .find(
-                      (attr) => attr.attribute.name.toLowerCase() === "sizes"
+                      (attr) =>
+                        attr.attribute.name.toLowerCase() === "sizes" ||
+                        attr.attribute.name.toLowerCase() === "size"
                     )
                     ?.values.map((val) => (
                       <button
@@ -188,7 +176,6 @@ const handleAddToCart = () => {
               </div>
             )}
 
-            {/* Quantity Selector */}
             <div className="flex items-center gap-3 mb-4">
               <h4 className="text-sm font-semibold">Quantity:</h4>
               <div className="flex items-center border rounded-md">
@@ -209,7 +196,6 @@ const handleAddToCart = () => {
             </div>
           </div>
 
-          {/* Footer Buttons */}
           <div className="border-t p-4 flex flex-col sm:flex-row gap-3">
             <button
               onClick={handleAddToCart}
@@ -228,16 +214,15 @@ const handleAddToCart = () => {
         </div>
       </div>
 
-         {/* Common SizeChartModal */}
-            {showSizeChart && (
-              <div className="fixed inset-0 z-[10000] flex items-center justify-center">
-                <SizeChartModal
-                  isOpen={showSizeChart}
-                  onClose={() => setShowSizeChart(false)}
-                  chartType={selectedChart}
-                />
-              </div>
-            )}
+      {showSizeChart && (
+        <div className="fixed inset-0 z-[10000] flex items-center justify-center">
+          <SizeChartModal
+            isOpen={showSizeChart}
+            onClose={() => setShowSizeChart(false)}
+            chartType={selectedChart}
+          />
+        </div>
+      )}
     </>
   );
 }

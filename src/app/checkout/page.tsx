@@ -1,7 +1,7 @@
 "use client";
 
 import { useCart } from "@/context/CartContext";
-import { useState , useEffect, use} from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -28,7 +28,9 @@ export default function CheckoutPage() {
     phone: "",
   });
 
-  // ✅ Auto-fill user data if logged in
+  const wpApiBase = process.env.NEXT_PUBLIC_WP_API_URL || "https://teehubshop.com/wp-json/wp/v2";
+
+  // Auto-fill user data if logged in
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
     if (storedUser) {
@@ -57,50 +59,74 @@ export default function CheckoutPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    // WordPress/WooCommerce order data structure
     const orderData = {
-      orderId: "ORD-" + Date.now(),
-      total: subtotal - discount,
-      status: "pending",
-      products: cartItems.map((item) => ({
-        product: item.id,
-        quantity: item.quantity,
-      })),
-      billingDetails: {
-        name: form.name,
-        email: form.email,
-        address: form.address,
+      payment_method: "cod", // Cash on Delivery
+      payment_method_title: "Cash on Delivery",
+      set_paid: false,
+      billing: {
+        first_name: form.name.split(" ")[0] || "",
+        last_name: form.name.split(" ").slice(1).join(" ") || "",
+        address_1: form.address,
+        address_2: "",
         city: form.city,
-        pincode: form.pincode,
+        state: "",
+        postcode: form.pincode,
+        country: "IN",
+        email: form.email,
         phone: form.phone,
       },
-     user: user ? user.uid : null,
+      shipping: {
+        first_name: form.name.split(" ")[0] || "",
+        last_name: form.name.split(" ").slice(1).join(" ") || "",
+        address_1: form.address,
+        address_2: "",
+        city: form.city,
+        state: "",
+        postcode: form.pincode,
+        country: "IN",
+      },
+      line_items: cartItems.map((item) => ({
+        product_id: parseInt(item.id),
+        quantity: item.quantity,
+        variation_id: 0, // Set if using variations
+      })),
+      shipping_lines: [
+        {
+          method_id: "flat_rate",
+          method_title: "Free Shipping",
+          total: "0.00",
+        },
+      ],
     };
 
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/orders`, {
+      // WordPress/WooCommerce orders endpoint
+      // Note: You'll need WooCommerce REST API credentials
+      const res = await fetch(`https://teehubshop.com/wp-json/wc/v3/orders`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          // Add WooCommerce API authentication here
+          // "Authorization": "Basic " + btoa("consumer_key:consumer_secret")
         },
         body: JSON.stringify(orderData),
       });
 
-      if (!res.ok) throw new Error("Failed to create order");
-
-      if (user) {
-        await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/users/${user.uid}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            name: form.name,
-            phone: form.phone,
-            address: form.address,
-          }),
-        });
+      if (!res.ok) {
+        const error = await res.json();
+        console.error("Order creation failed:", error);
+        throw new Error("Failed to create order");
       }
+
+      const createdOrder = await res.json();
+      console.log("Order created:", createdOrder);
 
       toast.success("Order placed successfully!");
       clearCart();
+      
+      // Redirect to success page or order confirmation
+      // router.push(`/order-confirmation/${createdOrder.id}`);
     } catch (error) {
       console.error(error);
       toast.error("Failed to place order. Please try again.");
@@ -111,7 +137,7 @@ export default function CheckoutPage() {
     const code = coupon.trim().toUpperCase();
 
     if (code === "SAVE10") {
-      setDiscount(subtotal * 0.1); // 10% off
+      setDiscount(subtotal * 0.1);
       setCouponMessage("✅ Coupon applied! You saved 10%");
     } else if (code === "FREESHIP") {
       setDiscount(0);
@@ -135,7 +161,7 @@ export default function CheckoutPage() {
         </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* 🧾 Left: Billing Details */}
+          {/* Billing Details */}
           <form onSubmit={handleSubmit} className="p-6 space-y-4">
             <h2 className="text-lg font-semibold mb-4">Billing Details</h2>
 
@@ -203,7 +229,7 @@ export default function CheckoutPage() {
             </button>
           </form>
 
-          {/* 🛒 Right: Order Summary */}
+          {/* Order Summary */}
           <div className="border-[0.5px] border-[#C7CBD4] rounded-lg p-6">
             <h2 className="text-lg font-semibold mb-4">Order Summary</h2>
 
@@ -219,7 +245,7 @@ export default function CheckoutPage() {
             </ul>
 
             {/* Coupon Code */}
-            <div className="mb-4">
+            <div className="mb-4 mt-4">
               <h4 className="text-sm font-semibold mb-2">Have a Coupon?</h4>
               <div className="flex gap-2">
                 <input
@@ -244,17 +270,12 @@ export default function CheckoutPage() {
 
             <div className="flex justify-between mt-4 border-t pt-4 font-semibold">
               <span>Subtotal</span>
-              <span>₹{subtotal}</span>
+              <span>₹{subtotal.toFixed(2)}</span>
             </div>
 
             <div className="flex justify-between mt-2">
               <span>Shipping</span>
               <span>Free</span>
-            </div>
-
-            <div className="flex justify-between mt-4 border-t pt-4 font-semibold">
-              <span>Subtotal</span>
-              <span>₹{subtotal.toFixed(2)}</span>
             </div>
 
             {discount > 0 && (
@@ -264,7 +285,7 @@ export default function CheckoutPage() {
               </div>
             )}
 
-            <div className="flex justify-between mt-4 text-lg font-bold">
+            <div className="flex justify-between mt-4 text-lg font-bold border-t pt-4">
               <span>Total</span>
               <span>₹{(subtotal - discount).toFixed(2)}</span>
             </div>

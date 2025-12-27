@@ -1,4 +1,4 @@
-// D:\teehub-frontend\src\components\CartDrawer.tsx
+// Updated CartDrawer.tsx - WordPress compatible
 "use client";
 import { useCart } from "@/context/CartContext";
 import Image from "next/image";
@@ -8,7 +8,6 @@ import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useRouter } from "next/navigation";
 
-
 export default function CartDrawer({
   isOpen,
   onClose,
@@ -17,8 +16,8 @@ export default function CartDrawer({
   onClose: () => void;
 }) {
   const { cartItems, removeFromCart, updateQuantity, updateSize } = useCart();
-  const apiBase = (process.env.NEXT_PUBLIC_API_URL || "").replace(/\/api$/, "");
   const router = useRouter();
+
   // Calculate totals
   const subtotal = cartItems.reduce(
     (total, item) => total + (item.regularPrice || 0) * item.quantity,
@@ -29,8 +28,7 @@ export default function CartDrawer({
     0
   );
   const savings = originalTotal - subtotal;
-  // Remove hardcoded 45% discount; use savings from salePrice vs regularPrice
-  const totalPayable = subtotal; // No additional hardcoded discount
+  const totalPayable = subtotal;
 
   // Disable scrolling when open
   useEffect(() => {
@@ -41,15 +39,19 @@ export default function CartDrawer({
   }, [isOpen]);
 
   const handleProceedToBuy = () => {
-  const user = localStorage.getItem("user");
+    const user = localStorage.getItem("user");
 
-  if (!user) {
-    toast.error("Please login first!");
-    return;
-  }
+    if (!user) {
+      toast.error("Please login first!");
+      setTimeout(() => {
+        router.push("/login");
+      }, 2000);
+      return;
+    }
 
-  router.push("/checkout");
-};
+    router.push("/checkout");
+  };
+
   return (
     <div
       className={`fixed inset-0 bg-black/50 transition-opacity duration-300 z-[9998] ${
@@ -73,6 +75,7 @@ export default function CartDrawer({
             ×
           </button>
         </div>
+
         {/* Cart Items */}
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
           {cartItems.length === 0 ? (
@@ -81,11 +84,11 @@ export default function CartDrawer({
             </p>
           ) : (
             cartItems.map((item) => {
-              const imageUrl = item.image
-                ? item.image.startsWith("http")
-                  ? item.image
-                  : `${apiBase}${item.image}`
+              // ✅ WordPress images are full URLs, no need for apiBase
+              const imageUrl = item.image?.startsWith("http")
+                ? item.image
                 : "/placeholder.png";
+
               const price = item.regularPrice || 0;
               const hasDiscount =
                 item.salePrice &&
@@ -114,7 +117,7 @@ export default function CartDrawer({
                   />
                   <div className="flex-1 text-sm">
                     <h3 className="font-semibold">{item.name}</h3>
-                    {/* Display variation attributes if available */}
+
                     {/* Size Selector */}
                     <div className="flex flex-wrap gap-2 mt-2">
                       {["XS", "S", "M", "L", "XL", "XXL"].map((size) => (
@@ -137,21 +140,19 @@ export default function CartDrawer({
                         <span className="font-bold text-gray-900">
                           ₹{price}{" "}
                         </span>
-                        <span className="line-through text-gray-400 text-xs">
-                          {item.salePrice}
-                        </span>
+                        {item.salePrice && (
+                          <span className="line-through text-gray-400 text-xs">
+                            ₹{item.salePrice}
+                          </span>
+                        )}
                       </div>
                       {hasDiscount && (
-                        <>
-                          <span className="line-through text-gray-400 text-xs">
-                            ₹{item.regularPrice}
-                          </span>
-                          <span className="text-green-600 text-xs">
-                            ({discountPercent}% OFF)
-                          </span>
-                        </>
+                        <span className="text-green-600 text-xs">
+                          ({discountPercent}% OFF)
+                        </span>
                       )}
                     </div>
+
                     {/* Quantity and Size */}
                     <div className="flex gap-2 mt-2">
                       <div className="flex items-center border rounded px-2">
@@ -191,12 +192,14 @@ export default function CartDrawer({
             })
           )}
         </div>
-        {/* Free Delivery */}
+
+        {/* Savings Banner */}
         {savings > 0 && (
           <div className="bg-green-100 text-green-700 text-center text-sm py-2 font-medium">
             Yay! You saved ₹{savings} on this order!
           </div>
         )}
+
         {/* Order Summary */}
         <div className="p-4 border-t text-sm">
           <h3 className="font-semibold mb-2 text-gray-800">Order Summary</h3>
@@ -226,6 +229,7 @@ export default function CartDrawer({
             <span>₹{totalPayable}</span>
           </div>
         </div>
+
         {/* Payment Footer */}
         <div className="border-t p-4 bg-white">
           <div className="flex justify-between items-center">
@@ -245,13 +249,12 @@ export default function CartDrawer({
                 <span>₹{savings}</span>
               </div>
             )}
-           <button
-  onClick={handleProceedToBuy}
-  className="bg-orange-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-orange-700 transition text-sm"
->
-  PROCEED TO BUY
-</button>
-
+            <button
+              onClick={handleProceedToBuy}
+              className="bg-orange-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-orange-700 transition text-sm"
+            >
+              PROCEED TO BUY
+            </button>
           </div>
         </div>
       </div>

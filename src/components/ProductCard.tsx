@@ -10,38 +10,37 @@ import CartDrawer from "@/components/CartDrawer";
 import QuickViewModal from "@/components/QuickViewModal";
 
 interface ProductCardProps {
-  product: Product | { slug: string }; // Allow either full product or just slug
+  product: Product | { slug: string };
 }
 
+// API route fetcher
 const fetcher = async (url: string) => {
   const res = await fetch(url);
   if (!res.ok) throw new Error(`Failed to fetch product: ${url}`);
   const data = await res.json();
-  return data?.docs?.[0] || null;
+  
+  // API returns array, get first item
+  if (Array.isArray(data) && data.length > 0) {
+    return data[0];
+  }
+  return null;
 };
 
 export default function ProductCard({ product }: ProductCardProps) {
-  const apiBase = process.env.NEXT_PUBLIC_API_URL || "";
-
   const { addToCart, cartCount, addToWishlist, removeFromWishlist, wishlist } =
     useCart();
   const [isDrawerOpen, setDrawerOpen] = useState(false);
   const [isQuickViewOpen, setQuickViewOpen] = useState(false);
 
-  // Use SWR to fetch product if only slug is provided, otherwise use prop
-  const { data: fetchedProduct, error } = useSWR<Product>(
+  // Fetch product if only slug is provided
+  const { data: fetchedProduct, error } = useSWR<Product | null>(
     product && "slug" in product && !("id" in product)
-      ? `${
-          process.env.NEXT_PUBLIC_API_URL
-        }/api/products?where[slug][equals]=${encodeURIComponent(
-          product.slug
-        )}&depth=2`
+      ? `/api/products?slug=${encodeURIComponent(product.slug)}`
       : null,
     fetcher,
     {
-      dedupingInterval: 3600000, // Cache for 1 hour
+      dedupingInterval: 3600000,
       revalidateOnFocus: false,
-      revalidateOnReconnect: true,
     }
   );
 
@@ -57,13 +56,9 @@ export default function ProductCard({ product }: ProductCardProps) {
     setIsInWishlist(wishlist.some((item) => item.slug === displayProduct.slug));
   }, [wishlist, displayProduct.slug]);
 
-  // Image URL with fallback
-  const normalizedBase = apiBase.endsWith("/") ? apiBase.slice(0, -1) : apiBase;
-  const imageUrl = displayProduct.images?.[0]?.image?.url
-    ? displayProduct.images[0].image.url.startsWith("http")
-      ? displayProduct.images[0].image.url
-      : `${normalizedBase}${displayProduct.images[0].image.url}`
-    : "/placeholder.png";
+  // Image URL
+  const imageUrl =
+    displayProduct?.images?.[0]?.image?.url || "/placeholder.png";
 
   const Skeleton = () => (
     <div className="rounded-lg overflow-hidden bg-white animate-pulse shadow-sm">
@@ -78,15 +73,16 @@ export default function ProductCard({ product }: ProductCardProps) {
     </div>
   );
 
-  if (error)
+  if (error) {
+    console.error("ProductCard error:", error);
     return <div className="text-red-600 text-sm">Error loading product...</div>;
+  }
   if (!displayProduct) return <Skeleton />;
 
   // Handle Add to Cart
   const handleAddToCart = () => {
     addToCart(displayProduct);
-    setDrawerOpen(true); // 👈 show drawer
-    // Log after a slight delay to capture the updated state
+    setDrawerOpen(true);
     setTimeout(() => {
       console.log("Added to cart, updated cartCount:", cartCount);
     }, 0);
@@ -105,6 +101,16 @@ export default function ProductCard({ product }: ProductCardProps) {
     }
   };
 
+  // Calculate discount percentage
+  const discountPercent =
+    displayProduct.salePrice && displayProduct.regularPrice
+      ? Math.round(
+          ((displayProduct.regularPrice - displayProduct.salePrice) /
+            displayProduct.regularPrice) *
+            100
+        )
+      : 0;
+
   return (
     <>
       <div className="rounded-lg overflow-hidden transition-all bg-white shadow-sm hover:shadow-md">
@@ -112,7 +118,7 @@ export default function ProductCard({ product }: ProductCardProps) {
           <div className="relative">
             {imageUrl && (
               <Image
-                unoptimized // 👈 add this
+                unoptimized
                 width={300}
                 height={300}
                 src={imageUrl}
@@ -148,15 +154,10 @@ export default function ProductCard({ product }: ProductCardProps) {
                 />
               </svg>
             </button>
-            {/* Discount Badge (if applicable) */}
-            {displayProduct.salePrice && displayProduct.regularPrice && (
+            {/* Discount Badge */}
+            {discountPercent > 0 && (
               <div className="absolute top-2 left-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full">
-                {Math.round(
-                  ((displayProduct.salePrice - displayProduct.regularPrice) /
-                    displayProduct.salePrice) *
-                    100
-                )}
-                % OFF
+                {discountPercent}% OFF
               </div>
             )}
           </div>
@@ -182,7 +183,7 @@ export default function ProductCard({ product }: ProductCardProps) {
           >
             {displayProduct.name}
           </h2>
-          {/* Add to Cart Button */}
+          {/* Quick View Button */}
           <button
             onClick={(e) => {
               e.preventDefault();

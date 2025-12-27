@@ -65,22 +65,34 @@ export default function LoginPage() {
     setLoading(false);
   };
 
-  const verifyOTP = async () => {
-    if (!otp) return alert("Please enter OTP");
-    setLoading(true);
-    try {
-      const result = await window.confirmationResult.confirm(otp);
-      setFirebaseUser(result.user);
-      setStep(3);
+ const verifyOTP = async () => {
+  if (!otp) return alert("Please enter OTP");
+  setLoading(true);
+  try {
+    const result = await window.confirmationResult.confirm(otp);
 
-      // ✅ After success message, go to name/address form
-      setTimeout(() => setStep(4), 2000);
-    } catch (err) {
-      console.error(err);
-      alert("Invalid OTP");
-    }
-    setLoading(false);
-  };
+    // ✅ Firebase user
+    const user = result.user;
+
+    // ✅ Fetch Firebase ID token
+    const token = await user.getIdToken();
+
+    // ✅ Store token for login session
+    localStorage.setItem("authToken", token);
+
+    setFirebaseUser(user);
+    setStep(3);
+
+    // ✅ After success message
+    setTimeout(() => setStep(4), 2000);
+
+  } catch (err) {
+    console.error(err);
+    alert("Invalid OTP");
+  }
+  setLoading(false);
+};
+
 
   const saveUserDetails = async () => {
     if (!name || !address) return alert("Please enter name and address");

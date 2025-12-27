@@ -3,13 +3,11 @@
 import Link from "next/link";
 import { useCart } from "@/context/CartContext";
 import Image from "next/image";
-import { Product } from "@/types/Product"; // ✅ import Product type
+import { Product } from "@/types/Product";
 
 export default function Wishlist() {
   const { wishlist, removeFromWishlist, addToCart } = useCart();
-  const apiBase = (process.env.NEXT_PUBLIC_API_URL || "").replace(/\/api$/, "");
 
-  // ✅ Use proper type instead of `any`
   const handleAddToCart = (product: Product) => {
     addToCart(product);
     removeFromWishlist(product.slug);
@@ -29,12 +27,8 @@ export default function Wishlist() {
       ) : (
         <div className="space-y-4">
           {wishlist.map((item: Product) => {
-            const imageUrl = item.images?.[0]?.image?.url
-              ? item.images[0].image.url.startsWith("http")
-                ? item.images[0].image.url
-                : `${apiBase}${item.images[0].image.url}`
-              : "/placeholder.png";
-
+            // ✅ WordPress images are already full URLs
+            const imageUrl = item.images?.[0]?.image?.url || "/placeholder.png";
             const price = item.salePrice || item.regularPrice || 0;
 
             return (
@@ -48,10 +42,12 @@ export default function Wishlist() {
                   height={100}
                   src={imageUrl}
                   alt={item.images?.[0]?.image?.alt || item.name}
-                  className="w-24  object-cover rounded-lg"
+                  className="w-24 object-cover rounded-lg"
                 />
                 <div className="flex-1">
-                  <h3 className="text-sm font-medium text-gray-800">{item.name}</h3>
+                  <h3 className="text-sm font-medium text-gray-800">
+                    {item.name}
+                  </h3>
                   <p className="text-xs text-gray-500">Price: ₹{price}</p>
                   <div className="flex items-center gap-4 mt-4">
                     <button

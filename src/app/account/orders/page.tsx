@@ -98,6 +98,7 @@ useEffect(() => {
       rating: reviewData.rating,
       review: reviewData.review,
       user: userId, // ✅ Must include this
+      status: "pending", // NEW
     };
 
     try {

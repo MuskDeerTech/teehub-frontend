@@ -28,15 +28,6 @@ import "slick-carousel/slick/slick-theme.css";
 import ProductCard from "@/components/ProductCard";
 import { Product } from "@/types/Product";
 
-interface AttributeValue {
-  id: string;
-  value: string;
-  attribute: {
-    id: string;
-    name: string;
-  };
-}
-
 interface Review {
   id: string;
   rating: number;
@@ -52,93 +43,113 @@ interface Review {
 }
 
 export default function HomePage() {
-  const [activeTab, setActiveTab] = useState<string>("");
+  const [activeTab, setActiveTab] = useState<string>("All");
   const [products, setProducts] = useState<Product[]>([]);
-  const [tabs, setTabs] = useState<string[]>([]);
-  const [colors, setColors] = useState<AttributeValue[]>([]);
+  const [tabs, setTabs] = useState<string[]>(["All"]);
   const [reviews, setReviews] = useState<Review[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const res = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/api/products?limit=100`
-        );
-        const data = (await res.json()) as { docs: Product[] };
-        const allProducts = data?.docs || [];
+        setLoading(true);
+        setError(null);
+
+        // ✅ Use your Next.js API route
+        const res = await fetch("/api/products");
+        
+        if (!res.ok) {
+          throw new Error(`HTTP error! status: ${res.status}`);
+        }
+
+        const allProducts = await res.json();
+        console.log("Fetched products:", allProducts); // Debug log
+        
         setProducts(allProducts);
 
-        // Extract distinct themes
-        const themes = Array.from(
+        // Extract categories as tabs
+        const categories = Array.from(
           new Set(
             allProducts
-              .map((p) => {
-                const themeAttr = p.attributes?.find(
-                  (a) => a.attribute.name.toLowerCase() === "theme"
-                );
-                return themeAttr?.values?.map((v) => v.value) || [];
-              })
-              .flat()
+              .flatMap((p: Product) => p.categories?.map((c) => c.name) || [])
               .filter(Boolean)
           )
-        );
-        setTabs(themes);
-        if (themes.length) setActiveTab(themes[0]);
+        ) as string[];
+        setTabs(["All", ...categories]);
       } catch (err) {
         console.error("Failed to fetch products:", err);
+        setError(err instanceof Error ? err.message : "Failed to fetch products");
+      } finally {
+        setLoading(false);
       }
     };
 
-    const fetchColors = async () => {
-      try {
-        const res = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/api/attribute-values?limit=50`
-        );
-        const data = (await res.json()) as { docs: AttributeValue[] };
-        const colorValues = data.docs.filter(
-          (v) => v.attribute?.name?.toLowerCase() === "colors"
-        );
-        setColors(colorValues);
-      } catch (err) {
-        console.error("Failed to fetch colors:", err);
-      }
-    };
-
-    const fetchReviews = async () => {
-      try {
-        const res = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/api/reviews?limit=10`
-        );
-        const data = (await res.json()) as { docs: Review[] };
-        setReviews(data.docs || []);
-      } catch (err) {
-        console.error("Failed to fetch reviews:", err);
-      }
-    };
+    // const fetchReviews = async () => {
+    //   try {
+    //     const res = await fetch("https://teehubshop.com/wp-json/wp/v2/comments?per_page=10");
+    //     if (!res.ok) return;
+        
+    //     const wpReviews = await res.json();
+        
+    //     const formattedReviews = wpReviews.map((r: any) => ({
+    //       id: r.id.toString(),
+    //       rating: 5,
+    //       review: r.content?.rendered?.replace(/<[^>]*>/g, "") || "",
+    //       user: {
+    //         id: r.author.toString(),
+    //         name: r.author_name,
+    //       },
+    //       createdAt: r.date,
+    //     }));
+        
+    //     setReviews(formattedReviews);
+    //   } catch (err) {
+    //     console.error("Failed to fetch reviews:", err);
+    //   }
+    // };
 
     fetchProducts();
-    fetchColors();
-    fetchReviews();
+    // fetchReviews();
   }, []);
 
-  // Filter products by active tab (theme)
-  const filteredProducts = products.filter((p) =>
-    p.attributes?.some(
-      (a) =>
-        a.attribute.name.toLowerCase() === "theme" &&
-        a.values.some((v) => v.value === activeTab)
+  // Filter products by active tab
+  const filteredProducts =
+    activeTab === "All"
+      ? products
+      : products.filter((p) =>
+          p.categories?.some((cat) => cat.name === activeTab)
+        );
+
+  // Get color options from products
+  const colorOptions = Array.from(
+    new Set(
+      products
+        .flatMap(
+          (p) =>
+            p.attributes
+              ?.find(
+                (attr) =>
+                  attr.attribute.name.toLowerCase() === "color" ||
+                  attr.attribute.name.toLowerCase() === "colors"
+              )
+              ?.values.map((v) => v.value) || []
+        )
+        .filter(Boolean)
     )
   );
 
   return (
     <div className={` flex flex-col`}>
       {/* 🔶 HERO + SIDE CARDS */}
-      <section className={`grid grid-cols-1 md:grid-cols-3 gap-6 px-6 py-10 ${monument.className}`}>
+      <section
+        className={`grid grid-cols-1 md:grid-cols-3 gap-6 px-6 py-10 ${monument.className}`}
+      >
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8 }}
-          className="relative md:col-span-2 rounded-3xl overflow-hidden bg-gray-900 text-white h-[400px] md:h-[500px]  cursor-pointer"
+          className="relative md:col-span-2 rounded-3xl overflow-hidden bg-gray-900 text-white h-[400px] md:h-[500px] cursor-pointer"
         >
           <Image
             src="/Custom-Tees-Banner.png"
@@ -181,7 +192,7 @@ export default function HomePage() {
                 className="object-cover group-hover:opacity-80 transition"
               />
               <div className="absolute inset-0 flex items-start justify-start p-6">
-                <p className="text-lg md:text-xl font-regular text-black  md:max-w-[150px]">
+                <p className="text-lg md:text-xl font-regular text-black md:max-w-[150px]">
                   {item.title}
                 </p>
               </div>
@@ -191,15 +202,15 @@ export default function HomePage() {
       </section>
 
       {/* 🔶 3-COLUMN SECTION */}
-      <section className={`${monument.className} grid grid-cols-1 md:grid-cols-[20%_80%] gap-4 px-6 `}>
-        {/* Left column — 20% */}
+      <section
+        className={`${monument.className} grid grid-cols-1 md:grid-cols-[20%_80%] gap-4 px-6 `}
+      >
         <div className="flex items-start justify-start">
           <h2 className="text-4xl md:text-5xl font-regular text-gray-900 leading-snug md:max-w-[100px]">
             Wear What You Stand For
           </h2>
         </div>
 
-        {/* Right column — 80% */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {[
             { title: "Gear Up Game On", img: "/Gear-Up-Game-On.png" },
@@ -240,8 +251,12 @@ export default function HomePage() {
 
       {/* 🔶 TRENDING SECTION */}
       <section className="py-12 px-6">
-        <div className={`flex justify-between mb-8 flex-wrap gap-4 ${monument.className}`}>
-          <h2 className={`text-3xl font-regular ${monument.className}`}>Trending</h2>
+        <div
+          className={`flex justify-between mb-8 flex-wrap gap-4 ${monument.className}`}
+        >
+          <h2 className={`text-3xl font-regular ${monument.className}`}>
+            Trending
+          </h2>
           <div className="flex gap-3 flex-wrap">
             {tabs.map((tab) => (
               <button
@@ -260,8 +275,21 @@ export default function HomePage() {
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6 font-regular product-home">
-          {filteredProducts.length > 0 ? (
-            filteredProducts.map((p) => <ProductCard key={p.id} product={p} />)
+          {loading ? (
+            <p className="text-center col-span-full text-gray-500">
+              Loading products...
+            </p>
+          ) : error ? (
+            <div className="col-span-full text-center">
+              <p className="text-red-600 mb-2">Error: {error}</p>
+              <p className="text-gray-500 text-sm">
+                Check console for details.
+              </p>
+            </div>
+          ) : filteredProducts.length > 0 ? (
+            filteredProducts
+              .slice(0, 8)
+              .map((p) => <ProductCard key={p.id} product={p} />)
           ) : (
             <p className="text-center col-span-full text-gray-500">
               No products found for {activeTab}.
@@ -271,23 +299,23 @@ export default function HomePage() {
       </section>
 
       {/* 🔶 EXPLORE BY COLORS */}
-      <section className="py-12 border-t border-[#C7CBD4] px-6 grid-col-1 grid md:grid-cols-[30%_70%] items-start gap-6">
-        <h2 className={`text-3xl md:text-4xl font-regular mb-6 leading-tight md:max-w-[100px] ${monument.className}`}>
+      {/* <section className="py-12 border-t border-[#C7CBD4] px-6 grid-col-1 grid md:grid-cols-[30%_70%] items-start gap-6">
+        <h2
+          className={`text-3xl md:text-4xl font-regular mb-6 leading-tight md:max-w-[100px] ${monument.className}`}
+        >
           Explore by Colors
         </h2>
 
         <div className="flex flex-wrap justify-start gap-4">
-          {colors.length > 0 ? (
-            colors.map((color) => {
-              const bg = color.value.toLowerCase();
+          {colorOptions.length > 0 ? (
+            colorOptions.map((color, idx) => {
+              const bg = color.toLowerCase();
               const isWhite =
                 bg === "white" || bg === "#ffffff" || bg === "rgb(255,255,255)";
               return (
                 <Link
-                  href={`/colors/${encodeURIComponent(
-                    color.value.toLowerCase()
-                  )}`}
-                  key={color.id}
+                  href={`/colors/${encodeURIComponent(color.toLowerCase())}`}
+                  key={idx}
                   className="px-5 py-2 rounded-full flex items-center gap-2 cursor-pointer hover:bg-gray-100 border border-[#C7CBD4]"
                 >
                   <span
@@ -296,7 +324,7 @@ export default function HomePage() {
                     }`}
                     style={{ backgroundColor: bg }}
                   ></span>
-                  <span className="font-regular uppercase">{color.value}</span>
+                  <span className="font-regular uppercase">{color}</span>
                 </Link>
               );
             })
@@ -304,14 +332,16 @@ export default function HomePage() {
             <p className="text-gray-500">No colors found</p>
           )}
         </div>
-      </section>
+      </section> */}
 
-      {/* 🔶 WHAT THE BUZZ IS ABOUT */}
-      <section className="py-12 border-t-[0.5px] border-[#C7CBD4] px-6 text-center">
-        <h2 className={`text-3xl md:text-4xl font-regular mb-10 ${monument.className}`}>
+      {/* Rest of sections remain the same... */}
+      {/* <section className="py-12 border-t-[0.5px] border-[#C7CBD4] px-6 text-center">
+        <h2
+          className={`text-3xl md:text-4xl font-regular mb-10 ${monument.className}`}
+        >
           What the Buzz Is About
         </h2>
-        <div className=" ">
+        <div className="">
           {reviews.length > 0 ? (
             <Slider
               dots={false}
@@ -328,10 +358,7 @@ export default function HomePage() {
             >
               {reviews.map((r) => (
                 <div key={r.id} className="px-3 py-6">
-                  <div
-                    className="bg-white drop-shadow-md
- items-center rounded-2xl p-6 text-left flex flex-col justify-between h-[200px]"
-                  >
+                  <div className="bg-white drop-shadow-md items-center rounded-2xl p-6 text-left flex flex-col justify-between h-[200px]">
                     <div className="flex text-yellow-400 mb-4">
                       {Array.from({ length: r.rating }).map((_, i) => (
                         <svg
@@ -345,8 +372,12 @@ export default function HomePage() {
                         </svg>
                       ))}
                     </div>
-                    <p className="text-gray-700 mb-2 text-center">{r.review}</p>
-                    <p className={`font-regular  mb-2 ${monument.className} text-sm`}>
+                    <p className="text-gray-700 mb-2 text-center line-clamp-2">
+                      {r.review}
+                    </p>
+                    <p
+                      className={`font-regular mb-2 ${monument.className} text-sm`}
+                    >
                       {r.user?.name || "Anonymous"}
                     </p>
                     <p className="text-sm text-gray-500">
@@ -360,15 +391,17 @@ export default function HomePage() {
             <p className="text-gray-500 col-span-full">No reviews yet</p>
           )}
         </div>
-      </section>
+      </section> */}
 
-      {/* 🔶 WHAT MAKES SHOPPING SPECIAL */}
-      <section className="py-16 px-6  border-t border-[#C7CBD4]">
-        <h2 className={`text-3xl md:text-4xl font-regular mb-12 ${monument.className}`}>
+      {/* WHAT MAKES SHOPPING SPECIAL */}
+      <section className="py-16 px-6 border-t border-[#C7CBD4]">
+        <h2
+          className={`text-3xl md:text-4xl font-regular mb-12 ${monument.className}`}
+        >
           What Makes Shopping with Us Special
         </h2>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-10 ">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
           {[
             {
               icon: (
@@ -380,10 +413,10 @@ export default function HomePage() {
                   xmlns="http://www.w3.org/2000/svg"
                 >
                   <rect width="120" height="120" rx="60" fill="#121212" />
-                  <g clip-path="url(#clip0_369_1447)">
+                  <g clipPath="url(#clip0_369_1447)">
                     <path
-                      fill-rule="evenodd"
-                      clip-rule="evenodd"
+                      fillRule="evenodd"
+                      clipRule="evenodd"
                       d="M44.8478 58.0425H45.7074L45.7222 50.0511C45.9003 46.2817 47.5333 42.9032 50.0644 40.4576L50.0844 40.4376C52.6631 37.9573 56.165 36.4316 60 36.4316C63.842 36.4316 67.3536 37.9624 69.9356 40.4576C72.5137 42.9501 74.1614 46.4109 74.2868 50.2658L74.2939 58.0425H75.1522C76.2123 58.0425 77.1799 58.4771 77.8723 59.1702L78.0581 59.3791C78.6438 60.0574 79 60.9356 79 61.8903V81.5738C79 82.6339 78.5654 83.6015 77.8723 84.2939C77.1799 84.987 76.2123 85.4216 75.1522 85.4216H44.8478C43.7877 85.4216 42.8201 84.987 42.1277 84.2939C41.4346 83.6015 41 82.6339 41 81.5738V61.8903C41 60.8392 41.4327 59.8793 42.1277 59.1792C42.8201 58.4771 43.7877 58.0425 44.8478 58.0425ZM60 65.0265C61.4221 65.0265 62.5749 66.1792 62.5749 67.6013C62.5749 68.7258 61.8548 69.6805 60.8506 70.0322L61.2871 72.0355L62.5749 77.9394H60H57.4251L58.7129 72.0355L59.1494 70.0322C58.1452 69.6805 57.4251 68.7258 57.4251 67.6013C57.4251 66.1792 58.5779 65.0265 60 65.0265ZM50.3229 58.0425H69.6771V50.3385C69.5807 47.7578 68.4678 45.4433 66.7422 43.7743C64.9967 42.0828 62.6186 41.0503 60 41.0503C57.3833 41.0503 55.0065 42.0816 53.27 43.7615C51.5541 45.4234 50.4463 47.7019 50.3209 50.244L50.3229 58.0425Z"
                       fill="white"
                     />
@@ -401,7 +434,7 @@ export default function HomePage() {
                 </svg>
               ),
               title: "Secure Payment",
-              desc: "We take care your package with full of attention and of course full of love. We want to make sure you’ll receive your package like you receive your birthday gift.",
+              desc: "We take care your package with full of attention and of course full of love. We want to make sure you'll receive your package like you receive your birthday gift.",
             },
             {
               icon: (
@@ -439,13 +472,16 @@ export default function HomePage() {
                 </svg>
               ),
               title: "Refund Process",
-              desc: "Refund is a such bad experience and we don’t want that thing happen to you. But when it’s happen we will make sure you will through smooth and friendly process.",
+              desc: "Refund is a such bad experience and we don't want that thing happen to you. But when it's happen we will make sure you will through smooth and friendly process.",
             },
           ].map((item) => (
-            <div key={item.title} className="flex flex-col  px-4 ">
+            <div key={item.title} className="flex flex-col px-4">
               {item.icon}
-              <h3 className={`text-xl font-regular mb-2 mt-4 ${monument.className}`}>
-              {item.title}</h3>
+              <h3
+                className={`text-xl font-regular mb-2 mt-4 ${monument.className}`}
+              >
+                {item.title}
+              </h3>
               <p
                 style={{ fontFamily: "poppins" }}
                 className="text-gray-600 text-sm leading-relaxed"
@@ -457,37 +493,45 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* 🔶 CURRENTLY IN FASHION */}
-      <section className="py-16 px-6 border-t border-[#C7CBD4] ">
-         <h2 className={`text-md md:text-xl font-regular mb-12 ${monument.className}`}>
-         Currently in fashion
+      {/* CURRENTLY IN FASHION */}
+      <section className="py-16 px-6 border-t border-[#C7CBD4]">
+        <h2
+          className={`text-md md:text-xl font-regular mb-12 ${monument.className}`}
+        >
+          Currently in fashion
         </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 items-center gap-10 ">
-       
-        <div className="relative rounded-2xl overflow-hidden">
-          <Image
-            src="/fashion.png"
-            alt="Currently in Fashion"
-            width={600}
-            height={400}
-            className="rounded-2xl object-cover"
-          />
+        <div className="grid grid-cols-1 md:grid-cols-2 items-center gap-10">
+          <div className="relative rounded-2xl overflow-hidden">
+            <Image
+              src="/fashion.png"
+              alt="Currently in Fashion"
+              width={600}
+              height={400}
+              className="rounded-2xl object-cover"
+            />
+          </div>
+          <div>
+            <h2
+              className={`text-3xl md:text-4xl font-regular mb-4 ${monument.className}`}
+            >
+              Wear Your Team, Own the Game
+            </h2>
+            <p
+              style={{ fontFamily: "poppins" }}
+              className={`text-gray-700 mb-6 ${monument.className}`}
+            >
+              From stadium cheers to street style, our IPL T-shirts keep your
+              spirit alive.
+            </p>
+            <Link href="/collections/ipl" className="inline-block">
+              <button
+                className={`border border-black px-6 py-2 rounded-full font-regular text-sm hover:bg-black hover:text-white transition ${monument.className}`}
+              >
+                View More
+              </button>
+            </Link>
+          </div>
         </div>
-        <div>
-          <h2 className={`text-3xl md:text-4xl font-regular mb-4 ${monument.className}`}>
-            Wear Your Team, Own the Game
-          </h2>
-          <p style={{ fontFamily: "poppins" }} className={`text-gray-700 mb-6 ${monument.className}`}>
-            From stadium cheers to street style, our IPL T-shirts keep your
-            spirit alive.
-          </p>
-          <Link href="/collections/ipl" className="inline-block">
-            <button className={`border border-black px-6 py-2 rounded-full font-regular  text-sm hover:bg-black hover:text-white transition ${monument.className}`}>
-              View More
-            </button>
-          </Link>
-        </div>
-      </div>
       </section>
     </div>
   );

@@ -9,23 +9,21 @@ import { useCart } from "@/context/CartContext";
 export default function Cart() {
   const { cartItems, removeFromCart, updateQuantity } = useCart();
 
-  const apiBase = (process.env.NEXT_PUBLIC_API_URL || "").replace(/\/api$/, "");
-
   // Calculate subtotal
   const subtotal = cartItems.reduce(
-    (total, item) => total + (item.regularPrice || 0) * item.quantity, // Use item.price directly
+    (total, item) => total + (item.regularPrice || 0) * item.quantity,
     0
   );
 
   // Handle quantity change
   const handleQuantityChange = (index: number, newQuantity: number) => {
-    const productId = cartItems[index].slug; // Use item.slug directly
+    const productId = cartItems[index].slug;
     updateQuantity(productId, newQuantity);
   };
 
   // Remove item from cart
   const handleRemoveItem = (index: number) => {
-    const productId = cartItems[index].slug; // Use item.slug directly
+    const productId = cartItems[index].slug;
     removeFromCart(productId);
   };
 
@@ -45,12 +43,11 @@ export default function Cart() {
           {/* Cart Items */}
           <div className="space-y-4">
             {cartItems.map((item, index) => {
-              const imageUrl = item.image
-                ? item.image.startsWith("http")
-                  ? item.image
-                  : `${apiBase}${item.image}`
-                : "/placeholder.png"; // Use item.image directly
-              const price = item.regularPrice || 0; // Use item.price directly
+              // ✅ WordPress images are already full URLs
+              const imageUrl = item.image?.startsWith("http")
+                ? item.image
+                : "/placeholder.png";
+              const price = item.regularPrice || 0;
               const total = price * item.quantity;
 
               return (
@@ -63,7 +60,7 @@ export default function Cart() {
                     width={100}
                     height={100}
                     src={imageUrl}
-                    alt={item.name} // Use item.name directly
+                    alt={item.name}
                     className="w-24 object-cover rounded-lg"
                   />
                   <div className="flex-1">
@@ -76,7 +73,8 @@ export default function Cart() {
                         onClick={() =>
                           handleQuantityChange(index, item.quantity - 1)
                         }
-                        className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300"
+                        disabled={item.quantity <= 1}
+                        className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300 disabled:opacity-50"
                       >
                         -
                       </button>
@@ -115,7 +113,7 @@ export default function Cart() {
             </div>
             <Link
               href="/checkout"
-              className="w-full px-4 py-2 bg-orange-600 text-white  rounded-lg text-center hover:bg-orange-700 transition-colors"
+              className="w-full block px-4 py-2 bg-orange-600 text-white rounded-lg text-center hover:bg-orange-700 transition-colors"
             >
               Proceed to Checkout
             </Link>

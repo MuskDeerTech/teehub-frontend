@@ -38,7 +38,8 @@ export default function ProductReviewsPage() {
 
   const { data: reviews } = useSWR(
     product
-      ? `${process.env.NEXT_PUBLIC_API_URL}/api/reviews?where[product][equals]=${product.id}&sort=createdAt&order=-1`
+      ? 
+       `${process.env.NEXT_PUBLIC_API_URL}/api/reviews?where[product][equals]=${product.id}&limit=10&where[status][equals]=approved`
       : null,
     fetcher
   );

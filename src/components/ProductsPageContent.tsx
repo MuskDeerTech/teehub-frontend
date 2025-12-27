@@ -10,8 +10,7 @@ import { Product } from "@/types/Product";
 const fetcher = async (url: string) => {
   const res = await fetch(url);
   if (!res.ok) throw new Error("Failed to fetch");
-  const data = await res.json();
-  return data?.docs || [];
+  return res.json();
 };
 
 export default function ProductsPageContent() {
@@ -33,14 +32,16 @@ export default function ProductsPageContent() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  // Fetch products from API route
   const { data: allProducts, error: productsError } = useSWR(
-    `${process.env.NEXT_PUBLIC_API_URL}/api/products?limit=100&depth=2`,
+    "/api/products",
     fetcher,
     { dedupingInterval: 300000, revalidateOnFocus: false }
   );
 
+  // Fetch categories from WordPress
   const { data: categories, error: categoriesError } = useSWR(
-    `${process.env.NEXT_PUBLIC_API_URL}/api/categories`,
+    "https://teehubshop.com/wp-json/wp/v2/product_cat?per_page=100",
     fetcher,
     { dedupingInterval: 3600000, revalidateOnFocus: false }
   );
@@ -158,7 +159,13 @@ export default function ProductsPageContent() {
             className="text-black"
             onClick={() => setIsFilterOpen(!isFilterOpen)}
           >
-            <Image unoptimized src="/hamburger.svg" alt="Filter" width={24} height={24} />
+            <Image
+              unoptimized
+              src="/hamburger.svg"
+              alt="Filter"
+              width={24}
+              height={24}
+            />
           </button>
 
           {/* Sort dropdown for mobile */}
@@ -173,9 +180,9 @@ export default function ProductsPageContent() {
         >
           <ProductFilters
             categories={
-              categories?.map((cat: { id: string; name: string }) => ({
+              categories?.map((cat: { id: number; name: string }) => ({
                 label: cat.name,
-                value: cat.id,
+                value: cat.id.toString(),
               })) || []
             }
             products={allProducts || []}

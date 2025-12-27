@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useState, ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { Product } from "@/types/Product";
 
 interface CartItem {
@@ -26,7 +26,7 @@ interface CartContextType {
   addToWishlist: (product: Product) => void;
   removeFromWishlist: (productId: string) => void;
   wishlistCount: number;
-  clearCart: () => void; // ✅ Add this line
+  clearCart: () => void;
 }
 
 const CartContext = createContext<CartContextType>({
@@ -40,7 +40,7 @@ const CartContext = createContext<CartContextType>({
   addToWishlist: () => {},
   removeFromWishlist: () => {},
   wishlistCount: 0,
-  clearCart: () => {}, // ✅ Add this line
+  clearCart: () => {},
 });
 
 export function useCart() {
@@ -50,6 +50,30 @@ export function useCart() {
 export function CartProvider({ children }: { children: ReactNode }) {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [wishlist, setWishlist] = useState<Product[]>([]);
+
+  // ✅ Load from localStorage on first render
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const savedCart = localStorage.getItem("cart");
+      const savedWishlist = localStorage.getItem("wishlist");
+      if (savedCart) setCartItems(JSON.parse(savedCart));
+      if (savedWishlist) setWishlist(JSON.parse(savedWishlist));
+    }
+  }, []);
+
+  // ✅ Save cart to localStorage whenever it changes
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("cart", JSON.stringify(cartItems));
+    }
+  }, [cartItems]);
+
+  // ✅ Save wishlist to localStorage whenever it changes
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("wishlist", JSON.stringify(wishlist));
+    }
+  }, [wishlist]);
 
   // ✅ Add to Cart
   const addToCart = (
@@ -75,7 +99,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
         );
       }
 
-      // ✅ Add new product to cart
       return [
         ...prev,
         {
@@ -85,7 +108,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
           price: product.salePrice || product.regularPrice || 0,
           regularPrice: product.regularPrice || product.salePrice || 0,
           salePrice: product.salePrice ?? undefined,
-
           quantity,
           image: product.images?.[0]?.image?.url,
           variation,
@@ -110,7 +132,16 @@ export function CartProvider({ children }: { children: ReactNode }) {
     );
   };
 
-  // ✅ Wishlist
+  // ✅ Update size / variation
+  const updateSize = (slug: string, newSize: string) => {
+    setCartItems((prevItems) =>
+      prevItems.map((item) =>
+        item.slug === slug ? { ...item, variation: newSize } : item
+      )
+    );
+  };
+
+  // ✅ Wishlist handlers
   const addToWishlist = (product: Product) => {
     if (!product.slug) return;
     setWishlist((prev) =>
@@ -124,21 +155,16 @@ export function CartProvider({ children }: { children: ReactNode }) {
     setWishlist((prev) => prev.filter((item) => item.slug !== productId));
   };
 
+  // ✅ Clear cart
+  const clearCart = () => {
+    setCartItems([]);
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("cart");
+    }
+  };
+
   const cartCount = cartItems.reduce((total, item) => total + item.quantity, 0);
   const wishlistCount = wishlist.length;
-
-  const updateSize = (slug: string, newSize: string) => {
-    setCartItems((prevItems) =>
-      prevItems.map((item) =>
-        item.slug === slug ? { ...item, variation: newSize } : item
-      )
-    );
-  };
-
-    const clearCart = () => {
-    setCartItems([]);
-    localStorage.removeItem("cart"); // optional: clear from storage
-  };
 
   return (
     <CartContext.Provider
@@ -152,8 +178,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
         addToWishlist,
         removeFromWishlist,
         wishlistCount,
-        updateSize, // 👈 add this
-        clearCart, // ✅ Implement clearCart
+        updateSize,
+        clearCart,
       }}
     >
       {children}

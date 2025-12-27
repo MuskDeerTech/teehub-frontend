@@ -14,7 +14,7 @@ const firebaseConfig = {
   measurementId: "G-VN1Y9MLTNJ",
 };
 
-// Initialize Firebase
+// ✅ Initialize Firebase
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 
@@ -25,4 +25,5 @@ if (typeof window !== "undefined") {
   });
 }
 
-export { RecaptchaVerifier, signInWithPhoneNumber };
+// ✅ Add this line
+export { app, RecaptchaVerifier, signInWithPhoneNumber };
