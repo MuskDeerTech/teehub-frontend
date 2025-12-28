@@ -27,8 +27,10 @@ const fetcher = async (url: string) => {
 };
 
 export default function ProductCard({ product }: ProductCardProps) {
-  const { addToCart, cartCount, addToWishlist, removeFromWishlist, wishlist } =
-    useCart();
+  // const { addToCart, cartCount, addToWishlist, removeFromWishlist, wishlist } =
+  //   useCart();
+  const { addToWishlist, removeFromWishlist, wishlist } = useCart();
+
   const [isDrawerOpen, setDrawerOpen] = useState(false);
   const [isQuickViewOpen, setQuickViewOpen] = useState(false);
 
@@ -80,13 +82,13 @@ export default function ProductCard({ product }: ProductCardProps) {
   if (!displayProduct) return <Skeleton />;
 
   // Handle Add to Cart
-  const handleAddToCart = () => {
-    addToCart(displayProduct);
-    setDrawerOpen(true);
-    setTimeout(() => {
-      console.log("Added to cart, updated cartCount:", cartCount);
-    }, 0);
-  };
+  // const handleAddToCart = () => {
+  //   addToCart(displayProduct);
+  //   setDrawerOpen(true);
+  //   setTimeout(() => {
+  //     console.log("Added to cart, updated cartCount:", cartCount);
+  //   }, 0);
+  // };
 
   // Handle Add/Remove from Wishlist
   const handleWishlistToggle = () => {

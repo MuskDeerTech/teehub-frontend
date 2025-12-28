@@ -22,31 +22,31 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
-import Slider from "react-slick";
+// import Slider from "react-slick";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 import ProductCard from "@/components/ProductCard";
 import { Product } from "@/types/Product";
 
-interface Review {
-  id: string;
-  rating: number;
-  review: string;
-  user?: {
-    id: string;
-    name: string;
-    image?: {
-      url: string;
-    };
-  };
-  createdAt: string;
-}
+// interface Review {
+//   id: string;
+//   rating: number;
+//   review: string;
+//   user?: {
+//     id: string;
+//     name: string;
+//     image?: {
+//       url: string;
+//     };
+//   };
+//   createdAt: string;
+// }
 
 export default function HomePage() {
   const [activeTab, setActiveTab] = useState<string>("All");
   const [products, setProducts] = useState<Product[]>([]);
   const [tabs, setTabs] = useState<string[]>(["All"]);
-  const [reviews, setReviews] = useState<Review[]>([]);
+  // const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -122,22 +122,22 @@ export default function HomePage() {
         );
 
   // Get color options from products
-  const colorOptions = Array.from(
-    new Set(
-      products
-        .flatMap(
-          (p) =>
-            p.attributes
-              ?.find(
-                (attr) =>
-                  attr.attribute.name.toLowerCase() === "color" ||
-                  attr.attribute.name.toLowerCase() === "colors"
-              )
-              ?.values.map((v) => v.value) || []
-        )
-        .filter(Boolean)
-    )
-  );
+  // const colorOptions = Array.from(
+  //   new Set(
+  //     products
+  //       .flatMap(
+  //         (p) =>
+  //           p.attributes
+  //             ?.find(
+  //               (attr) =>
+  //                 attr.attribute.name.toLowerCase() === "color" ||
+  //                 attr.attribute.name.toLowerCase() === "colors"
+  //             )
+  //             ?.values.map((v) => v.value) || []
+  //       )
+  //       .filter(Boolean)
+  //   )
+  // );
 
   return (
     <div className={` flex flex-col`}>

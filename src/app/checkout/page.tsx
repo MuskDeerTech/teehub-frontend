@@ -6,19 +6,19 @@ import Link from "next/link";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
-interface User {
-  uid: string;
-  phone: string;
-  name?: string;
-  address?: string;
-}
+// interface User {
+//   uid: string;
+//   phone: string;
+//   name?: string;
+//   address?: string;
+// }
 
 export default function CheckoutPage() {
   const { cartItems, clearCart } = useCart();
   const [coupon, setCoupon] = useState("");
   const [discount, setDiscount] = useState(0);
   const [couponMessage, setCouponMessage] = useState("");
-  const [user, setUser] = useState<User | null>(null);
+  // const [user, setUser] = useState<User | null>(null);
   const [form, setForm] = useState({
     name: "",
     email: "",
@@ -28,14 +28,14 @@ export default function CheckoutPage() {
     phone: "",
   });
 
-  const wpApiBase = process.env.NEXT_PUBLIC_WP_API_URL || "https://teehubshop.com/wp-json/wp/v2";
+  // const wpApiBase = process.env.NEXT_PUBLIC_WP_API_URL || "https://teehubshop.com/wp-json/wp/v2";
 
   // Auto-fill user data if logged in
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
     if (storedUser) {
       const userData = JSON.parse(storedUser);
-      setUser(userData);
+      // setUser(userData);
       setForm((prev) => ({
         ...prev,
         name: userData.name || "",

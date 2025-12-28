@@ -6,9 +6,10 @@ import Image from "next/image";
 import { useCart } from "@/context/CartContext";
 
 interface Category {
-  id: string;
+  id: number;
   name: string;
-  parent?: string | null;
+  slug: string;
+  count: number;
 }
 
 interface User {
@@ -33,15 +34,30 @@ export default function Header() {
     if (storedUser) setUser(JSON.parse(storedUser));
   }, []);
 
-  // ✅ Fetch categories dynamically from Payload
+  // ✅ Fetch categories from WordPress WooCommerce
   useEffect(() => {
     async function fetchCategories() {
       try {
+        // Fetch from WordPress product categories endpoint
         const res = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/api/categories?depth=0`
+          "https://teehubshop.com/wp-json/wc/v3/products/categories?per_page=100&consumer_key=ck_d3c0b18ca7ac7fbf059265d229555187de554abf&consumer_secret=cs_f0353b549d425dce8fd3a7697fb2954e890b0e65"
         );
-        const data = await res.json();
-        setCategories(data.docs || []);
+        
+        if (!res.ok) {
+          console.error("Failed to fetch categories:", res.status);
+          return;
+        }
+        
+        const data: Category[] = await res.json();
+        
+        // Filter out categories with 0 products and sort by product count
+        const filteredCategories = data
+          .filter((cat) => cat.count > 0)
+          .sort((a, b) => b.count - a.count)
+          .slice(0, 6); // Show top 6 categories
+        
+        setCategories(filteredCategories);
+        console.log("✅ Fetched categories:", filteredCategories);
       } catch (error) {
         console.error("Failed to fetch categories:", error);
       }
@@ -144,7 +160,7 @@ export default function Header() {
                       fill="none"
                     >
                       <path
-                        fill-rule="evenodd"
+                        fillRule="evenodd"
                         clipRule="evenodd"
                         d="M12.7071 14.7071C12.3166 15.0976 11.6834 15.0976 11.2929 14.7071L6.29289 9.70711C5.90237 9.31658 5.90237 8.68342 6.29289 8.29289C6.68342 7.90237 7.31658 7.90237 7.70711 8.29289L12 12.5858L16.2929 8.29289C16.6834 7.90237 17.3166 7.90237 17.7071 8.29289C18.0976 8.68342 18.0976 9.31658 17.7071 9.70711L12.7071 14.7071Z"
                         fill="#000000"
@@ -203,9 +219,9 @@ export default function Header() {
             <nav className="hidden lg:flex gap-6">
               {categories.length > 0 ? (
                 categories.map((cat) => (
-                  <Link
+                  <Link style={{textTransform:"uppercase", whiteSpace:"nowrap"}}
                     key={cat.id}
-                    href={`/category/${cat.name.toLowerCase()}`}
+                    href={`/category/${cat.slug}`}
                     className="text-sm font-medium text-gray-700 hover:text-orange-600 transition-colors"
                   >
                     {cat.name}
@@ -316,19 +332,18 @@ export default function Header() {
                   fill="none"
                   xmlns="http://www.w3.org/2000/svg"
                 >
-                  {" "}
                   <path
                     d="M30.7693 8.29479C30.6324 8.13679 30.463 8.01009 30.2728 7.92329C30.0826 7.83648 29.8759 7.79159 29.6668 7.79167H9.51412L9.22975 6.09417C9.17313 5.75364 8.99756 5.44424 8.73427 5.221C8.47097 4.99776 8.13703 4.87516 7.79183 4.875H4.51058C4.12381 4.875 3.75287 5.02865 3.47938 5.30214C3.20589 5.57563 3.05225 5.94656 3.05225 6.33333C3.05225 6.72011 3.20589 7.09104 3.47938 7.36453C3.75287 7.63802 4.12381 7.79167 4.51058 7.79167H6.55662L9.26912 24.0725L9.33475 24.2533L9.4135 24.4735L9.5885 24.7346L9.72704 24.8979L10.0085 25.0875L10.1718 25.1823C10.3418 25.2521 10.5233 25.2892 10.707 25.2917H26.7502C27.1369 25.2917 27.5079 25.138 27.7814 24.8645C28.0549 24.591 28.2085 24.2201 28.2085 23.8333C28.2085 23.4466 28.0549 23.0756 27.7814 22.8021C27.5079 22.5286 27.1369 22.375 26.7502 22.375H11.9437L11.7016 20.9167H28.2085C28.5594 20.9167 28.8986 20.7902 29.1638 20.5604C29.429 20.3305 29.6024 20.0128 29.6522 19.6654L31.1106 9.45708C31.1403 9.25021 31.1252 9.03936 31.0663 8.83883C31.0075 8.6383 30.9062 8.45276 30.7693 8.29479ZM27.9854 10.7083L27.5697 13.625H22.3752V10.7083H27.9854ZM20.9168 10.7083V13.625H16.5418V10.7083H20.9168ZM20.9168 15.0833V18H16.5418V15.0833H20.9168ZM15.0835 10.7083V13.625H10.7085L10.4927 13.6687L9.99975 10.7083H15.0835ZM10.7289 15.0833H15.0835V18H11.2145L10.7289 15.0833ZM22.3752 18V15.0833H27.3597L26.9441 18H22.3752Z"
                     fill="black"
-                  />{" "}
+                  />
                   <path
                     d="M12.896 31.125C14.1041 31.125 15.0835 30.1456 15.0835 28.9375C15.0835 27.7294 14.1041 26.75 12.896 26.75C11.6879 26.75 10.7085 27.7294 10.7085 28.9375C10.7085 30.1456 11.6879 31.125 12.896 31.125Z"
                     fill="black"
-                  />{" "}
+                  />
                   <path
                     d="M26.021 31.125C27.2291 31.125 28.2085 30.1456 28.2085 28.9375C28.2085 27.7294 27.2291 26.75 26.021 26.75C24.8129 26.75 23.8335 27.7294 23.8335 28.9375C23.8335 30.1456 24.8129 31.125 26.021 31.125Z"
                     fill="black"
-                  />{" "}
+                  />
                 </svg>
                 {cartCount > 0 && (
                   <span className="absolute -top-1 -right-0.5 text-xs bg-red-600 text-white rounded-full px-1">
@@ -348,7 +363,7 @@ export default function Header() {
                 categories.map((cat) => (
                   <Link
                     key={cat.id}
-                    href={`/category/${cat.name.toLowerCase()}`}
+                    href={`/category/${cat.slug}`}
                     className="text-sm font-medium text-gray-700 hover:text-orange-600 transition-colors"
                   >
                     {cat.name}

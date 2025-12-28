@@ -10,7 +10,8 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import PhoneInput from "react-phone-input-2";
 import "react-phone-input-2/lib/style.css";
-import type { User as FirebaseUser, ConfirmationResult } from "firebase/auth";
+// import type { User as FirebaseUser, ConfirmationResult } from "firebase/auth";
+import type { ConfirmationResult } from "firebase/auth";
 
 declare global {
   interface Window {
@@ -24,7 +25,7 @@ export default function LoginPage() {
   const [otp, setOtp] = useState("");
   const [name, setName] = useState("");
   const [address, setAddress] = useState("");
-  const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
+  // const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [timer, setTimer] = useState(30);
@@ -80,7 +81,7 @@ export default function LoginPage() {
     // ✅ Store token for login session
     localStorage.setItem("authToken", token);
 
-    setFirebaseUser(user);
+    // setFirebaseUser(user);
     setStep(3);
 
     // ✅ After success message

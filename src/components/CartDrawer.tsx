@@ -2,7 +2,7 @@
 "use client";
 import { useCart } from "@/context/CartContext";
 import Image from "next/image";
-import Link from "next/link";
+// import Link from "next/link";
 import { useEffect } from "react";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";

@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
+
 declare module "react-leaflet" {
   import * as React from "react";
   import { Map as LeafletMap } from "leaflet";

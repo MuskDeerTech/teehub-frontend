@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { FaStar } from "react-icons/fa";
 import Link from "next/link";
+import Image from "next/image";
 
 interface Review {
   id: string;
@@ -192,11 +193,14 @@ useEffect(() => {
                       <Link href={`/products/${p.product.slug}`} className="flex-shrink-0">
                         <div className="w-20 h-20 bg-gray-100 rounded-lg overflow-hidden cursor-pointer hover:opacity-80 transition-opacity">
                           {p.product?.images?.[0]?.image?.url ? (
-                            <img
-                              src={`${process.env.NEXT_PUBLIC_API_URL}${p.product.images[0].image.url}`}
-                              alt={p.product.name}
-                              className="object-cover w-full h-full"
-                            />
+                           <Image
+  unoptimized
+  width={80}
+  height={80}
+  src={`${process.env.NEXT_PUBLIC_API_URL}${p.product.images[0].image.url}`}
+  alt={p.product.name}
+  className="object-cover w-full h-full"
+/>
                           ) : (
                             <div className="w-full h-full flex items-center justify-center text-gray-400 text-sm">
                               No Image

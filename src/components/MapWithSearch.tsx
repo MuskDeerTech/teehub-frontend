@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
-import dynamic from "next/dynamic";
+// import dynamic from "next/dynamic";
 import {
   MapContainer,
   TileLayer,

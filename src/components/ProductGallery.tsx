@@ -12,25 +12,25 @@ interface ProductGalleryProps {
   productName: string;
 }
 
-const GallerySkeleton = () => (
-  <div className="space-y-6">
-    <div className="relative w-full h-[500px] border rounded-lg overflow-hidden shadow-md animate-pulse">
-      <div className="w-full h-full bg-gray-300" />
-    </div>
-    <div className="grid grid-cols-4 gap-4 mt-4">
-      {Array(4)
-        .fill(null)
-        .map((_, index) => (
-          <div
-            key={index}
-            className="w-full h-24 border rounded-lg overflow-hidden animate-pulse"
-          >
-            <div className="w-full h-full bg-gray-300" />
-          </div>
-        ))}
-    </div>
-  </div>
-);
+// const GallerySkeleton = () => (
+//   <div className="space-y-6">
+//     <div className="relative w-full h-[500px] border rounded-lg overflow-hidden shadow-md animate-pulse">
+//       <div className="w-full h-full bg-gray-300" />
+//     </div>
+//     <div className="grid grid-cols-4 gap-4 mt-4">
+//       {Array(4)
+//         .fill(null)
+//         .map((_, index) => (
+//           <div
+//             key={index}
+//             className="w-full h-24 border rounded-lg overflow-hidden animate-pulse"
+//           >
+//             <div className="w-full h-full bg-gray-300" />
+//           </div>
+//         ))}
+//     </div>
+//   </div>
+// );
 
 export default function ProductGallery({
   images,

@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useEffect } from "react";
-import { Product } from "@/types/Product";
+// import { useState, useEffect } from "react";
+// import { Product } from "@/types/Product";
 import Image from "next/image";
 import { useCart } from "@/context/CartContext";
 
