@@ -1,0 +1,38 @@
+@import "tailwindcss";
+
+@theme inline {
+  /* Map the project font CSS variables to Tailwind's font utilities. */
+  --font-sans: var(--font-inter);
+  --font-display: var(--font-anton);
+}
+
+/* Hide scrollbars on the horizontal sliders/carousels (Tailwind has no
+   built-in utility for this). */
+@utility scrollbar-hide {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Fill text with a background image (used for the giant footer "TEE HUB"
+   text). Tailwind's `bg-clip-text text-transparent` doesn't set
+   -webkit-text-fill-color, which some engines need, so we ship a tiny
+   utility that does the full effect. */
+@utility text-image-fill {
+  color: transparent;
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+html,
+body {
+  width: 100%;
+  overflow-x: hidden;
+  scroll-behavior: smooth;
+}
+
+body {
+  background: #fff;
+}
