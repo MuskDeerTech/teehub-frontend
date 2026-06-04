@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { menuCollections, menuCategories } from "@/lib/products";
 
 type MegaMenuProps = {
@@ -37,8 +38,10 @@ export default function MegaMenu({ open, onClose }: MegaMenuProps) {
           {/* RIGHT — category tiles */}
           <div className="grid flex-1 grid-cols-6 justify-items-center gap-x-10 max-[1024px]:flex max-[1024px]:flex-wrap max-[1024px]:justify-start">
             {menuCategories.map((cat) => (
-              <div
+              <Link
                 key={cat.title}
+                href={`/category/${cat.slug}`}
+                onClick={onClose}
                 className="flex w-[104px] cursor-pointer flex-col items-center gap-[35px]"
               >
                 <span className="whitespace-nowrap text-center text-[12px] font-bold uppercase tracking-[0.4px] text-black">
@@ -51,7 +54,7 @@ export default function MegaMenu({ open, onClose }: MegaMenuProps) {
                   height={104}
                   className="h-[104px] w-[104px] object-contain transition-transform duration-300 hover:scale-105"
                 />
-              </div>
+              </Link>
             ))}
           </div>
         </div>

@@ -3,14 +3,24 @@
 
 export const navLinks = ["NEW IN", "COLLECTIONS", "TRACK ORDER"];
 
-export const categories = [
-  "IPL JERSEY 2026",
-  "POLO",
-  "FOOTBALL",
-  "HOODIES",
-  "CAPS",
-  "JACKETS",
+/**
+ * Single source of truth for the shop's categories. `slug` drives the URL
+ * (`/category/<slug>`); `label` is what the UI shows. Add a CMS later and this
+ * list becomes a fetch — the routing/components don't change.
+ */
+export type Category = { slug: string; label: string };
+
+export const categoryList: Category[] = [
+  { slug: "ipl-jersey", label: "IPL JERSEY 2026" },
+  { slug: "polo", label: "POLO" },
+  { slug: "football", label: "FOOTBALL" },
+  { slug: "hoodies", label: "HOODIES" },
+  { slug: "caps", label: "CAPS" },
+  { slug: "jackets", label: "JACKETS" },
 ];
+
+/** Labels for the Hero pill row (derived so there's no second list to update). */
+export const categories = categoryList.map((c) => c.label);
 
 /** Left-hand collection links shown in the hamburger mega-menu. */
 export const menuCollections = [
@@ -22,15 +32,15 @@ export const menuCollections = [
 ];
 
 /** Right-hand category tiles (heading + finished tile image) in the mega-menu. */
-export type MenuCategory = { title: string; image: string };
+export type MenuCategory = { title: string; image: string; slug: string };
 
 export const menuCategories: MenuCategory[] = [
-  { title: "IPL JERSEY 2026", image: "/images/hamburg/ipl-jersey.png" },
-  { title: "POLO", image: "/images/hamburg/polo.png" },
-  { title: "FOOTBALL", image: "/images/hamburg/football.png" },
-  { title: "HOODIES", image: "/images/hamburg/hoodies.png" },
-  { title: "CAPS", image: "/images/hamburg/cap.png" },
-  { title: "JACKETS", image: "/images/hamburg/jacket.png" },
+  { title: "IPL JERSEY 2026", image: "/images/hamburg/ipl-jersey.png", slug: "ipl-jersey" },
+  { title: "POLO", image: "/images/hamburg/polo.png", slug: "polo" },
+  { title: "FOOTBALL", image: "/images/hamburg/football.png", slug: "football" },
+  { title: "HOODIES", image: "/images/hamburg/hoodies.png", slug: "hoodies" },
+  { title: "CAPS", image: "/images/hamburg/cap.png", slug: "caps" },
+  { title: "JACKETS", image: "/images/hamburg/jacket.png", slug: "jackets" },
 ];
 
 export type Team = { name: string; logo: string; logoWidth: number; logoHeight: number };
@@ -159,3 +169,60 @@ export const poloShirts: ApparelProduct[] = [
     newPrice: "₹999.00",
   },
 ];
+
+/**
+ * Catalog product shown on a category listing page (the grid of cards).
+ *
+ * Design notes for the eventual CMS swap:
+ *  - `image` is an optional string: a local `/images/...` path now, a CMS URL
+ *    later. Both are just strings, so components never change. It's optional so
+ *    we can build the cards as coloured boxes before the Figma exports land.
+ *  - Prices are NUMBERS, not pre-formatted strings, so we can sort/filter later
+ *    and format the ₹ once in `formatPriceRange`.
+ *  - `bg` is the card's background colour; the jersey image sits on top of it
+ *    (`object-contain`), which keeps every card uniform regardless of how
+ *    differently sized the source images are.
+ */
+export type Product = {
+  slug: string;
+  title: string;
+  bg: string;
+  priceMin: number;
+  priceMax: number;
+  image?: string;
+};
+
+/** IPL jerseys — colours/titles only for now; images get dropped in later. */
+export const iplJerseys: Product[] = [
+  { slug: "rcb-jersey-2026", title: "RCB JERSEY 2026", bg: "#BF5550", priceMin: 899, priceMax: 1099 },
+  { slug: "mi-jersey-2026", title: "MUMBAI INDIANS JERSEY 2026", bg: "#A8CCE9", priceMin: 899, priceMax: 1099 },
+  { slug: "csk-jersey-2026", title: "CSK JERSEY 2026", bg: "#B29952", priceMin: 899, priceMax: 1099 },
+  { slug: "mi-blue-jersey-2026", title: "MUMBAI INDIANS JERSEY 2026", bg: "#6188CF", priceMin: 899, priceMax: 1099 },
+  { slug: "kkr-jersey-2026", title: "KKR JERSEY 2026", bg: "#9F6CC5", priceMin: 899, priceMax: 1099 },
+  { slug: "gt-jersey-2026", title: "GUJARAT TITANS JERSEY 2026", bg: "#6480AC", priceMin: 899, priceMax: 1099 },
+  { slug: "rr-jersey-2026", title: "RAJASTHAN ROYALS JERSEY 2026", bg: "#C661AF", priceMin: 899, priceMax: 1099 },
+  { slug: "dc-jersey-2026", title: "DELHI CAPITALS JERSEY 2026", bg: "#DA6D9B", priceMin: 899, priceMax: 1099 },
+  { slug: "lsg-jersey-2026", title: "LUCKNOW SUPER GIANTS JERSEY 2026", bg: "#6C89AD", priceMin: 899, priceMax: 1099 },
+];
+
+/** Products keyed by category slug. New categories slot in here (or via a CMS). */
+const productsByCategory: Record<string, Product[]> = {
+  "ipl-jersey": iplJerseys,
+};
+
+/** All products for a category. `"all"` returns every product (the VIEW ALL pill). */
+export function getProductsByCategory(slug: string): Product[] {
+  if (slug === "all") return Object.values(productsByCategory).flat();
+  return productsByCategory[slug] ?? [];
+}
+
+export function getCategory(slug: string): Category | undefined {
+  return categoryList.find((c) => c.slug === slug);
+}
+
+/** Formats a product's price as a single `₹min – ₹max` (or just `₹min`) string. */
+export function formatPriceRange({ priceMin, priceMax }: Product): string {
+  const fmt = (n: number) =>
+    `₹${n.toLocaleString("en-IN", { minimumFractionDigits: 2 })}`;
+  return priceMax > priceMin ? `${fmt(priceMin)} – ${fmt(priceMax)}` : fmt(priceMin);
+}

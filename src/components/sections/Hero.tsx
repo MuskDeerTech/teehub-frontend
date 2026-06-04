@@ -1,12 +1,12 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useState } from "react";
 import Dots from "@/components/ui/Dots";
-import { categories, teams } from "@/lib/products";
+import { categoryList, teams } from "@/lib/products";
 
 export default function Hero() {
-  const [activeTab, setActiveTab] = useState("IPL JERSEY 2026");
   // Default to RCB so the initial window shows MI · RCB · CSK.
   const [activeIndex, setActiveIndex] = useState(1);
 
@@ -50,14 +50,14 @@ export default function Hero() {
     <section className="relative grid h-[calc(100vh_-_72px)] min-h-[650px] w-full grid-cols-2 overflow-hidden">
       {/* CATEGORY */}
       <div className="scrollbar-hide absolute left-6 right-6 top-6 z-10 flex gap-3 overflow-x-auto">
-        {categories.map((cat) => (
-          <button
-            key={cat}
-            onClick={() => setActiveTab(cat)}
+        {categoryList.map((cat) => (
+          <Link
+            key={cat.slug}
+            href={`/category/${cat.slug}`}
             className="cursor-pointer whitespace-nowrap rounded-full border border-white/40 bg-transparent px-5 py-2.5 text-[12px] font-bold tracking-[1px] text-white backdrop-blur-[10px] transition-colors duration-200 hover:bg-white hover:text-black"
           >
-            {cat}
-          </button>
+            {cat.label}
+          </Link>
         ))}
       </div>
 
