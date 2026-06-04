@@ -54,11 +54,7 @@ export default function Hero() {
           <button
             key={cat}
             onClick={() => setActiveTab(cat)}
-            className={`cursor-pointer whitespace-nowrap rounded-full border border-white/40 px-5 py-2.5 text-[12px] font-bold tracking-[1px] backdrop-blur-[10px] ${
-              activeTab === cat
-                ? "bg-white text-black"
-                : "bg-white/[0.08] text-white"
-            }`}
+            className="cursor-pointer whitespace-nowrap rounded-full border border-white/40 bg-transparent px-5 py-2.5 text-[12px] font-bold tracking-[1px] text-white backdrop-blur-[10px] transition-colors duration-200 hover:bg-white hover:text-black"
           >
             {cat}
           </button>
@@ -75,7 +71,7 @@ export default function Hero() {
           sizes="50vw"
           className="object-cover"
         />
-        <div className="pointer-events-none absolute left-[-10px] top-1/2 z-[5] -translate-y-1/2 whitespace-nowrap text-[clamp(40px,9vw,180px)] uppercase leading-[0.9] text-[#ff5820] min-[1440px]:h-[100px] min-[1440px]:text-[150px] max-[1024px]:h-[50px] max-[1024px]:text-[120px] max-[768px]:h-[5%] max-[768px]:w-1/2 max-[360px]:hidden">
+        <div className="pointer-events-none absolute -left-7.5 top-1/2 z-[5] -translate-y-1/2 whitespace-nowrap font-display text-[clamp(60px,14vw,280px)] uppercase leading-[0.85] text-[#ff5820] min-[1440px]:text-[240px] max-[1024px]:text-[160px] max-[768px]:w-1/2 max-[360px]:hidden">
           TEE
         </div>
       </div>
@@ -91,7 +87,7 @@ export default function Hero() {
           className="object-cover"
         />
         <div className="absolute inset-0 bg-black/25" />
-        <div className="pointer-events-none absolute right-[-10px] top-1/2 z-[5] -translate-y-1/2 whitespace-nowrap text-[clamp(40px,9vw,180px)] uppercase leading-[0.9] text-[#ff5820] min-[1440px]:h-[100px] min-[1440px]:text-[150px] max-[1024px]:h-[50px] max-[1024px]:text-[120px] max-[768px]:h-[5%] max-[768px]:w-1/2 max-[360px]:hidden">
+        <div className="pointer-events-none absolute -right-7.5 top-1/2 z-[5] -translate-y-1/2 whitespace-nowrap font-display text-[clamp(60px,14vw,280px)] uppercase leading-[0.85] text-[#ff5820] min-[1440px]:text-[240px] max-[1024px]:text-[160px] max-[768px]:w-1/2 max-[360px]:hidden">
           HUB
         </div>
       </div>

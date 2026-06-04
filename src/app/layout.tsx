@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter, Anton } from "next/font/google";
+import { Inter, Anton_SC } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
@@ -12,7 +12,7 @@ const inter = Inter({
 });
 
 // Heavy condensed display font for the big "TEE HUB" image-filled text.
-const anton = Anton({
+const anton = Anton_SC({
   variable: "--font-anton",
   weight: "400",
   subsets: ["latin"],

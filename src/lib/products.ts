@@ -4,7 +4,6 @@
 export const navLinks = ["NEW IN", "COLLECTIONS", "TRACK ORDER"];
 
 export const categories = [
-  "VIEW ALL",
   "IPL JERSEY 2026",
   "POLO",
   "FOOTBALL",
@@ -13,19 +12,40 @@ export const categories = [
   "JACKETS",
 ];
 
+/** Left-hand collection links shown in the hamburger mega-menu. */
+export const menuCollections = [
+  "NEW ARRIVALS",
+  "WINTER COLLECTION 2025",
+  "BASICS",
+  "TEEHUB CLUB",
+  "ICONICS",
+];
+
+/** Right-hand category tiles (heading + finished tile image) in the mega-menu. */
+export type MenuCategory = { title: string; image: string };
+
+export const menuCategories: MenuCategory[] = [
+  { title: "IPL JERSEY 2026", image: "/images/hamburg/ipl-jersey.png" },
+  { title: "POLO", image: "/images/hamburg/polo.png" },
+  { title: "FOOTBALL", image: "/images/hamburg/football.png" },
+  { title: "HOODIES", image: "/images/hamburg/hoodies.png" },
+  { title: "CAPS", image: "/images/hamburg/cap.png" },
+  { title: "JACKETS", image: "/images/hamburg/jacket.png" },
+];
+
 export type Team = { name: string; logo: string; logoWidth: number; logoHeight: number };
 
 export const teams: Team[] = [
-  { name: "MI", logo: "/images/teams/mi.svg", logoWidth: 300, logoHeight: 189 },
-  { name: "RCB", logo: "/images/teams/rcb.svg", logoWidth: 265, logoHeight: 377 },
-  { name: "CSK", logo: "/images/teams/csk.svg", logoWidth: 298, logoHeight: 246 },
-  { name: "DC", logo: "/images/teams/dc.svg", logoWidth: 300, logoHeight: 300 },
-  { name: "GT", logo: "/images/teams/gt.svg", logoWidth: 190, logoHeight: 140 },
-  { name: "KKR", logo: "/images/teams/kkr.svg", logoWidth: 234, logoHeight: 361 },
-  { name: "LSG", logo: "/images/teams/lsg.svg", logoWidth: 568, logoHeight: 326 },
-  { name: "PBKS", logo: "/images/teams/pk.svg", logoWidth: 275, logoHeight: 352 },
-  { name: "RR", logo: "/images/teams/rr.svg", logoWidth: 152, logoHeight: 237 },
-  { name: "SRH", logo: "/images/teams/sh.svg", logoWidth: 401, logoHeight: 302 },
+  { name: "MI", logo: "/svg/teams/mi.svg", logoWidth: 300, logoHeight: 189 },
+  { name: "RCB", logo: "/svg/teams/rcb.svg", logoWidth: 265, logoHeight: 377 },
+  { name: "CSK", logo: "/svg/teams/csk.svg", logoWidth: 298, logoHeight: 246 },
+  { name: "DC", logo: "/svg/teams/dc.svg", logoWidth: 300, logoHeight: 300 },
+  { name: "GT", logo: "/svg/teams/gt.svg", logoWidth: 190, logoHeight: 140 },
+  { name: "KKR", logo: "/svg/teams/kkr.svg", logoWidth: 234, logoHeight: 361 },
+  { name: "LSG", logo: "/svg/teams/lsg.svg", logoWidth: 568, logoHeight: 326 },
+  { name: "PBKS", logo: "/svg/teams/pk.svg", logoWidth: 275, logoHeight: 352 },
+  { name: "RR", logo: "/svg/teams/rr.svg", logoWidth: 152, logoHeight: 237 },
+  { name: "SRH", logo: "/svg/teams/sh.svg", logoWidth: 401, logoHeight: 302 },
 ];
 
 /** IPL jersey "drops" — shown in a colored card with a single price range. */
