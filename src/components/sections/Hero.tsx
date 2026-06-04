@@ -7,7 +7,44 @@ import { categories, teams } from "@/lib/products";
 
 export default function Hero() {
   const [activeTab, setActiveTab] = useState("IPL JERSEY 2026");
-  const [activeTeam, setActiveTeam] = useState("RCB");
+  // Default to RCB so the initial window shows MI · RCB · CSK.
+  const [activeIndex, setActiveIndex] = useState(1);
+
+  const teamCount = teams.length;
+  const prevIndex = (activeIndex - 1 + teamCount) % teamCount;
+  const nextIndex = (activeIndex + 1) % teamCount;
+
+  // Fixed 4 dots that advance one step per click, starting on the third dot
+  // (matches the RCB default at activeIndex 1).
+  const dotCount = 4;
+  const activeDot = (activeIndex + 1) % dotCount;
+
+  const renderTeamCard = (index: number, position: "left" | "center" | "right") => {
+    const team = teams[index];
+    const active = position === "center";
+    return (
+      <div
+        key={team.name}
+        onClick={() => {
+          if (position === "left") setActiveIndex(prevIndex);
+          else if (position === "right") setActiveIndex(nextIndex);
+        }}
+        className={`flex shrink-0 items-center justify-center rounded-[10px] bg-white transition-all duration-200 ${
+          active
+            ? "h-[clamp(70px,8vw,100px)] w-[clamp(70px,8vw,100px)]"
+            : "h-[clamp(52px,6vw,72px)] w-[clamp(52px,6vw,72px)] cursor-pointer opacity-90"
+        }`}
+      >
+        <Image
+          src={team.logo}
+          alt={team.name}
+          width={team.logoWidth}
+          height={team.logoHeight}
+          className={`object-contain ${active ? "h-[70%] w-[70%]" : "h-[65%] w-[65%]"}`}
+        />
+      </div>
+    );
+  };
 
   return (
     <section className="relative grid h-[calc(100vh_-_72px)] min-h-[650px] w-full grid-cols-2 overflow-hidden">
@@ -66,48 +103,33 @@ export default function Hero() {
 
       {/* TEAM SLIDER */}
       <div className="absolute bottom-[30px] left-1/2 z-20 flex w-[clamp(280px,45vw,520px)] -translate-x-1/2 flex-col items-center gap-2">
-        <div className="scrollbar-hide flex items-center gap-3 overflow-x-auto">
-          <button className="h-[clamp(24px,3vw,34px)] w-[clamp(24px,3vw,34px)] cursor-pointer rounded-full bg-white/25 text-white">
+        <div className="flex items-center justify-center gap-3">
+          <button
+            onClick={() => setActiveIndex(prevIndex)}
+            aria-label="Previous team"
+            className="h-[clamp(24px,3vw,34px)] w-[clamp(24px,3vw,34px)] cursor-pointer rounded-full bg-white/25 text-white"
+          >
             ‹
           </button>
 
-          {teams.map((team) => {
-            const active = activeTeam === team.name;
-            return (
-              <div
-                key={team.name}
-                onClick={() => setActiveTeam(team.name)}
-                className={`flex shrink-0 cursor-pointer items-center justify-center rounded-[10px] ${
-                  active
-                    ? "h-[clamp(70px,8vw,100px)] w-[clamp(70px,8vw,100px)] bg-white"
-                    : "h-[clamp(52px,6vw,72px)] w-[clamp(52px,6vw,72px)] bg-white/15"
-                }`}
-              >
-                <Image
-                  src={team.logo}
-                  alt={team.name}
-                  width={team.logoWidth}
-                  height={team.logoHeight}
-                  className={`h-auto object-contain ${
-                    active
-                      ? "w-[clamp(40px,5vw,70px)]"
-                      : "w-[clamp(28px,3.5vw,42px)]"
-                  }`}
-                />
-              </div>
-            );
-          })}
+          {renderTeamCard(prevIndex, "left")}
+          {renderTeamCard(activeIndex, "center")}
+          {renderTeamCard(nextIndex, "right")}
 
-          <button className="h-[clamp(24px,3vw,34px)] w-[clamp(24px,3vw,34px)] cursor-pointer rounded-full bg-white/25 text-white">
+          <button
+            onClick={() => setActiveIndex(nextIndex)}
+            aria-label="Next team"
+            className="h-[clamp(24px,3vw,34px)] w-[clamp(24px,3vw,34px)] cursor-pointer rounded-full bg-white/25 text-white"
+          >
             ›
           </button>
         </div>
 
         <div className="text-[15px] font-bold tracking-[1px] text-white">
-          {activeTeam}
+          {teams[activeIndex].name}
         </div>
 
-        <Dots tone="light" />
+        <Dots tone="light" count={dotCount} active={activeDot} />
       </div>
     </section>
   );

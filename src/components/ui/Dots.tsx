@@ -3,14 +3,22 @@
  * (so they were invisible); given minimal visible styling here.
  * No "use client" — usable from both server and client components.
  */
-export default function Dots({ tone = "light" }: { tone?: "light" | "dark" }) {
+export default function Dots({
+  tone = "light",
+  count = 4,
+  active = 2,
+}: {
+  tone?: "light" | "dark";
+  count?: number;
+  active?: number;
+}) {
   return (
     <div className="flex items-center gap-2">
-      {[0, 1, 2, 3].map((i) => (
+      {Array.from({ length: count }).map((_, i) => (
         <span
           key={i}
-          className={`h-2 w-2 rounded-full ${
-            i === 2
+          className={`h-2 w-2 rounded-full transition-colors ${
+            i === active
               ? tone === "light"
                 ? "bg-white"
                 : "bg-[#ff5b1f]"

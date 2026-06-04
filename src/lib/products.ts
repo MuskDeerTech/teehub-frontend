@@ -16,9 +16,16 @@ export const categories = [
 export type Team = { name: string; logo: string; logoWidth: number; logoHeight: number };
 
 export const teams: Team[] = [
-  { name: "CSK", logo: "/images/csk.webp", logoWidth: 70, logoHeight: 70 },
-  { name: "RCB", logo: "/images/rcb.jpg", logoWidth: 3840, logoHeight: 2160 },
-  { name: "MI", logo: "/images/mi.jpeg", logoWidth: 251, logoHeight: 201 },
+  { name: "MI", logo: "/images/teams/mi.svg", logoWidth: 300, logoHeight: 189 },
+  { name: "RCB", logo: "/images/teams/rcb.svg", logoWidth: 265, logoHeight: 377 },
+  { name: "CSK", logo: "/images/teams/csk.svg", logoWidth: 298, logoHeight: 246 },
+  { name: "DC", logo: "/images/teams/dc.svg", logoWidth: 300, logoHeight: 300 },
+  { name: "GT", logo: "/images/teams/gt.svg", logoWidth: 190, logoHeight: 140 },
+  { name: "KKR", logo: "/images/teams/kkr.svg", logoWidth: 234, logoHeight: 361 },
+  { name: "LSG", logo: "/images/teams/lsg.svg", logoWidth: 568, logoHeight: 326 },
+  { name: "PBKS", logo: "/images/teams/pk.svg", logoWidth: 275, logoHeight: 352 },
+  { name: "RR", logo: "/images/teams/rr.svg", logoWidth: 152, logoHeight: 237 },
+  { name: "SRH", logo: "/images/teams/sh.svg", logoWidth: 401, logoHeight: 302 },
 ];
 
 /** IPL jersey "drops" — shown in a colored card with a single price range. */

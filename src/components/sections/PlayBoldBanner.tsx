@@ -6,10 +6,10 @@ export default function PlayBoldBanner() {
       <Image
         src="/images/play-blod-banner.png"
         alt="Play Bold"
-        width={2400}
-        height={822}
+        fill
+        priority
         sizes="100vw"
-        className="absolute left-1/2 top-0 z-[1] h-[822px] w-[2400px] -translate-x-1/2 object-cover object-top min-[1440px]:inset-0 min-[1440px]:h-full min-[1440px]:w-full min-[1440px]:translate-x-0 max-[1024px]:left-[-170px] max-[1024px]:h-[800px] max-[1024px]:w-[500%] max-[1024px]:translate-x-0 max-[768px]:left-[-300px] max-[768px]:h-[800px] max-[768px]:w-[150%] max-[480px]:left-0 max-[480px]:h-[320px] max-[480px]:w-full max-[360px]:left-[-250px] max-[360px]:h-[500px] max-[360px]:w-[150%]"
+        className="z-1 object-cover object-top"
       />
       <Image
         src="/images/red.png"
