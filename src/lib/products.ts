@@ -190,19 +190,35 @@ export type Product = {
   priceMin: number;
   priceMax: number;
   image?: string;
+  // Filterable facets used by the filter panel. Optional so products can be
+  // added before they're fully tagged (an untagged product just never matches
+  // those facets and contributes nothing to their counts).
+  themes?: string[];
+  type?: string;
+  colors?: string[];
+  sleeve?: string;
+  sizes?: string[];
+};
+
+// Every jersey is a short-sleeve cricket/IPL "Jersey"; colours and available
+// sizes vary per product. These facets drive the filter panel's live counts.
+const JERSEY_FACETS: Pick<Product, "themes" | "type" | "sleeve"> = {
+  themes: ["Cricket", "IPL"],
+  type: "Jerseys",
+  sleeve: "Short",
 };
 
 /** IPL jerseys — colours/titles only for now; images get dropped in later. */
 export const iplJerseys: Product[] = [
-  { slug: "rcb-jersey-2026", title: "RCB JERSEY 2026", bg: "#BF5550", priceMin: 899, priceMax: 1099, image: "/images/ipl-jersey/rcb.png" },
-  { slug: "mi-jersey-2026", title: "MUMBAI INDIANS JERSEY 2026", bg: "#A8CCE9", priceMin: 899, priceMax: 1099, image: "/images/ipl-jersey/mi.png" },
-  { slug: "csk-jersey-2026", title: "CSK JERSEY 2026", bg: "#B29952", priceMin: 899, priceMax: 1099, image: "/images/ipl-jersey/csk.png" },
-  { slug: "mi-blue-jersey-2026", title: "MUMBAI INDIANS JERSEY 2026", bg: "#6188CF", priceMin: 899, priceMax: 1099, image: "/images/ipl-jersey/mi2.png" },
-  { slug: "kkr-jersey-2026", title: "KKR JERSEY 2026", bg: "#9F6CC5", priceMin: 899, priceMax: 1099, image: "/images/ipl-jersey/kkr.png" },
-  { slug: "gt-jersey-2026", title: "GUJARAT TITANS JERSEY 2026", bg: "#6480AC", priceMin: 899, priceMax: 1099, image: "/images/ipl-jersey/gt.png" },
-  { slug: "rr-jersey-2026", title: "RAJASTHAN ROYALS JERSEY 2026", bg: "#C661AF", priceMin: 899, priceMax: 1099, image: "/images/ipl-jersey/rr.png" },
-  { slug: "dc-jersey-2026", title: "DELHI CAPITALS JERSEY 2026", bg: "#DA6D9B", priceMin: 899, priceMax: 1099, image: "/images/ipl-jersey/blihi.png" },
-  { slug: "lsg-jersey-2026", title: "LUCKNOW SUPER GIANTS JERSEY 2026", bg: "#6C89AD", priceMin: 899, priceMax: 1099, image: "/images/ipl-jersey/gt2.png" },
+  { slug: "rcb-jersey-2026", title: "RCB JERSEY 2026", bg: "#BF5550", priceMin: 899, priceMax: 1099, image: "/images/ipl-jersey/rcb.png", ...JERSEY_FACETS, colors: ["Red", "Black"], sizes: ["Extra Large", "Large", "Medium", "Small"] },
+  { slug: "mi-jersey-2026", title: "MUMBAI INDIANS JERSEY 2026", bg: "#A8CCE9", priceMin: 899, priceMax: 1099, image: "/images/ipl-jersey/mi.png", ...JERSEY_FACETS, colors: ["Blue", "White"], sizes: ["Large", "Medium", "Small"] },
+  { slug: "csk-jersey-2026", title: "CSK JERSEY 2026", bg: "#B29952", priceMin: 899, priceMax: 1099, image: "/images/ipl-jersey/csk.png", ...JERSEY_FACETS, colors: ["Yellow", "Blue"], sizes: ["Extra Large", "Large", "Medium"] },
+  { slug: "mi-blue-jersey-2026", title: "MUMBAI INDIANS JERSEY 2026", bg: "#6188CF", priceMin: 899, priceMax: 1099, image: "/images/ipl-jersey/mi2.png", ...JERSEY_FACETS, colors: ["Blue"], sizes: ["Large", "Medium", "Small", "Extra Small"] },
+  { slug: "kkr-jersey-2026", title: "KKR JERSEY 2026", bg: "#9F6CC5", priceMin: 899, priceMax: 1099, image: "/images/ipl-jersey/kkr.png", ...JERSEY_FACETS, colors: ["Black", "Yellow"], sizes: ["Large", "Medium"] },
+  { slug: "gt-jersey-2026", title: "GUJARAT TITANS JERSEY 2026", bg: "#6480AC", priceMin: 899, priceMax: 1099, image: "/images/ipl-jersey/gt.png", ...JERSEY_FACETS, colors: ["Blue", "Black"], sizes: ["Oversized", "Large", "Medium"] },
+  { slug: "rr-jersey-2026", title: "RAJASTHAN ROYALS JERSEY 2026", bg: "#C661AF", priceMin: 899, priceMax: 1099, image: "/images/ipl-jersey/rr.png", ...JERSEY_FACETS, colors: ["Red", "Blue"], sizes: ["Large", "Medium", "Small"] },
+  { slug: "dc-jersey-2026", title: "DELHI CAPITALS JERSEY 2026", bg: "#DA6D9B", priceMin: 899, priceMax: 1099, image: "/images/ipl-jersey/blihi.png", ...JERSEY_FACETS, colors: ["Blue", "Red"], sizes: ["Extra Large", "Large", "Medium"] },
+  { slug: "lsg-jersey-2026", title: "LUCKNOW SUPER GIANTS JERSEY 2026", bg: "#6C89AD", priceMin: 899, priceMax: 1099, image: "/images/ipl-jersey/gt2.png", ...JERSEY_FACETS, colors: ["Blue", "Orange"], sizes: ["Large", "Medium", "Small"] },
 ];
 
 /** Products keyed by category slug. New categories slot in here (or via a CMS). */
@@ -218,6 +234,117 @@ export function getProductsByCategory(slug: string): Product[] {
 
 export function getCategory(slug: string): Category | undefined {
   return categoryList.find((c) => c.slug === slug);
+}
+
+/** Every catalog product, flattened — the set the filter panel counts over. */
+export const allProducts: Product[] = Object.values(productsByCategory).flat();
+
+/**
+ * The filterable facets, mapped to the `Product` field each one reads. Adding a
+ * facet here is all it takes for the counting logic below to pick it up.
+ */
+export type FacetKey = "themes" | "type" | "colors" | "sleeve" | "sizes";
+
+/** A product's values for one facet, normalised to an array (so single-value
+ *  fields like `type`/`sleeve` count the same way as the list fields). */
+function facetValues(p: Product, key: FacetKey): string[] {
+  const v = p[key];
+  return Array.isArray(v) ? v : v ? [v] : [];
+}
+
+/** The currently selected option labels per facet (empty/absent = no filter). */
+export type FacetSelections = Partial<Record<FacetKey, string[]>>;
+
+/** Does a product satisfy every selected facet *except* the one being counted?
+ *  Across facets it's AND; within a facet, multiple selections are OR. We skip
+ *  the facet being counted so its own options don't zero each other out — the
+ *  standard reactive-facet behaviour. */
+function matchesOtherFacets(
+  p: Product,
+  sel: FacetSelections,
+  except: FacetKey,
+): boolean {
+  return (Object.keys(sel) as FacetKey[]).every((key) => {
+    if (key === except) return true;
+    const chosen = sel[key];
+    if (!chosen?.length) return true;
+    const vals = facetValues(p, key);
+    return chosen.some((c) => vals.includes(c));
+  });
+}
+
+/** URL query-param name for each facet, e.g. `?color=Blue,Red&size=Large`.
+ *  Keeping the mapping here means the panel and the grid agree on the format. */
+export const FACET_PARAM: Record<FacetKey, string> = {
+  themes: "theme",
+  type: "category",
+  colors: "color",
+  sleeve: "sleeve",
+  sizes: "size",
+};
+
+/** Read a `{ facet: [labels] }` selection back out of URL search params. */
+export function paramsToSelections(params: URLSearchParams): FacetSelections {
+  const sel: FacetSelections = {};
+  for (const key of Object.keys(FACET_PARAM) as FacetKey[]) {
+    const raw = params.get(FACET_PARAM[key]);
+    if (raw) sel[key] = raw.split(",").filter(Boolean);
+  }
+  return sel;
+}
+
+/**
+ * Narrow products by the selected facets (AND across facets, OR within one) and
+ * an optional price ceiling. This is the actual "apply" — `getFacetCounts` is
+ * for the live numbers; this is what trims the grid.
+ */
+export function filterProducts(
+  products: Product[],
+  sel: FacetSelections,
+  maxPrice?: number,
+): Product[] {
+  return products.filter((p) => {
+    for (const key of Object.keys(sel) as FacetKey[]) {
+      const chosen = sel[key];
+      if (!chosen?.length) continue;
+      const vals = facetValues(p, key);
+      if (!chosen.some((c) => vals.includes(c))) return false;
+    }
+    if (maxPrice != null && p.priceMin > maxPrice) return false;
+    return true;
+  });
+}
+
+/** Per-facet result: how many products match each option, plus `total` — the
+ *  size of the set those options are counted within (products matching the
+ *  *other* selected facets). An option whose count equals `total` covers every
+ *  product in scope, so picking it narrows nothing — the panel uses this to
+ *  hide redundant facets (e.g. "Theme" on a page that's all one theme). */
+export type FacetResult = { total: number; counts: Record<string, number> };
+
+/**
+ * Live facet counts: for each facet, how many products would remain for each of
+ * its options given the *other* facets' current selections. Options with no
+ * matches are simply absent from `counts`.
+ *
+ * This is the function to swap for a backend/CMS call later — same return shape,
+ * the panel doesn't change.
+ */
+export function getFacetCounts(
+  products: Product[],
+  sel: FacetSelections,
+): Record<FacetKey, FacetResult> {
+  const keys: FacetKey[] = ["themes", "type", "colors", "sleeve", "sizes"];
+  const result = {} as Record<FacetKey, FacetResult>;
+  for (const key of keys) {
+    const base = products.filter((p) => matchesOtherFacets(p, sel, key));
+    const counts: Record<string, number> = {};
+    for (const p of base) {
+      for (const v of facetValues(p, key)) counts[v] = (counts[v] ?? 0) + 1;
+    }
+    result[key] = { total: base.length, counts };
+  }
+  return result;
 }
 
 /** Card background colours reused for the blank placeholder cards. */

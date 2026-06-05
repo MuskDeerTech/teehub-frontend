@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useState } from "react";
 import { navLinks } from "@/lib/products";
 import MegaMenu from "@/components/layout/MegaMenu";
@@ -21,8 +22,12 @@ export default function Navbar() {
         ))}
       </div>
 
-      {/* LOGO */}
-      <div className="absolute left-1/2 -translate-x-1/2 max-[768px]:left-[55%]">
+      {/* LOGO — links home from any page. */}
+      <Link
+        href="/"
+        aria-label="TeeHub home"
+        className="absolute left-1/2 -translate-x-1/2 max-[768px]:left-[55%]"
+      >
         <Image
           src="/images/teehub-logo.png"
           alt="TeeHub Logo"
@@ -31,7 +36,7 @@ export default function Navbar() {
           priority
           className="h-[52px] w-auto"
         />
-      </div>
+      </Link>
 
       {/* ICONS */}
       <div className="flex items-center gap-7 max-[768px]:flex-1 max-[768px]:justify-end max-[768px]:gap-5 max-[360px]:hidden">
