@@ -194,15 +194,15 @@ export type Product = {
 
 /** IPL jerseys — colours/titles only for now; images get dropped in later. */
 export const iplJerseys: Product[] = [
-  { slug: "rcb-jersey-2026", title: "RCB JERSEY 2026", bg: "#BF5550", priceMin: 899, priceMax: 1099 },
-  { slug: "mi-jersey-2026", title: "MUMBAI INDIANS JERSEY 2026", bg: "#A8CCE9", priceMin: 899, priceMax: 1099 },
-  { slug: "csk-jersey-2026", title: "CSK JERSEY 2026", bg: "#B29952", priceMin: 899, priceMax: 1099 },
-  { slug: "mi-blue-jersey-2026", title: "MUMBAI INDIANS JERSEY 2026", bg: "#6188CF", priceMin: 899, priceMax: 1099 },
-  { slug: "kkr-jersey-2026", title: "KKR JERSEY 2026", bg: "#9F6CC5", priceMin: 899, priceMax: 1099 },
-  { slug: "gt-jersey-2026", title: "GUJARAT TITANS JERSEY 2026", bg: "#6480AC", priceMin: 899, priceMax: 1099 },
-  { slug: "rr-jersey-2026", title: "RAJASTHAN ROYALS JERSEY 2026", bg: "#C661AF", priceMin: 899, priceMax: 1099 },
-  { slug: "dc-jersey-2026", title: "DELHI CAPITALS JERSEY 2026", bg: "#DA6D9B", priceMin: 899, priceMax: 1099 },
-  { slug: "lsg-jersey-2026", title: "LUCKNOW SUPER GIANTS JERSEY 2026", bg: "#6C89AD", priceMin: 899, priceMax: 1099 },
+  { slug: "rcb-jersey-2026", title: "RCB JERSEY 2026", bg: "#BF5550", priceMin: 899, priceMax: 1099, image: "/images/ipl-jersey/rcb.png" },
+  { slug: "mi-jersey-2026", title: "MUMBAI INDIANS JERSEY 2026", bg: "#A8CCE9", priceMin: 899, priceMax: 1099, image: "/images/ipl-jersey/mi.png" },
+  { slug: "csk-jersey-2026", title: "CSK JERSEY 2026", bg: "#B29952", priceMin: 899, priceMax: 1099, image: "/images/ipl-jersey/csk.png" },
+  { slug: "mi-blue-jersey-2026", title: "MUMBAI INDIANS JERSEY 2026", bg: "#6188CF", priceMin: 899, priceMax: 1099, image: "/images/ipl-jersey/mi2.png" },
+  { slug: "kkr-jersey-2026", title: "KKR JERSEY 2026", bg: "#9F6CC5", priceMin: 899, priceMax: 1099, image: "/images/ipl-jersey/kkr.png" },
+  { slug: "gt-jersey-2026", title: "GUJARAT TITANS JERSEY 2026", bg: "#6480AC", priceMin: 899, priceMax: 1099, image: "/images/ipl-jersey/gt.png" },
+  { slug: "rr-jersey-2026", title: "RAJASTHAN ROYALS JERSEY 2026", bg: "#C661AF", priceMin: 899, priceMax: 1099, image: "/images/ipl-jersey/rr.png" },
+  { slug: "dc-jersey-2026", title: "DELHI CAPITALS JERSEY 2026", bg: "#DA6D9B", priceMin: 899, priceMax: 1099, image: "/images/ipl-jersey/blihi.png" },
+  { slug: "lsg-jersey-2026", title: "LUCKNOW SUPER GIANTS JERSEY 2026", bg: "#6C89AD", priceMin: 899, priceMax: 1099, image: "/images/ipl-jersey/gt2.png" },
 ];
 
 /** Products keyed by category slug. New categories slot in here (or via a CMS). */

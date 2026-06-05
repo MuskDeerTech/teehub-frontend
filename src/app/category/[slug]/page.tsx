@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
 import CategoryFilter from "@/components/category/CategoryFilter";
-import ProductTile from "@/components/ui/ProductTile";
+import ProductGrid from "@/components/ui/ProductGrid";
 import PlaceholderTile from "@/components/ui/PlaceholderTile";
-import Pagination from "@/components/ui/Pagination";
 import {
   categoryList,
   getCategory,
@@ -50,11 +49,7 @@ export default async function CategoryPage({
       <CategoryFilter active={slug} />
 
       {products.length > 0 ? (
-        <div className={gridClass}>
-          {products.map((product) => (
-            <ProductTile key={product.slug} product={product} />
-          ))}
-        </div>
+        <ProductGrid products={products} />
       ) : showPlaceholders ? (
         <div className={gridClass}>
           {placeholderColors.map((bg, i) => (
@@ -66,8 +61,6 @@ export default async function CategoryPage({
           No products here yet — check back soon.
         </p>
       )}
-
-      {(products.length > 0 || showPlaceholders) && <Pagination />}
     </main>
   );
 }

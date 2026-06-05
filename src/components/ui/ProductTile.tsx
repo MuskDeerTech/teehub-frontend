@@ -37,7 +37,7 @@ export default function ProductTile({ product }: { product: Product }) {
             alt={product.title}
             fill
             sizes="(max-width: 480px) 100vw, (max-width: 768px) 50vw, 33vw"
-            className="object-contain object-bottom p-3 transition-transform duration-300 group-hover:scale-[1.04]"
+            className="object-contain object-bottom pt-3 transition-transform duration-300 group-hover:scale-[1.04]"
           />
         ) : null}
       </div>
