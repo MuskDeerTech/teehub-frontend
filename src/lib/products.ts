@@ -220,6 +220,31 @@ export function getCategory(slug: string): Category | undefined {
   return categoryList.find((c) => c.slug === slug);
 }
 
+/** Card background colours reused for the blank placeholder cards. */
+export const placeholderPalette = [
+  "#BF5550", "#A8CCE9", "#B29952", "#6188CF", "#9F6CC5",
+  "#6480AC", "#C661AF", "#DA6D9B", "#6C89AD",
+];
+
+/**
+ * The placeholder palette jumbled into a per-category order. Same colours on
+ * every page, but a different arrangement per slug. Seeded by the slug so the
+ * order is deterministic — stable across builds and identical on server/client
+ * (no hydration mismatch).
+ */
+export function getPlaceholderColors(slug: string): string[] {
+  const seed = [...slug].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7);
+  const colors = [...placeholderPalette];
+  // Seeded Fisher–Yates shuffle driven by a small LCG.
+  let state = seed;
+  for (let i = colors.length - 1; i > 0; i--) {
+    state = (state * 1103515245 + 12345) >>> 0;
+    const j = state % (i + 1);
+    [colors[i], colors[j]] = [colors[j], colors[i]];
+  }
+  return colors;
+}
+
 /** Formats a product's price as a single `₹min – ₹max` (or just `₹min`) string. */
 export function formatPriceRange({ priceMin, priceMax }: Product): string {
   const fmt = (n: number) =>
