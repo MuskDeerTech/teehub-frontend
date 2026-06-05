@@ -19,7 +19,10 @@ export default function Hero() {
   const dotCount = 4;
   const activeDot = (activeIndex + 1) % dotCount;
 
-  const renderTeamCard = (index: number, position: "left" | "center" | "right") => {
+  const renderTeamCard = (
+    index: number,
+    position: "left" | "center" | "right",
+  ) => {
     const team = teams[index];
     const active = position === "center";
     return (
@@ -121,9 +124,7 @@ export default function Hero() {
           </button>
         </div>
 
-        <div className="text-[15px] font-bold tracking-[1px] text-white">
-          {teams[activeIndex].name}
-        </div>
+        <div aria-hidden="true" className="h-[22px]" />
 
         <Dots tone="light" count={dotCount} active={activeDot} />
       </div>

@@ -17,7 +17,7 @@ export default function CategoryFilter({ active }: { active: string }) {
           return (
             <Link
               key={c.slug}
-              href={`/category/${c.slug}`}
+              href={c.slug === "all" ? "/" : `/category/${c.slug}`}
               className={`whitespace-nowrap rounded-full border px-5 py-2.5 text-[12px] font-bold tracking-[1px] transition-colors duration-200 ${
                 isActive
                   ? "border-black bg-black text-white"
