@@ -22,11 +22,11 @@ export default function ProductDetails() {
       <section className="mx-auto flex w-[1750px] gap-1 bg-[#EFEFEF] px-[21px] py-5">
         {/* LEFT FIXED IMAGE */}
         <div className="w-[32%] shrink-0">
-          <div className="h-[700px] overflow-hidden rounded-[8px] bg-[#C45B53]">
+          <div className="h-[700px] overflow-hidden rounded-[8px] bg-[#BF5550]">
             <Image
-              src="/Price-detail/rcb-pricedetailL.png"
+              src="images/Price-detail/rcb-pricedetailL.png"
               alt="Front Jersey"
-              width={700}
+              width={7000}
               height={900}
               className="h-full w-full object-contain"
             />
@@ -37,7 +37,7 @@ export default function ProductDetails() {
         <div className="h-[800px] w-[4525px] overflow-y-auto pr-1">
           <div className="flex flex-col gap-3">
             {/* Gallery 1 */}
-            <div className="h-[700px] shrink-0 overflow-hidden rounded-[8px] bg-[#C45B53]">
+            <div className="h-[700px] shrink-0 overflow-hidden rounded-[8px] bg-[#BF5550]">
               <Image
                 src="/images/Price-detail/rcb-pricedetailR.png"
                 alt="Gallery 1"
@@ -95,10 +95,10 @@ export default function ProductDetails() {
 
             {/* SIZE */}
             <div className="mt-5">
-              <div className="mb-3 flex items-right justify-between gap-4">
+              <div className="mb-3 flex justify-right gap-4">
                 <button
                   onClick={() => setShowGuide(true)}
-                  className="shrink-0 rounded bg-[#e9e9e9] flex items-right px-5 py-2 text-xs"
+                  className="shrink-0 rounded bg-[#e9e9e9] px-7 py-2 text-11px text-right flex justify-right"
                 >
                   Size Guide
                 </button>
@@ -109,7 +109,7 @@ export default function ProductDetails() {
                   <button
                     key={size}
                     onClick={() => setSelectedSize(size)}
-                    className={`min-w-[85px] rounded-full border px-4 py-2 text-sm transition ${
+                    className={`min-w-[90px] rounded-full border px-4 py-2 text-sm transition ${
                       selectedSize === size
                         ? "border-black bg-black text-white"
                         : "bg-white hover:border-black"
@@ -122,46 +122,55 @@ export default function ProductDetails() {
             </div>
 
             {/* QUANTITY + NAME */}
-            <div className="mt-5 flex gap-3">
-              <div className="w-[120px]">
-                <p className="mb-2 text-xs text-gray-500">Quantity</p>
+<div className="mt-8 flex gap-4">
 
-                <div className="flex h-[38px] items-center justify-between rounded bg-[#f3f3f3] px-3">
-                  <button
-                    onClick={() => setQuantity((prev) => Math.max(1, prev - 1))}
-                  >
-                    −
-                  </button>
+  {/* Quantity */}
+  <div className="w-1/2">
+    <div className="mb-2 rounded bg-[#E9E9E9] py-2 text-center text-sm">
+      Quantity
+    </div>
 
-                  <span>{quantity}</span>
+    <div className="flex items-center justify-between rounded bg-white px-3 py-2">
+      <button
+        onClick={() => setQuantity((prev) => Math.max(1, prev - 1))}
+        className="flex h-5 w-5 items-center justify-center rounded bg-black text-white"
+      >
+        −
+      </button>
 
-                  <button onClick={() => setQuantity((prev) => prev + 1)}>
-                    +
-                  </button>
-                </div>
-              </div>
+      <span className="text-[20px] font-medium">
+        {quantity}
+      </span>
 
-              <div className="flex-1">
-                <p className="mb-2 text-xs text-gray-500">
-                  Name and T-Shirt Number
-                </p>
+      <button
+        onClick={() => setQuantity((prev) => prev + 1)}
+        className="flex h-5 w-5 items-center justify-center rounded bg-black text-white"
+      >
+        +
+      </button>
+    </div>
+  </div>
 
-                <div className="flex overflow-hidden rounded bg-[#f3f3f3]">
-                  <input
-                    type="text"
-                    placeholder="MRUDULA"
-                    className="h-[38px] flex-1 bg-transparent px-3 outline-none"
-                  />
+  {/* Name & Number */}
+  <div className="w-1/2">
+    <div className="mb-2 rounded bg-[#E9E9E9] py-2 text-center text-sm">
+      Name and T.shirt Number
+    </div>
 
-                  <div className="h-[38px] w-px bg-gray-300" />
+    <div className="flex gap-2">
+      <input
+        type="text"
+        placeholder="MRUDULA"
+        className="h-[47px] flex-1 rounded bg-white px-3 outline-none"
+      />
 
-                  <input
-                    type="text"
-                    placeholder="07"
-                    className="h-[38px] w-[70px] bg-transparent text-center outline-none"
-                  />
-                </div>
-              </div>
+      <input
+        type="text"
+        placeholder="07"
+        className="h-[47px] w-[30px] rounded bg-white text-center outline-none"
+      />
+    </div>
+  </div>
             </div>
 
             {/* Action Buttons */}
@@ -170,14 +179,14 @@ export default function ProductDetails() {
                 ADD TO CART ₹330 to free shipping
               </button>
 
-              <button className="flex h-[56px] w-[56px] items-center justify-center rounded border">
+              <button className="flex h-[70px] w-[56px] items-center justify-center rounded border">
                 ♡
               </button>
 
-              <button className="flex h-[56px] w-[56px] items-center justify-center rounded border border-green-500 text-green-500">
+              <button className="flex h-[70px] w-[56px] items-center justify-center rounded border border-green-500 text-green-500">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 32 32"
+                  viewBox="0 0 35 37"
                   fill="currentColor"
                   className="h-6 w-6"
                 >
