@@ -8,7 +8,7 @@
 export default function PlaceholderTile({ bg }: { bg: string }) {
   return (
     <div
-      className="relative aspect-[3/4] w-full overflow-hidden rounded-[10px]"
+      className="relative aspect-5/6 w-full overflow-hidden rounded-[10px]"
       style={{ backgroundColor: bg }}
     >
       <button

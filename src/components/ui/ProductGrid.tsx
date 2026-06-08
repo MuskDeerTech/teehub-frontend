@@ -9,7 +9,7 @@ import Pagination from "@/components/ui/Pagination";
 const PER_PAGE = 9;
 
 const gridClass =
-  "mt-9 grid grid-cols-3 gap-x-5 gap-y-10 max-[640px]:grid-cols-2 max-[420px]:grid-cols-1";
+  "mt-9 grid grid-cols-3 gap-x-16 gap-y-12 max-[640px]:grid-cols-2 max-[420px]:grid-cols-1";
 
 /**
  * Client-side paginated product grid. The full product list is passed in from

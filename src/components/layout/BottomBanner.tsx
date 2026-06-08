@@ -6,7 +6,7 @@ export default function BottomBanner() {
     <div className="w-full overflow-hidden border-2 border-[#111] bg-white px-[clamp(44px,5.2vw,100px)] pb-[28px] pt-[24px] max-[768px]:px-8 max-[768px]:pb-5 max-[768px]:pt-5 max-[480px]:px-4 max-[480px]:pb-4 max-[480px]:pt-4">
       <div className="mx-auto w-full max-w-[1302px]">
         <img
-          src="/images/svg/banner.svg"
+          src="/svg/banner.svg"
           alt="TEE HUB"
           className="block h-auto w-full -mt-[clamp(52px,10.9vw,142px)]"
         />

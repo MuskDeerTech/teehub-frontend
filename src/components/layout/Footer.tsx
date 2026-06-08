@@ -26,10 +26,10 @@ const colTitleClass =
 
 export default function Footer() {
   return (
-    <footer className="box-border w-full bg-[#252525] px-20 py-12 max-[1024px]:px-10 max-[1024px]:py-10 max-[768px]:px-6 max-[768px]:py-10 max-[480px]:px-4 max-[480px]:py-8 max-[360px]:px-3 max-[360px]:py-6">
-      <div className="mx-auto flex max-w-[1441px] items-start gap-20 max-[1024px]:gap-10 max-[768px]:grid max-[768px]:grid-cols-2 max-[768px]:gap-8 max-[480px]:grid max-[480px]:grid-cols-2 max-[480px]:gap-6 max-[360px]:grid-cols-1 max-[360px]:gap-5">
+    <footer className="box-border w-full bg-[#252525] py-12 max-[1024px]:py-10 max-[768px]:py-10 max-[480px]:py-8 max-[360px]:py-6">
+      <div className="mx-auto flex w-full max-w-[1440px] items-start gap-20 px-[clamp(16px,4vw,80px)] max-[1024px]:gap-10 max-[768px]:grid max-[768px]:grid-cols-2 max-[768px]:gap-8 max-[480px]:grid max-[480px]:grid-cols-2 max-[480px]:gap-6 max-[360px]:grid-cols-1 max-[360px]:gap-5">
         {/* WE ARE TEEHUB */}
-        <div className="flex flex-[2] flex-col gap-3 max-[768px]:col-span-2 max-[480px]:col-span-2 max-[360px]:col-auto">
+        <div className="flex flex-col gap-3 max-[768px]:col-span-2 max-[480px]:col-span-2 max-[360px]:col-auto">
           <h3 className="mb-1 text-[15px] font-bold uppercase tracking-[1px] text-white max-[768px]:text-[14px] max-[480px]:text-[13px]">
             WE ARE TEEHUB
           </h3>
@@ -58,7 +58,7 @@ export default function Footer() {
         </div>
 
         {/* ORDER SUPPORT */}
-        <div className="flex flex-1 flex-col gap-[13px] min-w-[220px] max-[1024px]:min-w-[140px]">
+        <div className="ml-auto flex flex-col gap-[13px] min-w-[220px] max-[1024px]:min-w-[140px] max-[768px]:ml-0">
           <h3 className={colTitleClass}>ORDER SUPPORT</h3>
           {orderSupport.map((link) => (
             <a key={link} href="#" className={linkClass}>
@@ -68,7 +68,7 @@ export default function Footer() {
         </div>
 
         {/* CONNECT WITH US */}
-        <div className="flex flex-1 flex-col gap-[13px] min-w-[220px] max-[1024px]:min-w-[140px]">
+        <div className="flex flex-col gap-[13px] min-w-[220px] max-[1024px]:min-w-[140px]">
           <h3 className={colTitleClass}>CONNECT WITH US</h3>
           {connectWithUs.map((link) => (
             <a key={link} href="#" className={linkClass}>

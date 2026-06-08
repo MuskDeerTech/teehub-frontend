@@ -25,7 +25,7 @@ export default function ProductTile({ product }: { product: Product }) {
   return (
     <article className="group flex flex-col">
       <div
-        className="relative aspect-[3/4] w-full overflow-hidden rounded-[10px]"
+        className="relative aspect-5/6 w-full overflow-hidden rounded-[10px]"
         style={{ backgroundColor: product.bg }}
       >
         <BookmarkButton
