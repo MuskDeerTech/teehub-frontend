@@ -4,6 +4,7 @@ import "./globals.css";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import BottomBanner from "@/components/layout/BottomBanner";
+import { BookmarksProvider } from "@/components/providers/BookmarksProvider";
 
 // Workhorse UI font — close free substitute for the paid "TT Paplane Trial".
 const inter = Inter({
@@ -36,12 +37,14 @@ export default function RootLayout({
     >
       <body className="min-h-full font-sans" suppressHydrationWarning>
         {/* Site chrome rendered once here so every page inherits it. */}
-        <div className="w-full min-h-screen overflow-x-hidden">
-          <Navbar />
-          {children}
-          <Footer />
-          <BottomBanner />
-        </div>
+        <BookmarksProvider>
+          <div className="w-full min-h-screen overflow-x-hidden">
+            <Navbar />
+            {children}
+            <Footer />
+            <BottomBanner />
+          </div>
+        </BookmarksProvider>
       </body>
     </html>
   );

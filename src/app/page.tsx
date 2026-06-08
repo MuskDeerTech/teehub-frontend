@@ -19,3 +19,14 @@ export default function Home() {
     </>
   );
 }
+/*
+import ProductDetails from "@/components/ui/ProductDetails";
+
+export default function ProductPage() {
+  return (
+    <>
+      <ProductDetails />
+     
+    </>
+  );
+}*/
