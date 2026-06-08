@@ -1,4 +1,6 @@
 import Image from "next/image";
+import BookmarkButton from "@/components/ui/BookmarkButton";
+import { productBookmarkId } from "@/lib/bookmarks";
 import type { Product } from "@/lib/products";
 import { formatPriceRange } from "@/lib/products";
 
@@ -23,13 +25,10 @@ export default function ProductTile({ product }: { product: Product }) {
         className="relative aspect-[3/4] w-full overflow-hidden rounded-[10px]"
         style={{ backgroundColor: product.bg }}
       >
-        <button
-          type="button"
-          aria-label="Save for later"
+        <BookmarkButton
+          id={productBookmarkId(product.slug)}
           className="absolute right-3 top-3 z-10 text-white/95 drop-shadow transition-transform duration-200 hover:scale-110"
-        >
-          <BookmarkIcon />
-        </button>
+        />
 
         {product.image ? (
           <Image
@@ -60,19 +59,5 @@ export default function ProductTile({ product }: { product: Product }) {
         </button>
       </div>
     </article>
-  );
-}
-
-function BookmarkIcon() {
-  return (
-    <svg
-      width="18"
-      height="22"
-      viewBox="0 0 18 22"
-      fill="currentColor"
-      aria-hidden="true"
-    >
-      <path d="M2 0h14a2 2 0 0 1 2 2v20l-9-5.2L0 22V2a2 2 0 0 1 2-2z" />
-    </svg>
   );
 }

@@ -1,4 +1,4 @@
-/*import Hero from "@/components/sections/Hero";
+import Hero from "@/components/sections/Hero";
 import LatestDrops from "@/components/sections/LatestDrops";
 import HoodiesBanner from "@/components/sections/HoodiesBanner";
 import JacketSection from "@/components/sections/JacketSection";
@@ -18,7 +18,8 @@ export default function Home() {
       <PoloShirts />
     </>
   );
-}*/
+}
+/*
 import ProductDetails from "@/components/ui/ProductDetails";
 
 export default function ProductPage() {
@@ -28,4 +29,4 @@ export default function ProductPage() {
      
     </>
   );
-}
+}*/

@@ -1,4 +1,6 @@
 import Image from "next/image";
+import BookmarkButton from "@/components/ui/BookmarkButton";
+import { jerseyBookmarkId } from "@/lib/bookmarks";
 import type { JerseyDrop } from "@/lib/products";
 
 /** Product card used in the "Latest Drops" section (colored box + price range). */
@@ -8,6 +10,11 @@ export default function JerseyCard({ drop }: { drop: JerseyDrop }) {
       <div
         className={`relative flex h-[468px] w-[313px] items-end justify-center overflow-hidden rounded-[10px] ${drop.bg} max-[1024px]:top-[20px] max-[1024px]:h-[500px] max-[1024px]:w-[90%] max-[768px]:h-[420px] max-[768px]:w-full max-[360px]:mt-[-66px] max-[360px]:h-[90%] max-[360px]:w-full`}
       >
+        <BookmarkButton
+          id={jerseyBookmarkId(drop.title)}
+          className="absolute right-3 top-3 z-10 text-white/95 drop-shadow transition-transform duration-200 hover:scale-110"
+        />
+
         <Image
           src={drop.image}
           alt={drop.alt}
