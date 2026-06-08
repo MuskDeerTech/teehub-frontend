@@ -232,6 +232,10 @@ export function getProductsByCategory(slug: string): Product[] {
   return productsByCategory[slug] ?? [];
 }
 
+export function getProductBySlug(slug: string): Product | undefined {
+  return allProducts.find((p) => p.slug === slug);
+}
+
 export function getCategory(slug: string): Category | undefined {
   return categoryList.find((c) => c.slug === slug);
 }

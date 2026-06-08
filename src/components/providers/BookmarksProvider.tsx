@@ -4,12 +4,13 @@ import {
   createContext,
   useCallback,
   useContext,
-  useEffect,
   useMemo,
-  useState,
+  useSyncExternalStore,
 } from "react";
 
 const STORAGE_KEY = "teehub-bookmarks";
+const EMPTY_BOOKMARKS = "[]";
+const listeners = new Set<() => void>();
 
 type BookmarksContextValue = {
   isBookmarked: (id: string) => boolean;
@@ -18,10 +19,13 @@ type BookmarksContextValue = {
 
 const BookmarksContext = createContext<BookmarksContextValue | null>(null);
 
-function loadBookmarks(): Set<string> {
+function readBookmarkJson() {
+  if (typeof window === "undefined") return EMPTY_BOOKMARKS;
+  return localStorage.getItem(STORAGE_KEY) ?? EMPTY_BOOKMARKS;
+}
+
+function parseBookmarks(raw: string): Set<string> {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return new Set();
     const parsed: unknown = JSON.parse(raw);
     return new Set(Array.isArray(parsed) ? (parsed as string[]) : []);
   } catch {
@@ -31,23 +35,27 @@ function loadBookmarks(): Set<string> {
 
 function saveBookmarks(bookmarks: Set<string>) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify([...bookmarks]));
+  listeners.forEach((listener) => listener());
+}
+
+function subscribe(listener: () => void) {
+  listeners.add(listener);
+  return () => listeners.delete(listener);
 }
 
 export function BookmarksProvider({ children }: { children: React.ReactNode }) {
-  const [bookmarks, setBookmarks] = useState<Set<string>>(() => new Set());
-
-  useEffect(() => {
-    setBookmarks(loadBookmarks());
-  }, []);
+  const bookmarkJson = useSyncExternalStore(
+    subscribe,
+    readBookmarkJson,
+    () => EMPTY_BOOKMARKS,
+  );
+  const bookmarks = useMemo(() => parseBookmarks(bookmarkJson), [bookmarkJson]);
 
   const toggle = useCallback((id: string) => {
-    setBookmarks((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      saveBookmarks(next);
-      return next;
-    });
+    const next = parseBookmarks(readBookmarkJson());
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
+    saveBookmarks(next);
   }, []);
 
   const isBookmarked = useCallback(
