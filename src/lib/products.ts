@@ -198,6 +198,22 @@ export type Product = {
   colors?: string[];
   sleeve?: string;
   sizes?: string[];
+  // Product-detail page ("/product/[slug]") fields. The catalog grid uses the
+  // priceMin/priceMax range; the detail page shows a single sale price with the
+  // struck-through MRP + discount, so these live here separately. All optional
+  // so a product can render the page before it's fully merchandised.
+  price?: number; // current sale price, e.g. 1200
+  originalPrice?: number; // struck-through MRP, e.g. 2500
+  discountPercent?: number; // discount badge value, e.g. 45
+  rating?: number; // average star rating, e.g. 4.7
+  reviewCount?: number; // number of ratings, e.g. 102
+  fitPercent?: number; // "All sizes 96% fit"
+  fitReviews?: number; // "(50 reviews)"
+  freeShippingRemaining?: number; // ₹ left to unlock free shipping, e.g. 330
+  detailSizes?: string[]; // size pills on the detail page (defaults to XS–XXXL)
+  details?: string[]; // bullet lines under the "Details" heading
+  description?: string; // long marketing paragraph under "Description"
+  prepaidPromo?: string; // green prepaid-incentive line under the fit copy
 };
 
 // Every jersey is a short-sleeve cricket/IPL "Jersey"; colours and available
@@ -210,7 +226,31 @@ const JERSEY_FACETS: Pick<Product, "themes" | "type" | "sleeve"> = {
 
 /** IPL jerseys — colours/titles only for now; images get dropped in later. */
 export const iplJerseys: Product[] = [
-  { slug: "rcb-jersey-2026", title: "RCB JERSEY 2026", bg: "#BF5550", priceMin: 899, priceMax: 1099, image: "/images/ipl-jersey/rcb.png", ...JERSEY_FACETS, colors: ["Red", "Black"], sizes: ["Extra Large", "Large", "Medium", "Small"] },
+  {
+    slug: "rcb-jersey-2026",
+    title: "RCB JERSEY 2026",
+    bg: "#BF5550",
+    priceMin: 899,
+    priceMax: 1099,
+    image: "/images/ipl-jersey/rcb.png",
+    ...JERSEY_FACETS,
+    colors: ["Red", "Black"],
+    sizes: ["Extra Large", "Large", "Medium", "Small"],
+    price: 1200,
+    originalPrice: 2500,
+    discountPercent: 45,
+    rating: 4.7,
+    reviewCount: 102,
+    fitPercent: 96,
+    fitReviews: 50,
+    freeShippingRemaining: 330,
+    detailSizes: ["XS", "S", "M", "L", "XL", "XXL", "XXXL"],
+    details: ["100% cotton pique", "weight - 330 gsm", "embroidery (front & back)"],
+    description:
+      "make a powerful style statement with the bottle green saddle league polo t-shirt, crafted for those who appreciate bold design and premium quality. made from 100% cotton with a solid 330 gsm weight, this green cotton polo t-shirt offers a structured feel with everyday comfort. the detailed saddle league embroidery adds depth and character, giving this red embroidered polo t-shirt a refined yet striking look. designed to elevate your streetwear rotation, this bottle green saddle league polo t-shirt pairs effortlessly with loose fit cargos for a relaxed vibe or with streetwear jeans for a sharper urban finish. easy to maintain with a machine reverse wash, it's a standout essential built for confident styling.",
+    prepaidPromo:
+      "Prepaid saves 70 shipping unlocks 3 free gifts + Scratch n' Spice card ships faster.",
+  },
   { slug: "mi-jersey-2026", title: "MUMBAI INDIANS JERSEY 2026", bg: "#A8CCE9", priceMin: 899, priceMax: 1099, image: "/images/ipl-jersey/mi.png", ...JERSEY_FACETS, colors: ["Blue", "White"], sizes: ["Large", "Medium", "Small"] },
   { slug: "csk-jersey-2026", title: "CSK JERSEY 2026", bg: "#B29952", priceMin: 899, priceMax: 1099, image: "/images/ipl-jersey/csk.png", ...JERSEY_FACETS, colors: ["Yellow", "Blue"], sizes: ["Extra Large", "Large", "Medium"] },
   { slug: "mi-blue-jersey-2026", title: "MUMBAI INDIANS JERSEY 2026", bg: "#6188CF", priceMin: 899, priceMax: 1099, image: "/images/ipl-jersey/mi2.png", ...JERSEY_FACETS, colors: ["Blue"], sizes: ["Large", "Medium", "Small", "Extra Small"] },
