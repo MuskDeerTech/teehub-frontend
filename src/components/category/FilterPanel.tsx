@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { IconRestore } from "@tabler/icons-react";
 import {
   FACET_PARAM,
   getFacetCounts,
@@ -161,7 +162,7 @@ export default function FilterPanel({
       {/* Dimmed backdrop — click to dismiss. */}
       <div
         onClick={onClose}
-        className={`fixed inset-0 z-40 bg-black/50 transition-opacity duration-300 ${
+        className={`fixed inset-0 z-[110] bg-black/35 backdrop-blur-sm transition-opacity duration-300 ${
           open ? "opacity-100" : "pointer-events-none opacity-0"
         }`}
         aria-hidden="true"
@@ -171,7 +172,7 @@ export default function FilterPanel({
         role="dialog"
         aria-modal="true"
         aria-label="Filters"
-        className={`fixed right-0 top-0 z-50 flex h-full w-full max-w-[440px] flex-col bg-white shadow-xl transition-transform duration-300 ease-out ${
+        className={`fixed right-0 top-0 z-[120] flex h-full w-full max-w-[440px] flex-col bg-white shadow-xl transition-transform duration-300 ease-out ${
           open ? "translate-x-0" : "translate-x-full"
         }`}
       >
@@ -180,14 +181,24 @@ export default function FilterPanel({
           <h2 className="text-[22px] font-semibold tracking-[-0.5px] text-black">
             Filters
           </h2>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Close filters"
-            className="text-black transition-opacity hover:opacity-60"
-          >
-            <CloseIcon />
-          </button>
+          <div className="flex items-center gap-4">
+            <button
+              type="button"
+              onClick={removeAll}
+              aria-label="Reset filters"
+              className="text-black transition-opacity hover:opacity-60"
+            >
+              <IconRestore size={21} stroke={1.8} aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label="Close filters"
+              className="text-black transition-opacity hover:opacity-60"
+            >
+              <CloseIcon />
+            </button>
+          </div>
         </div>
 
         {/* Scrollable body */}
@@ -291,18 +302,11 @@ export default function FilterPanel({
         </div>
 
         {/* Footer actions */}
-        <div className="flex items-center justify-between gap-4 px-7 py-5">
-          <button
-            type="button"
-            onClick={removeAll}
-            className="rounded-full border border-[#d9d9d9] px-6 py-3 text-[13px] font-semibold text-black transition-colors hover:border-black"
-          >
-            REMOVE ALL
-          </button>
+        <div className="px-7 py-5">
           <button
             type="button"
             onClick={apply}
-            className="flex-1 rounded-full bg-[#f1571f] px-6 py-3 text-[13px] font-semibold tracking-[0.5px] text-white transition-opacity hover:opacity-90"
+            className="w-full rounded-full bg-[#f1571f] px-6 py-3 text-[13px] font-semibold tracking-[0.5px] text-white transition-opacity hover:opacity-90"
           >
             APPLY
           </button>
