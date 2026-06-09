@@ -38,7 +38,7 @@ export default function RootLayout({
       <body className="min-h-full font-sans" suppressHydrationWarning>
         {/* Site chrome rendered once here so every page inherits it. */}
         <BookmarksProvider>
-          <div className="w-full min-h-screen overflow-x-hidden">
+          <div className="w-full min-h-screen overflow-x-clip">
             <Navbar />
             {children}
             <Footer />
