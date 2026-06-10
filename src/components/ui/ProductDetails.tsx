@@ -3,9 +3,11 @@
 import Image from "next/image";
 import { useMemo, useState } from "react";
 import BookmarkButton from "@/components/ui/BookmarkButton";
+import CartLoginDrawer from "@/components/cart/CartLogin";
 import { productBookmarkId } from "@/lib/bookmarks";
 import type { Product } from "@/lib/products";
 import { formatPriceRange } from "@/lib/products";
+import CartLogin from "@/components/cart/CartLogin";
 
 const fallbackSizes = ["XS", "S", "M", "L", "XL", "XXL", "XXXL"];
 const tabs = ["details & description", "washcare", "shipping"] as const;
@@ -89,6 +91,7 @@ export default function ProductDetails({ product }: { product: Product }) {
   const [nameValue, setNameValue] = useState("MRUDULA");
   const [numberValue, setNumberValue] = useState("07");
   const [showGuide, setShowGuide] = useState(false);
+  const [showCartLogin, setShowCartLogin] = useState(false);
   const [activeTab, setActiveTab] = useState<ProductTab>(
     "details & description",
   );
@@ -291,6 +294,7 @@ export default function ProductDetails({ product }: { product: Product }) {
               <div className="mt-5 flex h-[58px] gap-3 max-[480px]:mt-4 max-[480px]:h-[54px] max-[480px]:gap-2">
                 <button
                   type="button"
+                  onClick={() => setShowCartLogin(true)}
                   className="flex min-w-0 flex-1 items-center justify-center gap-3 rounded-[10px] bg-[#f36d43] px-4 text-white transition-opacity hover:opacity-90 max-[480px]:gap-2 max-[480px]:px-3"
                 >
                   <span className="flex min-w-0 flex-col items-start leading-none">
@@ -475,6 +479,10 @@ export default function ProductDetails({ product }: { product: Product }) {
           </div>
         </div>
       )}
+         <CartLogin
+        open={showCartLogin}
+        onClose={() => setShowCartLogin(false)}
+      />
     </>
   );
 }
