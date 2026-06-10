@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
 import { Inter, Anton_SC } from "next/font/google";
-import "./globals.css";
+import "../globals.css";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import BottomBanner from "@/components/layout/BottomBanner";
 import { BookmarksProvider } from "@/components/providers/BookmarksProvider";
 
-// Workhorse UI font — close free substitute for the paid "TT Paplane Trial".
+// Workhorse UI font -- close free substitute for the paid "TT Paplane Trial".
 const inter = Inter({
   variable: "--font-inter",
   subsets: ["latin"],
@@ -20,12 +20,12 @@ const anton = Anton_SC({
 });
 
 export const metadata: Metadata = {
-  title: "TeeHub — Premium Sports Jerseys, Hoodies & Polos",
+  title: "TeeHub - Premium Sports Jerseys, Hoodies & Polos",
   description:
     "Shop IPL jerseys, football hoodies, jackets and polo t-shirts at TeeHub.",
 };
 
-export default function RootLayout({
+export default function StorefrontLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
@@ -36,7 +36,7 @@ export default function RootLayout({
       className={`${inter.variable} ${anton.variable} h-full antialiased`}
     >
       <body className="min-h-full font-sans" suppressHydrationWarning>
-        {/* Site chrome rendered once here so every page inherits it. */}
+        {/* Site chrome rendered once here so every storefront page inherits it. */}
         <BookmarksProvider>
           <div className="w-full min-h-screen overflow-x-clip">
             <Navbar />
