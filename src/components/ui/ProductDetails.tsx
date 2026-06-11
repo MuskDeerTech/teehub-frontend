@@ -100,8 +100,7 @@ export default function ProductDetails({ product }: { product: Product }) {
   const [numberValue, setNumberValue] = useState("07");
   const [showGuide, setShowGuide] = useState(false);
   const [showCartLogin, setShowCartLogin] = useState(false);
-
-  /* SHARE POPUP */
+  const [copied, setCopied] = useState(false);
   const [showShare, setShowShare] = useState(false);
   const shareRef = useRef<HTMLDivElement>(null);
 
@@ -110,7 +109,12 @@ export default function ProductDetails({ product }: { product: Product }) {
   const copyLink = async () => {
     try {
       await navigator.clipboard.writeText(shareUrl);
-      alert("Link copied!");
+
+      setCopied(true);
+
+      setTimeout(() => {
+        setCopied(false);
+      }, 2500);
     } catch (error) {
       console.error(error);
     }
@@ -218,7 +222,7 @@ export default function ProductDetails({ product }: { product: Product }) {
               </div>
 
               <div className="mt-3 flex flex-wrap items-center gap-2">
-                <span className="text-[24px] font-bold leading-none text-[#f97316]">
+                <span className="text-[25px] font-bold leading-none text-[#f97316]">
                   {hasSalePrice
                     ? inr(product.price as number)
                     : formatPriceRange(product)}
@@ -248,7 +252,7 @@ export default function ProductDetails({ product }: { product: Product }) {
                   <button
                     type="button"
                     onClick={() => setShowGuide(true)}
-                    className="rounded bg-[#e9e9e9] px-5 py-1.5 text-[11px] font-medium text-black transition-colors hover:bg-[#dedede]"
+                    className="rounded bg-[#e9e9e9] px-3 py-1.5 text-[13px] font-medium text-black transition-colors hover:bg-[#dedede]"
                   >
                     Size Guide
                   </button>
@@ -370,26 +374,34 @@ export default function ProductDetails({ product }: { product: Product }) {
                   </button>
 
                   {showShare && (
-                    <div className="absolute right-0 top-[64px] z-50 w-52 rounded-xl border border-gray-200 bg-white p-2 shadow-xl">
+                    <div className="absolute right-0 top-[64px] z-50 overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl">
                       <a
                         href={`https://wa.me/?text=${encodeURIComponent(shareUrl)}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors hover:bg-gray-100"
+                        className="flex items-center gap-2 px-4 py-3 text-sm font-medium transition-all hover:bg-[#f6f6f6]"
                       >
-                        <IconBrandWhatsapp size={18} />
-                        WhatsApp
+                        <span className="flex h-7 w-8 items-center justify-center rounded-full bg-green-100">
+                          <IconBrandWhatsapp
+                            size={18}
+                            className="text-green-600"
+                          />
+                        </span>
+
+                        <span>WhatsApp</span>
                       </a>
 
                       <a
-                        href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(
-                          shareUrl,
-                        )}`}
+                        href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(shareUrl)}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors hover:bg-gray-100"
+                        className="flex items-center gap-2 px-4 py-3 text-sm font-medium transition-all hover:bg-[#f6f6f6]"
                       >
-                        <IconBrandX size={18} />X (Twitter)
+                        <span className="flex h-7 w-8 items-center justify-center rounded-full bg-gray-100">
+                          <IconBrandX size={18} />
+                        </span>
+
+                        <span>X (Twitter)</span>
                       </a>
 
                       <a
@@ -398,19 +410,28 @@ export default function ProductDetails({ product }: { product: Product }) {
                         )}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors hover:bg-gray-100"
+                        className="flex items-center gap-2 px-4 py-3 text-sm font-medium transition-all hover:bg-[#f6f6f6]"
                       >
-                        <IconBrandFacebook size={18} />
-                        Facebook
+                        <span className="flex h-7 w-8 items-center justify-center rounded-full bg-blue-100">
+                          <IconBrandFacebook
+                            size={18}
+                            className="text-blue-600"
+                          />
+                        </span>
+
+                        <span>Facebook</span>
                       </a>
 
                       <button
                         type="button"
                         onClick={copyLink}
-                        className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm transition-colors hover:bg-gray-100"
+                        className="flex w-full items-center gap-2 px-4 py-3 text-left text-sm font-medium transition-all hover:bg-[#f6f6f6]"
                       >
-                        <IconLink size={18} />
-                        Copy Link
+                        <span className="flex h-8 w-8 items-center justify-center rounded-full bg-black-100">
+                          <IconLink size={18} className="text-orange-600" />
+                        </span>
+
+                        <span>Copy Link</span>
                       </button>
                     </div>
                   )}
@@ -541,6 +562,11 @@ export default function ProductDetails({ product }: { product: Product }) {
         </div>
       )}
       <CartLogin open={showCartLogin} onClose={() => setShowCartLogin(false)} />
+      {copied && (
+        <div className="fixed bottom-6 left-1/2 z-[100] -translate-x-1/2 rounded-full bg-black px-4 py-2 text-sm font-medium text-white shadow-lg">
+          Link copied successfully ✓
+        </div>
+      )}
     </>
   );
 }
