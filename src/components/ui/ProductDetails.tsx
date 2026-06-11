@@ -1,13 +1,19 @@
 "use client";
 
 import Image from "next/image";
-import { useMemo, useState } from "react";
 import BookmarkButton from "@/components/ui/BookmarkButton";
-import CartLoginDrawer from "@/components/cart/CartLogin";
 import { productBookmarkId } from "@/lib/bookmarks";
 import type { Product } from "@/lib/products";
 import { formatPriceRange } from "@/lib/products";
 import CartLogin from "@/components/cart/CartLogin";
+import { useMemo, useState, useRef, useEffect } from "react";
+import {
+  IconShare3,
+  IconBrandWhatsapp,
+  IconBrandX,
+  IconBrandFacebook,
+  IconLink,
+} from "@tabler/icons-react";
 
 const fallbackSizes = ["XS", "S", "M", "L", "XL", "XXL", "XXXL"];
 const tabs = ["details & description", "washcare", "shipping"] as const;
@@ -76,7 +82,9 @@ function GalleryImage({
         width={700}
         height={900}
         priority={priority}
-        className="h-full w-full object-contain"
+        className={`h-full w-full object-contain ${
+          image.src.includes("back.png") ? "translate-y-[78px]" : ""
+        }`}
       />
     </div>
   );
@@ -92,11 +100,47 @@ export default function ProductDetails({ product }: { product: Product }) {
   const [numberValue, setNumberValue] = useState("07");
   const [showGuide, setShowGuide] = useState(false);
   const [showCartLogin, setShowCartLogin] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [showShare, setShowShare] = useState(false);
+  const shareRef = useRef<HTMLDivElement>(null);
+
+  const shareUrl = typeof window !== "undefined" ? window.location.href : "";
+
+  const copyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+
+      setCopied(true);
+
+      setTimeout(() => {
+        setCopied(false);
+      }, 2500);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
   const [activeTab, setActiveTab] = useState<ProductTab>(
     "details & description",
   );
 
   const gallery = useMemo(() => getGallery(product), [product]);
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        shareRef.current &&
+        !shareRef.current.contains(event.target as Node)
+      ) {
+        setShowShare(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
   // The detail page shows a single sale price with the struck-through MRP +
   // discount when `price` is set; otherwise it falls back to the catalog range.
@@ -115,7 +159,7 @@ export default function ProductDetails({ product }: { product: Product }) {
           section height — page scroll walks through those cards until the last
           one, then the section ends and the footer scrolls in normally.
         */}
-        <div className="mx-auto grid w-full max-w-[1440px] grid-cols-1 gap-3 px-3 py-4 lg:items-start lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(480px,520px)] lg:py-3 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(520px,560px)] lg:px-4">
+        <div className="mx-auto grid w-full max-w-[1440px] grid-cols-1 gap-3 px-3 py-4 lg:items-start lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(580px,580px)] lg:py-3 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(650px,650px)] lg:px-4">
           {/* Frozen left — first gallery image */}
           <div className={stickyPanelClass}>
             {gallery[0] && (
@@ -143,12 +187,12 @@ export default function ProductDetails({ product }: { product: Product }) {
 
           {/* Frozen right — product info */}
           <div
-            className={`flex min-h-0 min-w-0 flex-col gap-3 pb-2 lg:overflow-hidden lg:pb-3 ${stickyPanelClass}`}
+            className={`flex min-h-0 min-w-0 flex-col gap-2 pb-2 lg:overflow-hidden lg:pb-3 ${stickyPanelClass}`}
           >
             <div className="shrink-0 rounded-lg border border-[#d8d8d8] bg-white p-4">
               <div className="flex items-start justify-between gap-3">
-                <div className="flex min-w-0 items-center gap-2">
-                  <h1 className="text-[15px] font-medium leading-tight text-black">
+                <div className="flex min-w-0 flex-1 items-center gap-2">
+                  <h1 className="text-[24px] font-medium leading-tight text-black">
                     {product.title}
                   </h1>
                   <BookmarkButton
@@ -158,11 +202,11 @@ export default function ProductDetails({ product }: { product: Product }) {
                 </div>
 
                 {product.rating != null && (
-                  <span className="flex shrink-0 items-center gap-1 text-[12px] text-black">
+                  <span className="flex shrink-0 items-center gap-1 text-[20px] text-black">
                     <svg
                       viewBox="0 0 20 20"
                       fill="#f5b301"
-                      className="h-3.5 w-3.5"
+                      className="h-7 w-3.5"
                       aria-hidden="true"
                     >
                       <path d="M10 1.5l2.6 5.27 5.82.85-4.21 4.1.99 5.8L10 14.77l-5.2 2.75.99-5.8L1.58 7.62l5.82-.85L10 1.5z" />
@@ -177,15 +221,15 @@ export default function ProductDetails({ product }: { product: Product }) {
                 )}
               </div>
 
-              <div className="mt-1 flex flex-wrap items-center gap-2">
-                <span className="text-[26px] font-bold leading-none text-[#f97316]">
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                <span className="text-[25px] font-bold leading-none text-[#f97316]">
                   {hasSalePrice
                     ? inr(product.price as number)
                     : formatPriceRange(product)}
                 </span>
 
                 {product.originalPrice != null && (
-                  <span className="text-sm font-medium text-gray-400 line-through">
+                  <span className="text-base font-medium text-gray-400 line-through">
                     {inr(product.originalPrice)}
                   </span>
                 )}
@@ -203,12 +247,12 @@ export default function ProductDetails({ product }: { product: Product }) {
                 </p>
               )}
 
-              <div className="mt-2.5">
-                <div className="mb-2 flex justify-end">
+              <div className="mt-5">
+                <div className="mb-2 flex w-full justify-start">
                   <button
                     type="button"
                     onClick={() => setShowGuide(true)}
-                    className="shrink-0 rounded bg-[#e9e9e9] px-5 py-1.5 text-[11px] font-medium text-black transition-colors hover:bg-[#dedede]"
+                    className="rounded bg-[#e9e9e9] px-3 py-1.5 text-[13px] font-medium text-black transition-colors hover:bg-[#dedede]"
                   >
                     Size Guide
                   </button>
@@ -232,9 +276,9 @@ export default function ProductDetails({ product }: { product: Product }) {
                 </div>
               </div>
 
-              <div className="mt-3 grid grid-cols-2 gap-4 max-[480px]:gap-2.5">
+              <div className="mt-3 grid grid-cols-2 gap-5 max-[480px]:gap-2.5">
                 <div>
-                  <div className="mb-1 flex h-[22px] items-center justify-center rounded bg-[#d9d9d9] px-2 text-center text-[10px] leading-none text-black max-[480px]:text-[9px]">
+                  <div className="mb-2 flex h-[22px] items-center justify-center rounded bg-[#d9d9d9] px-2 text-center text-[10px] leading-none text-black max-[480px]:text-[9px]">
                     Quantity
                   </div>
 
@@ -266,7 +310,7 @@ export default function ProductDetails({ product }: { product: Product }) {
                 </div>
 
                 <div>
-                  <div className="mb-1 flex h-[22px] items-center justify-center whitespace-nowrap rounded bg-[#d9d9d9] px-2 text-center text-[10px] leading-none text-black max-[480px]:text-[9px]">
+                  <div className="mb-2 flex h-[22px] items-center justify-center whitespace-nowrap rounded bg-[#d9d9d9] px-2 text-center text-[10px] leading-none text-black max-[480px]:text-[9px]">
                     Name and T-shirt Number
                   </div>
 
@@ -291,7 +335,7 @@ export default function ProductDetails({ product }: { product: Product }) {
                 </div>
               </div>
 
-              <div className="mt-5 flex h-[58px] gap-3 max-[480px]:mt-4 max-[480px]:h-[54px] max-[480px]:gap-2">
+              <div className="mt-4 flex h-[58px] gap-3 max-[480px]:mt-4 max-[480px]:h-[54px] max-[480px]:gap-2">
                 <button
                   type="button"
                   onClick={() => setShowCartLogin(true)}
@@ -319,43 +363,81 @@ export default function ProductDetails({ product }: { product: Product }) {
                   </svg>
                 </button>
 
-                <button
-                  type="button"
-                  aria-label="Add to wishlist"
-                  className="flex h-full w-[46px] shrink-0 items-center justify-center rounded-[10px] border border-[#c8c8c8] bg-[#f4f4f4] text-black transition-colors hover:border-black max-[480px]:w-[42px]"
-                >
-                  <svg
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="h-6 w-6 max-[480px]:h-5 max-[480px]:w-5"
-                    aria-hidden="true"
+                <div ref={shareRef} className="relative">
+                  <button
+                    type="button"
+                    onClick={() => setShowShare((prev) => !prev)}
+                    aria-label="Share Product"
+                    className="flex h-full w-[46px] shrink-0 items-center justify-center rounded-[10px] border border-[#c8c8c8] bg-[#f4f4f4] text-black transition-colors hover:border-black max-[480px]:w-[42px]"
                   >
-                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-                  </svg>
-                </button>
+                    <IconShare3 size={22} stroke={1.8} />
+                  </button>
 
-                <button
-                  type="button"
-                  aria-label="Contact on WhatsApp"
-                  className="flex h-full w-[46px] shrink-0 items-center justify-center rounded-[10px] border border-[#2fb653] bg-[#e9f8ef] text-[#2fc454] max-[480px]:w-[42px]"
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 35 37"
-                    fill="currentColor"
-                    className="h-7 w-7 max-[480px]:h-6 max-[480px]:w-6"
-                    aria-hidden="true"
-                  >
-                    <path d="M16.04 3C8.84 3 3 8.72 3 15.78c0 2.47.72 4.86 2.08 6.92L3 29l6.53-2.02a13.2 13.2 0 006.51 1.72C23.24 28.7 29 22.98 29 15.92 29 8.72 23.24 3 16.04 3zm7.7 18.04c-.32.88-1.86 1.68-2.58 1.8-.66.1-1.5.15-2.42-.14-.56-.18-1.28-.42-2.2-.82-3.88-1.68-6.4-5.62-6.6-5.88-.18-.26-1.58-2.1-1.58-4.02s1-2.86 1.36-3.24c.36-.38.78-.48 1.04-.48h.74c.24 0 .56-.08.88.7.32.78 1.08 2.7 1.18 2.9.1.2.16.44.04.7-.12.26-.18.42-.36.64-.18.22-.38.48-.54.64-.18.18-.38.38-.16.74.22.36.98 1.62 2.1 2.62 1.44 1.28 2.66 1.68 3.04 1.86.38.18.6.16.82-.1.22-.26.94-1.1 1.2-1.48.26-.38.52-.32.88-.2.36.12 2.28 1.08 2.66 1.28.38.2.64.3.74.48.1.18.1 1.02-.22 1.9z" />
-                  </svg>
-                </button>
+                  {showShare && (
+                    <div className="absolute right-0 top-[64px] z-50 overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl">
+                      <a
+                        href={`https://wa.me/?text=${encodeURIComponent(shareUrl)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 px-4 py-3 text-sm font-medium transition-all hover:bg-[#f6f6f6]"
+                      >
+                        <span className="flex h-7 w-8 items-center justify-center rounded-full bg-green-100">
+                          <IconBrandWhatsapp
+                            size={18}
+                            className="text-green-600"
+                          />
+                        </span>
+
+                        <span>WhatsApp</span>
+                      </a>
+
+                      <a
+                        href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(shareUrl)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 px-4 py-3 text-sm font-medium transition-all hover:bg-[#f6f6f6]"
+                      >
+                        <span className="flex h-7 w-8 items-center justify-center rounded-full bg-gray-100">
+                          <IconBrandX size={18} />
+                        </span>
+
+                        <span>X (Twitter)</span>
+                      </a>
+
+                      <a
+                        href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(
+                          shareUrl,
+                        )}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 px-4 py-3 text-sm font-medium transition-all hover:bg-[#f6f6f6]"
+                      >
+                        <span className="flex h-7 w-8 items-center justify-center rounded-full bg-blue-100">
+                          <IconBrandFacebook
+                            size={18}
+                            className="text-blue-600"
+                          />
+                        </span>
+
+                        <span>Facebook</span>
+                      </a>
+
+                      <button
+                        type="button"
+                        onClick={copyLink}
+                        className="flex w-full items-center gap-2 px-4 py-3 text-left text-sm font-medium transition-all hover:bg-[#f6f6f6]"
+                      >
+                        <span className="flex h-8 w-8 items-center justify-center rounded-full bg-black-100">
+                          <IconLink size={18} className="text-orange-600" />
+                        </span>
+
+                        <span>Copy Link</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
-
-              <div className="mt-4 space-y-1.5 text-[12px] leading-5 text-black">
+              <div className="mt-2 space-y-1.5 text-[12px] leading-5 text-black">
                 <p>
                   <strong>Highly stretchable fabric.</strong> Order by your{" "}
                   <button
@@ -479,10 +561,12 @@ export default function ProductDetails({ product }: { product: Product }) {
           </div>
         </div>
       )}
-         <CartLogin
-        open={showCartLogin}
-        onClose={() => setShowCartLogin(false)}
-      />
+      <CartLogin open={showCartLogin} onClose={() => setShowCartLogin(false)} />
+      {copied && (
+        <div className="fixed bottom-6 left-1/2 z-[100] -translate-x-1/2 rounded-full bg-black px-4 py-2 text-sm font-medium text-white shadow-lg">
+          Link copied successfully ✓
+        </div>
+      )}
     </>
   );
 }
