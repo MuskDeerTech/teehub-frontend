@@ -21,6 +21,15 @@ const tabs = ["details & description", "washcare", "shipping"] as const;
 type ProductTab = (typeof tabs)[number];
 
 function getGallery(product: Product) {
+  // CMS products carry their own gallery (uploaded in the Payload admin);
+  // the hardcoded fallbacks below only cover legacy static data.
+  if (product.images?.length) {
+    return product.images.map((img) => ({
+      src: img.src,
+      alt: img.alt || product.title,
+    }));
+  }
+
   if (product.slug === "rcb-jersey-2026") {
     return [
       {

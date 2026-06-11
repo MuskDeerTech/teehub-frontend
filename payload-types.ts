@@ -192,17 +192,37 @@ export interface Product {
   title: string;
   slug: string;
   category: number | Category;
+  /**
+   * First image is the catalog card; the rest become the detail-page gallery.
+   */
   images?: (number | Media)[] | null;
-  price: number;
+  /**
+   * Hex colour (e.g. #BF5550) behind the product image on cards and the detail gallery.
+   */
+  bg: string;
+  priceMin: number;
+  /**
+   * Leave empty to show a single price instead of a range.
+   */
+  priceMax?: number | null;
+  /**
+   * Current sale price on the product page.
+   */
+  price?: number | null;
   originalPrice?: number | null;
   discountPercent?: number | null;
-  colors?:
-    | {
-        name: string;
-        id?: string | null;
-      }[]
-    | null;
-  sizes?:
+  themes?: ('Cricket' | 'IPL' | 'Football' | 'Movie')[] | null;
+  /**
+   * Garment type — the filter panel's "Category" section.
+   */
+  type?: ('T-Shirts' | 'Polos' | 'Jerseys' | 'Hoodies') | null;
+  colors?: ('Black' | 'Red' | 'Orange' | 'Blue' | 'White' | 'Yellow')[] | null;
+  sleeve?: ('Long' | 'Short' | 'Halter') | null;
+  /**
+   * Fit availability — the filter panel's "Fit" section.
+   */
+  sizes?: ('Oversized' | 'Extra Large' | 'Large' | 'Medium' | 'Small' | 'Extra Small')[] | null;
+  detailSizes?:
     | {
         label: string;
         stock?: number | null;
@@ -218,6 +238,22 @@ export interface Product {
     | null;
   rating?: number | null;
   reviewCount?: number | null;
+  /**
+   * "All sizes 96% fit" badge value.
+   */
+  fitPercent?: number | null;
+  /**
+   * Review count shown next to the fit badge.
+   */
+  fitReviews?: number | null;
+  /**
+   * ₹ left to unlock free shipping, shown on the cart button.
+   */
+  freeShippingRemaining?: number | null;
+  /**
+   * Green prepaid-incentive line under the fit copy.
+   */
+  prepaidPromo?: string | null;
   isPublished?: boolean | null;
   isFeatured?: boolean | null;
   sortOrder?: number | null;
@@ -354,16 +390,18 @@ export interface ProductsSelect<T extends boolean = true> {
   slug?: T;
   category?: T;
   images?: T;
+  bg?: T;
+  priceMin?: T;
+  priceMax?: T;
   price?: T;
   originalPrice?: T;
   discountPercent?: T;
-  colors?:
-    | T
-    | {
-        name?: T;
-        id?: T;
-      };
-  sizes?:
+  themes?: T;
+  type?: T;
+  colors?: T;
+  sleeve?: T;
+  sizes?: T;
+  detailSizes?:
     | T
     | {
         label?: T;
@@ -379,6 +417,10 @@ export interface ProductsSelect<T extends boolean = true> {
       };
   rating?: T;
   reviewCount?: T;
+  fitPercent?: T;
+  fitReviews?: T;
+  freeShippingRemaining?: T;
+  prepaidPromo?: T;
   isPublished?: T;
   isFeatured?: T;
   sortOrder?: T;

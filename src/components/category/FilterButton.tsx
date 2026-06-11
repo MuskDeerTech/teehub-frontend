@@ -1,14 +1,16 @@
  "use client";
 
 import { useState } from "react";
+import type { Product } from "@/lib/products";
 import FilterPanel from "./FilterPanel";
 
 /**
  * The FILTERS pill plus the slide-in panel it controls. Lives in its own
  * client component so the surrounding `CategoryFilter` can stay a server
- * component (the pill links don't need JS).
+ * component (the pill links don't need JS). The page's product list is passed
+ * through to the panel for its live facet counts.
  */
-export default function FilterButton({ slug }: { slug: string }) {
+export default function FilterButton({ products }: { products: Product[] }) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -21,7 +23,7 @@ export default function FilterButton({ slug }: { slug: string }) {
         <FilterIcon /> FILTERS
       </button>
 
-      <FilterPanel slug={slug} open={open} onClose={() => setOpen(false)} />
+      <FilterPanel products={products} open={open} onClose={() => setOpen(false)} />
     </>
   );
 }

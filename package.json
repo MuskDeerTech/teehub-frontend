@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "seed": "esbuild scripts/seed.ts --bundle --platform=node --format=esm --packages=external --outfile=scripts/.seed.compiled.mjs && node --env-file=.env scripts/.seed.compiled.mjs"
   },
   "dependencies": {
     "@deemlol/next-icons": "^0.2.7",

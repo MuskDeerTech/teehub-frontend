@@ -190,6 +190,9 @@ export type Product = {
   priceMin: number;
   priceMax: number;
   image?: string;
+  // Full gallery for the detail page (first entry doubles as the card image).
+  // Populated by the CMS mapping in catalog.ts; static products may omit it.
+  images?: { src: string; alt: string }[];
   // Filterable facets used by the filter panel. Optional so products can be
   // added before they're fully tagged (an untagged product just never matches
   // those facets and contributes nothing to their counts).
