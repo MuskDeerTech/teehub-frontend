@@ -25,7 +25,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params;
   const label = slug === "all" ? "Shop All" : getCategory(slug)?.label;
-  return { title: label ? `${label} — TeeHub` : "Shop — TeeHub" };
+  return { title: label ? `${label} - TeeHub` : "Shop - TeeHub" };
 }
 
 export default async function CategoryPage({
@@ -66,7 +66,7 @@ export default async function CategoryPage({
         </div>
       ) : (
         <p className="mt-20 text-center text-[15px] text-[#777]">
-          No products here yet — check back soon.
+          No products here yet - check back soon.
         </p>
       )}
     </main>
