@@ -1,7 +1,28 @@
 // Central place for the homepage's content/data, separated from presentation.
 // Swap these arrays for a CMS/API later without touching the components.
 
+import type { CSSProperties } from "react";
+
 export const navLinks = ["NEW IN", "COLLECTIONS", "TRACK ORDER"];
+
+/**
+ * Manual position/zoom of an image inside its card, set with the drag/zoom
+ * editors in the Payload admin: `scale` is a %, `x`/`y` are offsets as a % of
+ * the card. Used by category menu tiles and product images alike.
+ */
+export type ImageFit = {
+  scale?: number;
+  x?: number;
+  y?: number;
+};
+
+/** The CSS transform that replays an admin-set fit; undefined when no fit. */
+export function fitTransform(fit?: ImageFit): CSSProperties | undefined {
+  if (!fit) return undefined;
+  return {
+    transform: `translate(${fit.x ?? 0}%, ${fit.y ?? 0}%) scale(${(fit.scale ?? 100) / 100})`,
+  };
+}
 
 /**
  * Single source of truth for the shop's categories. `slug` drives the URL
@@ -18,6 +39,9 @@ export type Category = {
     src: string;
     alt: string;
   };
+  // How the thumbnail sits inside the menu tile, set with the drag/zoom editor
+  // in the Payload admin.
+  thumbFit?: ImageFit;
 };
 
 export const categoryList: Category[] = [
@@ -190,7 +214,8 @@ export type Product = {
   image?: string;
   // Full gallery for the detail page (first entry doubles as the card image).
   // Populated by the CMS mapping in catalog.ts; static products may omit it.
-  images?: { src: string; alt: string }[];
+  // `fit` is the admin-set drag/zoom of that image inside its card.
+  images?: { src: string; alt: string; fit?: ImageFit }[];
   // Filterable facets used by the filter panel. Optional so products can be
   // added before they're fully tagged (an untagged product just never matches
   // those facets and contributes nothing to their counts).

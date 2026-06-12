@@ -3,7 +3,7 @@ import Link from "next/link";
 import BookmarkButton from "@/components/ui/BookmarkButton";
 import { productBookmarkId } from "@/lib/bookmarks";
 import type { Product } from "@/lib/products";
-import { formatPriceRange } from "@/lib/products";
+import { fitTransform, formatPriceRange } from "@/lib/products";
 
 /**
  * Catalog card used on the category listing pages.
@@ -45,6 +45,8 @@ export default function ProductTile({ product }: { product: Product }) {
               fill
               sizes="(max-width: 480px) 100vw, (max-width: 768px) 50vw, 33vw"
               className="object-contain object-bottom pt-3 transition-transform duration-300 group-hover:scale-[1.04]"
+              // The card image is the first gallery entry; replay its admin-set fit.
+              style={fitTransform(product.images?.[0]?.fit)}
             />
           ) : null}
         </Link>

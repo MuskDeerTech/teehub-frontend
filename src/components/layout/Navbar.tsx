@@ -16,6 +16,11 @@ type PayloadCategory = {
   slug: string;
   bg?: string | null;
   thumbnailImage?: number | PayloadMedia | null;
+  thumbFit?: {
+    scale?: number | null;
+    x?: number | null;
+    y?: number | null;
+  } | null;
 };
 
 function mapCategory(doc: PayloadCategory): Category {
@@ -30,6 +35,13 @@ function mapCategory(doc: PayloadCategory): Category {
     bg: doc.bg ?? undefined,
     thumbnailImage: thumbnail?.url
       ? { src: thumbnail.url, alt: thumbnail.alt || doc.name }
+      : undefined,
+    thumbFit: doc.thumbFit
+      ? {
+          scale: doc.thumbFit.scale ?? undefined,
+          x: doc.thumbFit.x ?? undefined,
+          y: doc.thumbFit.y ?? undefined,
+        }
       : undefined,
   };
 }

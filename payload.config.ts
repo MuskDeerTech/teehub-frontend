@@ -106,6 +106,44 @@ const Categories: CollectionConfig = {
         },
       },
     },
+    // How the thumbnail sits inside the menu tile (drag + zoom editor).
+    // Values are replayed by MegaMenu as a CSS transform, so the admin
+    // preview and the storefront tile always match.
+    {
+      name: "thumbFit",
+      label: "Thumbnail Fit",
+      type: "group",
+      admin: {
+        description:
+          "Drag the image and zoom until it fits the tile the way you want.",
+        components: {
+          Field: "/src/components/admin/ThumbFitField#default",
+        },
+      },
+      fields: [
+        {
+          name: "scale",
+          type: "number",
+          defaultValue: 100,
+          min: 20,
+          max: 300,
+        },
+        {
+          name: "x",
+          type: "number",
+          defaultValue: 0,
+          min: -100,
+          max: 100,
+        },
+        {
+          name: "y",
+          type: "number",
+          defaultValue: 0,
+          min: -100,
+          max: 100,
+        },
+      ],
+    },
     {
       name: "sortOrder",
       type: "number",
@@ -204,6 +242,20 @@ const Products: CollectionConfig = {
                   "Hex colour (e.g. #BF5550) behind the product image on cards and the detail gallery.",
                 components: {
                   Field: "/src/components/admin/ColorPickerField#default",
+                },
+              },
+            },
+            // Per-image drag/zoom inside the card, keyed by media id so fits
+            // survive reordering. Edited with the Instagram-style strip+editor.
+            {
+              name: "imageFits",
+              label: "Image Fit",
+              type: "json",
+              admin: {
+                description:
+                  "Click a thumbnail, then drag and zoom that image until it sits right on the card.",
+                components: {
+                  Field: "/src/components/admin/ImageFitsField#default",
                 },
               },
             },

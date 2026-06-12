@@ -3,8 +3,8 @@
 import Image from "next/image";
 import BookmarkButton from "@/components/ui/BookmarkButton";
 import { productBookmarkId } from "@/lib/bookmarks";
-import type { Product } from "@/lib/products";
-import { formatPriceRange } from "@/lib/products";
+import type { ImageFit, Product } from "@/lib/products";
+import { fitTransform, formatPriceRange } from "@/lib/products";
 import CartLogin from "@/components/cart/CartLogin";
 import { useMemo, useState, useRef, useEffect } from "react";
 import {
@@ -27,6 +27,7 @@ function getGallery(product: Product) {
     return product.images.map((img) => ({
       src: img.src,
       alt: img.alt || product.title,
+      fit: img.fit,
     }));
   }
 
@@ -70,7 +71,7 @@ function GalleryImage({
   priority = false,
   fill = false,
 }: {
-  image: { src: string; alt: string };
+  image: { src: string; alt: string; fit?: ImageFit };
   product: Product;
   priority?: boolean;
   /** Full viewport-height card on desktop (frozen side panels + middle scroll steps). */
@@ -94,6 +95,8 @@ function GalleryImage({
         className={`h-full w-full object-contain ${
           image.src.includes("back.png") ? "translate-y-[78px]" : ""
         }`}
+        // Replays the per-image drag/zoom set in the admin's Image Fit editor.
+        style={fitTransform(image.fit)}
       />
     </div>
   );

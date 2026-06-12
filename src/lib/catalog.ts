@@ -15,7 +15,7 @@ import type {
   Product as ProductDoc,
   Category as CategoryDoc,
 } from "../../payload-types";
-import type { Category, Product } from "@/lib/products";
+import type { Category, ImageFit, Product } from "@/lib/products";
 
 const PAGE_LIMIT = 200;
 
@@ -32,6 +32,13 @@ function toCategory(doc: CategoryDoc): Category {
     thumbnailImage: thumbnail?.url
       ? { src: thumbnail.url, alt: thumbnail.alt || doc.name }
       : undefined,
+    thumbFit: doc.thumbFit
+      ? {
+          scale: doc.thumbFit.scale ?? undefined,
+          x: doc.thumbFit.x ?? undefined,
+          y: doc.thumbFit.y ?? undefined,
+        }
+      : undefined,
   };
 }
 
@@ -43,9 +50,16 @@ function mediaDocs(images: ProductDoc["images"]): Media[] {
 }
 
 function toProduct(doc: ProductDoc): Product {
+  // Admin-set per-image fits, keyed by media id; entries for images no longer
+  // in the gallery are simply never looked up.
+  const fits: Record<string, ImageFit> =
+    doc.imageFits && typeof doc.imageFits === "object" && !Array.isArray(doc.imageFits)
+      ? (doc.imageFits as Record<string, ImageFit>)
+      : {};
+
   const gallery = mediaDocs(doc.images)
     .filter((m) => m.url)
-    .map((m) => ({ src: m.url as string, alt: m.alt }));
+    .map((m) => ({ src: m.url as string, alt: m.alt, fit: fits[String(m.id)] }));
 
   return {
     slug: doc.slug,

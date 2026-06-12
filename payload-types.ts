@@ -165,6 +165,14 @@ export interface Category {
    * Hex colour (e.g. #c0352f) behind the menu thumbnail in the navbar dropdown.
    */
   bg?: string | null;
+  /**
+   * Drag the image and zoom until it fits the tile the way you want.
+   */
+  thumbFit?: {
+    scale?: number | null;
+    x?: number | null;
+    y?: number | null;
+  };
   sortOrder?: number | null;
   isActive?: boolean | null;
   updatedAt: string;
@@ -209,6 +217,18 @@ export interface Product {
    * Hex colour (e.g. #BF5550) behind the product image on cards and the detail gallery.
    */
   bg: string;
+  /**
+   * Click a thumbnail, then drag and zoom that image until it sits right on the card.
+   */
+  imageFits?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
   priceMin: number;
   /**
    * Leave empty to show a single price instead of a range.
@@ -382,6 +402,13 @@ export interface CategoriesSelect<T extends boolean = true> {
   description?: T;
   thumbnailImage?: T;
   bg?: T;
+  thumbFit?:
+    | T
+    | {
+        scale?: T;
+        x?: T;
+        y?: T;
+      };
   sortOrder?: T;
   isActive?: T;
   updatedAt?: T;
@@ -400,6 +427,7 @@ export interface ProductsSelect<T extends boolean = true> {
   sortOrder?: T;
   images?: T;
   bg?: T;
+  imageFits?: T;
   priceMin?: T;
   priceMax?: T;
   price?: T;

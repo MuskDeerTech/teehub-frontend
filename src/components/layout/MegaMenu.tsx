@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { menuCollections, type Category } from "@/lib/products";
+import { fitTransform, menuCollections, type Category } from "@/lib/products";
 
 type MegaMenuProps = {
   open: boolean;
@@ -78,6 +78,9 @@ export default function MegaMenu({
                           width={104}
                           height={104}
                           className="h-[104px] w-[104px] object-contain"
+                          // Replays the drag/zoom fit set in the admin editor;
+                          // overflow is clipped by the rounded tile above.
+                          style={fitTransform(cat.thumbFit)}
                         />
                       ) : (
                         <span className="px-2 text-center text-[11px] font-bold uppercase tracking-[0.4px] text-[#777]">
