@@ -2,12 +2,79 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
-import { navLinks } from "@/lib/products";
+import { useEffect, useState } from "react";
+import { navLinks, type Category } from "@/lib/products";
 import MegaMenu from "@/components/layout/MegaMenu";
+
+type PayloadMedia = {
+  url?: string | null;
+  alt?: string | null;
+};
+
+type PayloadCategory = {
+  name: string;
+  slug: string;
+  bg?: string | null;
+  thumbnailImage?: number | PayloadMedia | null;
+};
+
+function mapCategory(doc: PayloadCategory): Category {
+  const thumbnail =
+    typeof doc.thumbnailImage === "object" && doc.thumbnailImage !== null
+      ? doc.thumbnailImage
+      : undefined;
+
+  return {
+    slug: doc.slug,
+    label: doc.name,
+    bg: doc.bg ?? undefined,
+    thumbnailImage: thumbnail?.url
+      ? { src: thumbnail.url, alt: thumbnail.alt || doc.name }
+      : undefined,
+  };
+}
 
 export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [categoriesLoaded, setCategoriesLoaded] = useState(false);
+  const [categoriesLoading, setCategoriesLoading] = useState(false);
+
+  useEffect(() => {
+    if (!menuOpen || categoriesLoaded || !categoriesLoading) return;
+
+    const controller = new AbortController();
+    const params = new URLSearchParams({
+      "where[isActive][equals]": "true",
+      sort: "sortOrder",
+      depth: "1",
+      limit: "200",
+    });
+
+    fetch(`/api/categories?${params.toString()}`, {
+      signal: controller.signal,
+    })
+      .then((res) => (res.ok ? res.json() : Promise.reject(new Error("Failed"))))
+      .then((data: { docs?: PayloadCategory[] }) => {
+        setCategories((data.docs ?? []).map(mapCategory));
+        setCategoriesLoaded(true);
+      })
+      .catch((err: unknown) => {
+        if (err instanceof DOMException && err.name === "AbortError") return;
+        setCategoriesLoaded(true);
+      })
+      .finally(() => setCategoriesLoading(false));
+
+    return () => controller.abort();
+  }, [categoriesLoaded, categoriesLoading, menuOpen]);
+
+  const toggleMenu = () => {
+    const next = !menuOpen;
+    setMenuOpen(next);
+    if (next && !categoriesLoaded && !categoriesLoading) {
+      setCategoriesLoading(true);
+    }
+  };
 
   return (
     <nav className="sticky top-0 z-[100] flex h-[72px] w-full items-center justify-between border-b border-[#e7e7e7] bg-[#f8f8f8] px-[42px] max-[768px]:px-5 max-[360px]:h-[70px] max-[360px]:justify-center max-[360px]:px-0">
@@ -80,7 +147,7 @@ export default function Navbar() {
           type="button"
           aria-label="Menu"
           aria-expanded={menuOpen}
-          onClick={() => setMenuOpen((prev) => !prev)}
+          onClick={toggleMenu}
           className="flex h-7 w-11 cursor-pointer items-center justify-center"
         >
           <Image
@@ -93,7 +160,12 @@ export default function Navbar() {
         </button>
       </div>
 
-      <MegaMenu open={menuOpen} onClose={() => setMenuOpen(false)} />
+      <MegaMenu
+        open={menuOpen}
+        onClose={() => setMenuOpen(false)}
+        categories={categories}
+        loading={categoriesLoading && !categoriesLoaded}
+      />
     </nav>
   );
 }

@@ -8,7 +8,17 @@ export const navLinks = ["NEW IN", "COLLECTIONS", "TRACK ORDER"];
  * (`/category/<slug>`); `label` is what the UI shows. Add a CMS later and this
  * list becomes a fetch — the routing/components don't change.
  */
-export type Category = { slug: string; label: string };
+export type Category = {
+  slug: string;
+  label: string;
+  // Solid colour behind the menu thumbnail tile (a transparent cutout PNG sits
+  // on top). Mirrors the product `bg` pattern; CMS-controlled per category.
+  bg?: string;
+  thumbnailImage?: {
+    src: string;
+    alt: string;
+  };
+};
 
 export const categoryList: Category[] = [
   { slug: "ipl-jersey", label: "IPL JERSEY 2026" },
@@ -29,18 +39,6 @@ export const menuCollections = [
   "BASICS",
   "TEEHUB CLUB",
   "ICONICS",
-];
-
-/** Right-hand category tiles (heading + finished tile image) in the mega-menu. */
-export type MenuCategory = { title: string; image: string; slug: string };
-
-export const menuCategories: MenuCategory[] = [
-  { title: "IPL JERSEY 2026", image: "/images/hamburg/ipl-jersey.png", slug: "ipl-jersey" },
-  { title: "POLO", image: "/images/hamburg/polo.png", slug: "polo" },
-  { title: "FOOTBALL", image: "/images/hamburg/football.png", slug: "football" },
-  { title: "HOODIES", image: "/images/hamburg/hoodies.png", slug: "hoodies" },
-  { title: "CAPS", image: "/images/hamburg/cap.png", slug: "caps" },
-  { title: "JACKETS", image: "/images/hamburg/jacket.png", slug: "jackets" },
 ];
 
 export type Team = { name: string; logo: string; logoWidth: number; logoHeight: number };

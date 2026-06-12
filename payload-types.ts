@@ -157,8 +157,14 @@ export interface Category {
   name: string;
   slug: string;
   description?: string | null;
-  bannerImage?: (number | null) | Media;
+  /**
+   * Small image shown for this category in the navbar dropdown.
+   */
   thumbnailImage?: (number | null) | Media;
+  /**
+   * Hex colour (e.g. #c0352f) behind the menu thumbnail in the navbar dropdown.
+   */
+  bg?: string | null;
   sortOrder?: number | null;
   isActive?: boolean | null;
   updatedAt: string;
@@ -192,6 +198,9 @@ export interface Product {
   title: string;
   slug: string;
   category: number | Category;
+  isPublished?: boolean | null;
+  isFeatured?: boolean | null;
+  sortOrder?: number | null;
   /**
    * First image is the catalog card; the rest become the detail-page gallery.
    */
@@ -211,17 +220,6 @@ export interface Product {
   price?: number | null;
   originalPrice?: number | null;
   discountPercent?: number | null;
-  themes?: ('Cricket' | 'IPL' | 'Football' | 'Movie')[] | null;
-  /**
-   * Garment type — the filter panel's "Category" section.
-   */
-  type?: ('T-Shirts' | 'Polos' | 'Jerseys' | 'Hoodies') | null;
-  colors?: ('Black' | 'Red' | 'Orange' | 'Blue' | 'White' | 'Yellow')[] | null;
-  sleeve?: ('Long' | 'Short' | 'Halter') | null;
-  /**
-   * Fit availability — the filter panel's "Fit" section.
-   */
-  sizes?: ('Oversized' | 'Extra Large' | 'Large' | 'Medium' | 'Small' | 'Extra Small')[] | null;
   detailSizes?:
     | {
         label: string;
@@ -254,9 +252,17 @@ export interface Product {
    * Green prepaid-incentive line under the fit copy.
    */
   prepaidPromo?: string | null;
-  isPublished?: boolean | null;
-  isFeatured?: boolean | null;
-  sortOrder?: number | null;
+  themes?: ('Cricket' | 'IPL' | 'Football' | 'Movie')[] | null;
+  /**
+   * Garment type — the filter panel's "Category" section.
+   */
+  type?: ('T-Shirts' | 'Polos' | 'Jerseys' | 'Hoodies') | null;
+  colors?: ('Black' | 'Red' | 'Orange' | 'Blue' | 'White' | 'Yellow')[] | null;
+  sleeve?: ('Long' | 'Short' | 'Halter') | null;
+  /**
+   * Fit availability — the filter panel's "Fit" section.
+   */
+  sizes?: ('Oversized' | 'Extra Large' | 'Large' | 'Medium' | 'Small' | 'Extra Small')[] | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -374,8 +380,8 @@ export interface CategoriesSelect<T extends boolean = true> {
   name?: T;
   slug?: T;
   description?: T;
-  bannerImage?: T;
   thumbnailImage?: T;
+  bg?: T;
   sortOrder?: T;
   isActive?: T;
   updatedAt?: T;
@@ -389,6 +395,9 @@ export interface ProductsSelect<T extends boolean = true> {
   title?: T;
   slug?: T;
   category?: T;
+  isPublished?: T;
+  isFeatured?: T;
+  sortOrder?: T;
   images?: T;
   bg?: T;
   priceMin?: T;
@@ -396,11 +405,6 @@ export interface ProductsSelect<T extends boolean = true> {
   price?: T;
   originalPrice?: T;
   discountPercent?: T;
-  themes?: T;
-  type?: T;
-  colors?: T;
-  sleeve?: T;
-  sizes?: T;
   detailSizes?:
     | T
     | {
@@ -421,9 +425,11 @@ export interface ProductsSelect<T extends boolean = true> {
   fitReviews?: T;
   freeShippingRemaining?: T;
   prepaidPromo?: T;
-  isPublished?: T;
-  isFeatured?: T;
-  sortOrder?: T;
+  themes?: T;
+  type?: T;
+  colors?: T;
+  sleeve?: T;
+  sizes?: T;
   updatedAt?: T;
   createdAt?: T;
 }

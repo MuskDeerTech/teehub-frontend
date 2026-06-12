@@ -20,7 +20,19 @@ import type { Category, Product } from "@/lib/products";
 const PAGE_LIMIT = 200;
 
 function toCategory(doc: CategoryDoc): Category {
-  return { slug: doc.slug, label: doc.name };
+  const thumbnail =
+    typeof doc.thumbnailImage === "object" && doc.thumbnailImage !== null
+      ? doc.thumbnailImage
+      : undefined;
+
+  return {
+    slug: doc.slug,
+    label: doc.name,
+    bg: doc.bg ?? undefined,
+    thumbnailImage: thumbnail?.url
+      ? { src: thumbnail.url, alt: thumbnail.alt || doc.name }
+      : undefined,
+  };
 }
 
 /** Resolved upload docs only — entries left as bare ids (depth 0) are skipped. */
@@ -70,6 +82,7 @@ export async function getCategories(): Promise<Category[]> {
     collection: "categories",
     where: { isActive: { equals: true } },
     sort: "sortOrder",
+    depth: 1,
     limit: PAGE_LIMIT,
   });
   return res.docs.map(toCategory);
