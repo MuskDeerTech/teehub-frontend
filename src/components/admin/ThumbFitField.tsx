@@ -5,9 +5,6 @@ import type { GroupFieldClientComponent } from "payload";
 import { useEffect, useRef, useState } from "react";
 
 /**
- * Instagram-style fit editor for the category menu thumbnail. Shows the real
- * tile (the category's `bg` colour with the uploaded image on top) and lets
- * the admin drag the image around and zoom with a slider until it sits right.
  *
  * Stores plain numbers — scale (%), x and y offsets (% of the tile) — which
  * MegaMenu replays as a CSS transform, so what you position here is exactly
