@@ -12,18 +12,9 @@ import { getPlaceholderColors } from "@/lib/products";
 
 type Params = { slug: string };
 
-// Catalog data lives in Payload now: pages are prerendered at build time from
-// the DB, then refreshed in the background so admin edits go live without a
-// redeploy.
-export const revalidate = 60;
-
-// Pre-render every category page at build time: one per category in the CMS,
-// plus the "all" (VIEW ALL) page. Categories added later still render on
-// demand (dynamicParams defaults to true).
-export async function generateStaticParams(): Promise<Params[]> {
-  const categories = await getCategories();
-  return [{ slug: "all" }, ...categories.map((c) => ({ slug: c.slug }))];
-}
+// Category pages query Payload/Postgres. Render them at request time so deploys
+// do not exhaust the database connection pool while collecting static params.
+export const dynamic = "force-dynamic";
 
 export async function generateMetadata({
   params,

@@ -1,19 +1,13 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import ProductDetails from "@/components/ui/ProductDetails";
-import { getAllProducts, getProductBySlug } from "@/lib/catalog";
+import { getProductBySlug } from "@/lib/catalog";
 
 type Params = { slug: string };
 
-// Product data lives in Payload now: pages are prerendered at build time from
-// the DB, then refreshed in the background so admin edits go live without a
-// redeploy.
-export const revalidate = 60;
-
-export async function generateStaticParams(): Promise<Params[]> {
-  const products = await getAllProducts();
-  return products.map((product) => ({ slug: product.slug }));
-}
+// Product pages query Payload/Postgres. Render them at request time so deploys
+// do not exhaust the database connection pool while collecting static params.
+export const dynamic = "force-dynamic";
 
 export async function generateMetadata({
   params,
