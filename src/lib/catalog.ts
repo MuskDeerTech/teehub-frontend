@@ -61,13 +61,27 @@ function toProduct(doc: ProductDoc): Product {
     .filter((m) => m.url)
     .map((m) => ({ src: m.url as string, alt: m.alt, fit: fits[String(m.id)] }));
 
+  // Catalog card is its own upload now, separate from the detail gallery, so
+  // its crop (cardFit) is independent of the gallery image fits above.
+  const cardImage =
+    typeof doc.cardImage === "object" && doc.cardImage !== null
+      ? doc.cardImage
+      : undefined;
+
   return {
     slug: doc.slug,
     title: doc.title,
     bg: doc.bg,
     priceMin: doc.priceMin,
     priceMax: doc.priceMax ?? doc.priceMin,
-    image: gallery[0]?.src,
+    image: cardImage?.url ?? undefined,
+    cardFit: doc.cardFit
+      ? {
+          scale: doc.cardFit.scale ?? undefined,
+          x: doc.cardFit.x ?? undefined,
+          y: doc.cardFit.y ?? undefined,
+        }
+      : undefined,
     images: gallery.length ? gallery : undefined,
     themes: doc.themes ?? undefined,
     type: doc.type ?? undefined,

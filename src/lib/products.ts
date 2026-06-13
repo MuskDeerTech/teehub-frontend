@@ -211,10 +211,14 @@ export type Product = {
   bg: string;
   priceMin: number;
   priceMax: number;
+  // Catalog card image (the `cardImage` upload) shown on the listing tiles.
   image?: string;
-  // Full gallery for the detail page (first entry doubles as the card image).
-  // Populated by the CMS mapping in catalog.ts; static products may omit it.
-  // `fit` is the admin-set drag/zoom of that image inside its card.
+  // Admin-set drag/zoom of the card image inside its tile — independent of the
+  // detail gallery fits below, so cropping the card never touches the gallery.
+  cardFit?: ImageFit;
+  // Full gallery for the detail page. Populated by the CMS mapping in
+  // catalog.ts; static products may omit it. `fit` is the admin-set drag/zoom
+  // of that image inside its card.
   images?: { src: string; alt: string; fit?: ImageFit }[];
   // Filterable facets used by the filter panel. Optional so products can be
   // added before they're fully tagged (an untagged product just never matches

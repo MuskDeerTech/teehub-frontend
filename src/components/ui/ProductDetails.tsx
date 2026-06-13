@@ -92,10 +92,10 @@ function GalleryImage({
         width={700}
         height={900}
         priority={priority}
-        className={`h-full w-full object-contain ${
-          image.src.includes("back.png") ? "translate-y-[78px]" : ""
-        }`}
-        // Replays the per-image drag/zoom set in the admin's Image Fit editor.
+        // Bottom-anchored so the image always sits on the bottom edge no matter
+        // how tall the box gets (full-height on desktop). The admin's Image Fit
+        // crop nudges/zooms from that bottom baseline.
+        className="h-full w-full origin-bottom object-contain object-[50%_90%]"
         style={fitTransform(image.fit)}
       />
     </div>

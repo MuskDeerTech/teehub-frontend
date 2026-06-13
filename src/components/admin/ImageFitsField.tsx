@@ -4,24 +4,16 @@ import { FieldLabel, useField, useFormFields } from "@payloadcms/ui";
 import type { JSONFieldClientComponent } from "payload";
 import { useEffect, useRef, useState } from "react";
 
-/**
- * Instagram-style fit editor for the product gallery. One compact block no
- * matter how many images the product has: a strip of small thumbnails on top
- * (click to pick), and a single preview card below (the product's `bg` colour
- * with the selected image on it) where you drag to position and zoom with a
- * slider.
- *
- * Stored as `{ [mediaId]: { scale, x, y } }` — keyed by the upload's id, not
- * its position, so reordering the Images array never shuffles the fits.
- * Entries for removed images are simply ignored by the storefront.
- */
 type Fit = { scale?: number; x?: number; y?: number };
 
 // Preview card matches the 3:4 gallery card on the product page.
 const TILE_W = 240;
 const TILE_H = 320;
 
-const ImageFitsField: JSONFieldClientComponent = ({ field, path: pathFromProps }) => {
+const ImageFitsField: JSONFieldClientComponent = ({
+  field,
+  path: pathFromProps,
+}) => {
   const path = pathFromProps || "imageFits";
   const { value, setValue } = useField<Record<string, Fit> | null>({ path });
 
@@ -33,7 +25,8 @@ const ImageFitsField: JSONFieldClientComponent = ({ field, path: pathFromProps }
   const imageIds: string[] = Array.isArray(imagesValue)
     ? imagesValue
         .map((item) => {
-          if (typeof item === "number" || typeof item === "string") return String(item);
+          if (typeof item === "number" || typeof item === "string")
+            return String(item);
           if (typeof item === "object" && item !== null) {
             const o = item as { id?: number | string; value?: number | string };
             const id = o.id ?? o.value;
@@ -62,7 +55,9 @@ const ImageFitsField: JSONFieldClientComponent = ({ field, path: pathFromProps }
       signal: controller.signal,
       credentials: "include",
     })
-      .then((res) => (res.ok ? res.json() : Promise.reject(new Error("failed"))))
+      .then((res) =>
+        res.ok ? res.json() : Promise.reject(new Error("failed")),
+      )
       .then(
         (data: {
           docs?: { id: number | string; url?: string | null; alt?: string }[];
@@ -101,13 +96,23 @@ const ImageFitsField: JSONFieldClientComponent = ({ field, path: pathFromProps }
     });
   };
 
-  const drag = useRef<{ startX: number; startY: number; baseX: number; baseY: number } | null>(null);
+  const drag = useRef<{
+    startX: number;
+    startY: number;
+    baseX: number;
+    baseY: number;
+  } | null>(null);
 
   const onPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     if (!activeUrl) return;
     e.preventDefault();
     e.currentTarget.setPointerCapture(e.pointerId);
-    drag.current = { startX: e.clientX, startY: e.clientY, baseX: curX, baseY: curY };
+    drag.current = {
+      startX: e.clientX,
+      startY: e.clientY,
+      baseX: curX,
+      baseY: curY,
+    };
   };
 
   const onPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
@@ -138,7 +143,14 @@ const ImageFitsField: JSONFieldClientComponent = ({ field, path: pathFromProps }
       ) : (
         <>
           {/* Thumbnail strip — click to choose which image you're adjusting. */}
-          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 10 }}>
+          <div
+            style={{
+              display: "flex",
+              gap: 8,
+              flexWrap: "wrap",
+              marginBottom: 10,
+            }}
+          >
             {imageIds.map((id, i) => {
               const isActive = id === activeId;
               const url = mediaMap[id]?.url;
@@ -213,6 +225,10 @@ const ImageFitsField: JSONFieldClientComponent = ({ field, path: pathFromProps }
                     width: "100%",
                     height: "100%",
                     objectFit: "contain",
+                    // Match the storefront's detail image: anchored near the
+                    // bottom (90%) with a small gap, zoom growing from the bottom.
+                    objectPosition: "50% 90%",
+                    transformOrigin: "bottom",
                     transform: `translate(${curX}%, ${curY}%) scale(${curScale / 100})`,
                     pointerEvents: "none",
                   }}
@@ -221,8 +237,17 @@ const ImageFitsField: JSONFieldClientComponent = ({ field, path: pathFromProps }
             </div>
 
             {/* Controls for the selected image. */}
-            <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 8 }}>
-              <label style={{ fontSize: 12, color: "var(--theme-elevation-600)" }}>
+            <div
+              style={{
+                flex: 1,
+                display: "flex",
+                flexDirection: "column",
+                gap: 8,
+              }}
+            >
+              <label
+                style={{ fontSize: 12, color: "var(--theme-elevation-600)" }}
+              >
                 Zoom ({curScale}%)
                 <input
                   type="range"
@@ -235,7 +260,9 @@ const ImageFitsField: JSONFieldClientComponent = ({ field, path: pathFromProps }
                   style={{ width: "100%", display: "block", marginTop: 4 }}
                 />
               </label>
-              <div style={{ fontSize: 12, color: "var(--theme-elevation-600)" }}>
+              <div
+                style={{ fontSize: 12, color: "var(--theme-elevation-600)" }}
+              >
                 Offset: {curX}% , {curY}% — drag the image to move it.
               </div>
               <button

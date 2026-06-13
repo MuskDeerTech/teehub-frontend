@@ -219,18 +219,32 @@ const Products: CollectionConfig = {
       type: "tabs",
       tabs: [
         {
-          label: "Product Page",
-          description: "Everything rendered on the product (slug) page.",
+          label: "Images",
+          description:
+            "Where each image shows up on the storefront. The catalog card and the detail gallery are independent.",
           fields: [
             {
-              name: "images",
+              name: "cardImage",
+              label: "Catalog Card Image",
               type: "upload",
               relationTo: "media",
-              hasMany: true,
+            },
+            {
+              name: "cardFit",
+              label: "Card Fit",
+              type: "group",
               admin: {
                 description:
-                  "First image is the catalog card; the rest become the detail-page gallery.",
+                  "Drag and zoom until the card image sits right in the listing tile.",
+                components: {
+                  Field: "/src/components/admin/CardFitField#default",
+                },
               },
+              fields: [
+                { name: "scale", type: "number", defaultValue: 100, min: 20, max: 300 },
+                { name: "x", type: "number", defaultValue: 0, min: -100, max: 100 },
+                { name: "y", type: "number", defaultValue: 0, min: -100, max: 100 },
+              ],
             },
             {
               name: "bg",
@@ -238,27 +252,44 @@ const Products: CollectionConfig = {
               required: true,
               defaultValue: "#BF5550",
               admin: {
-                description:
-                  "Hex colour (e.g. #BF5550) behind the product image on cards and the detail gallery.",
                 components: {
                   Field: "/src/components/admin/ColorPickerField#default",
                 },
               },
             },
-            // Per-image drag/zoom inside the card, keyed by media id so fits
-            // survive reordering. Edited with the Instagram-style strip+editor.
+            // Detail-page gallery: first image is the big frozen left image, the
+            // rest stack in the scrolling middle column. Never used on cards.
+            {
+              name: "images",
+              label: "Detail Gallery",
+              type: "upload",
+              relationTo: "media",
+              hasMany: true,
+              admin: {
+                description:
+                  "Product detail page only. First image is the big left image; the rest scroll in the middle.",
+              },
+            },
+            // Per-image drag/zoom inside the gallery card, keyed by media id so
+            // fits survive reordering. Edited with the strip+editor.
             {
               name: "imageFits",
-              label: "Image Fit",
+              label: "Gallery Image Fit",
               type: "json",
               admin: {
                 description:
-                  "Click a thumbnail, then drag and zoom that image until it sits right on the card.",
+                  "Click a gallery thumbnail, then drag and zoom that image until it sits right on the detail page.",
                 components: {
                   Field: "/src/components/admin/ImageFitsField#default",
                 },
               },
             },
+          ],
+        },
+        {
+          label: "Product Page",
+          description: "Everything rendered on the product (slug) page.",
+          fields: [
             // Catalog price range shown on category-page tiles ("₹899 – ₹1,099").
             {
               name: "priceMin",

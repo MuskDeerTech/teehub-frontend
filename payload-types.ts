@@ -209,16 +209,22 @@ export interface Product {
   isPublished?: boolean | null;
   isFeatured?: boolean | null;
   sortOrder?: number | null;
+  cardImage?: (number | null) | Media;
   /**
-   * First image is the catalog card; the rest become the detail-page gallery.
+   * Drag and zoom until the card image sits right in the listing tile.
+   */
+  cardFit?: {
+    scale?: number | null;
+    x?: number | null;
+    y?: number | null;
+  };
+  bg: string;
+  /**
+   * Product detail page only. First image is the big left image; the rest scroll in the middle.
    */
   images?: (number | Media)[] | null;
   /**
-   * Hex colour (e.g. #BF5550) behind the product image on cards and the detail gallery.
-   */
-  bg: string;
-  /**
-   * Click a thumbnail, then drag and zoom that image until it sits right on the card.
+   * Click a gallery thumbnail, then drag and zoom that image until it sits right on the detail page.
    */
   imageFits?:
     | {
@@ -425,8 +431,16 @@ export interface ProductsSelect<T extends boolean = true> {
   isPublished?: T;
   isFeatured?: T;
   sortOrder?: T;
-  images?: T;
+  cardImage?: T;
+  cardFit?:
+    | T
+    | {
+        scale?: T;
+        x?: T;
+        y?: T;
+      };
   bg?: T;
+  images?: T;
   imageFits?: T;
   priceMin?: T;
   priceMax?: T;
