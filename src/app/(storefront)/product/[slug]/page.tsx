@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import ProductDetails from "@/components/ui/ProductDetails";
+import LatestDrops from "@/components/sections/LatestDrops";
 import { allProducts, getProductBySlug } from "@/lib/products";
 
 type Params = { slug: string };
@@ -32,5 +33,11 @@ export default async function ProductPage({
 
   if (!product) notFound();
 
-  return <ProductDetails product={product} />;
+  return (
+    <>
+      <ProductDetails product={product} />
+    
+      {/*<LatestDrops />*/}
+    </>
+  );
 }

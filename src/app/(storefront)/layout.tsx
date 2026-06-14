@@ -5,6 +5,7 @@ import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import BottomBanner from "@/components/layout/BottomBanner";
 import { BookmarksProvider } from "@/components/providers/BookmarksProvider";
+import CartRoot from "@/components/cart/CartRoot";
 
 // Workhorse UI font -- close free substitute for the paid "TT Paplane Trial".
 const inter = Inter({
@@ -43,6 +44,7 @@ export default function StorefrontLayout({
             {children}
             <Footer />
             <BottomBanner />
+            <CartRoot />
           </div>
         </BookmarksProvider>
       </body>
