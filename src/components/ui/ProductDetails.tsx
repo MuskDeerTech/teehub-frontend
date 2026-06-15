@@ -2,18 +2,20 @@
 
 import Image from "next/image";
 import BookmarkButton from "@/components/ui/BookmarkButton";
+import LatestDrops from "@/components/sections/LatestDrops";
 import { productBookmarkId } from "@/lib/bookmarks";
-import type { ImageFit, Product } from "@/lib/products";
-import { fitTransform, formatPriceRange } from "@/lib/products";
-import CartLogin from "@/components/cart/CartLogin";
+import { cartFlow } from "@/lib/CartFlow";
+import type { Product } from "@/lib/products";
+import { formatPriceRange } from "@/lib/products";
 import { useMemo, useState, useRef, useEffect } from "react";
 import {
   IconShare3,
   IconBrandWhatsapp,
-  IconBrandX,
+  IconBrandInstagram,
   IconBrandFacebook,
   IconLink,
 } from "@tabler/icons-react";
+
 
 const fallbackSizes = ["XS", "S", "M", "L", "XL", "XXL", "XXXL"];
 const tabs = ["details & description", "washcare", "shipping"] as const;
@@ -111,11 +113,9 @@ export default function ProductDetails({ product }: { product: Product }) {
   const [nameValue, setNameValue] = useState("MRUDULA");
   const [numberValue, setNumberValue] = useState("07");
   const [showGuide, setShowGuide] = useState(false);
-  const [showCartLogin, setShowCartLogin] = useState(false);
   const [copied, setCopied] = useState(false);
   const [showShare, setShowShare] = useState(false);
   const shareRef = useRef<HTMLDivElement>(null);
-
   const shareUrl = typeof window !== "undefined" ? window.location.href : "";
 
   const copyLink = async () => {
@@ -123,6 +123,7 @@ export default function ProductDetails({ product }: { product: Product }) {
       await navigator.clipboard.writeText(shareUrl);
 
       setCopied(true);
+      setShowShare(false);
 
       setTimeout(() => {
         setCopied(false);
@@ -152,7 +153,9 @@ export default function ProductDetails({ product }: { product: Product }) {
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
-  }, []);
+    
+  },
+   []);
 
   // The detail page shows a single sale price with the struck-through MRP +
   // discount when `price` is set; otherwise it falls back to the catalog range.
@@ -171,7 +174,7 @@ export default function ProductDetails({ product }: { product: Product }) {
           section height — page scroll walks through those cards until the last
           one, then the section ends and the footer scrolls in normally.
         */}
-        <div className="mx-auto grid w-full max-w-[1440px] grid-cols-1 gap-3 px-3 py-4 lg:items-start lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(580px,580px)] lg:py-3 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(650px,650px)] lg:px-4">
+        <div className="mx-auto grid w-full max-w-[1475px] grid-cols-1 gap-3 px-3 py-4 lg:items-start lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(580px,580px)] lg:py-3 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(650px,650px)] lg:px-4">
           {/* Frozen left — first gallery image */}
           <div className={stickyPanelClass}>
             {gallery[0] && (
@@ -350,19 +353,21 @@ export default function ProductDetails({ product }: { product: Product }) {
               <div className="mt-4 flex h-[58px] gap-3 max-[480px]:mt-4 max-[480px]:h-[54px] max-[480px]:gap-2">
                 <button
                   type="button"
-                  onClick={() => setShowCartLogin(true)}
+                  onClick={() => cartFlow.open(product, selectedSize, quantity)}
                   className="flex min-w-0 flex-1 items-center justify-center gap-3 rounded-[10px] bg-[#f36d43] px-4 text-white transition-opacity hover:opacity-90 max-[480px]:gap-2 max-[480px]:px-3"
                 >
                   <span className="flex min-w-0 flex-col items-start leading-none">
                     <span className="whitespace-nowrap text-[13px] font-semibold uppercase tracking-[1px] max-[480px]:text-[11px]">
                       ADD TO CART
                     </span>
+
                     {product.freeShippingRemaining != null && (
                       <span className="mt-1.5 whitespace-nowrap text-[10px] font-normal max-[480px]:text-[9px]">
                         {inr(product.freeShippingRemaining)} to free shipping
                       </span>
                     )}
                   </span>
+
                   <svg
                     viewBox="0 0 64 64"
                     fill="currentColor"
@@ -391,7 +396,8 @@ export default function ProductDetails({ product }: { product: Product }) {
                         href={`https://wa.me/?text=${encodeURIComponent(shareUrl)}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex items-center gap-2 px-4 py-3 text-sm font-medium transition-all hover:bg-[#f6f6f6]"
+                        onClick={() => setShowShare(false)}
+                        className="flex items-center gap-2 px-4 py-3 text-sm font-medium transition-colors hover:bg-[#f6f6f6]"
                       >
                         <span className="flex h-7 w-8 items-center justify-center rounded-full bg-green-100">
                           <IconBrandWhatsapp
@@ -404,16 +410,20 @@ export default function ProductDetails({ product }: { product: Product }) {
                       </a>
 
                       <a
-                        href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(shareUrl)}`}
+                        href="https://instagram.com/teehubstore"
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex items-center gap-2 px-4 py-3 text-sm font-medium transition-all hover:bg-[#f6f6f6]"
+                        onClick={() => setShowShare(false)}
+                        className="flex items-center gap-2 px-4 py-3 text-sm font-medium transition-colors hover:bg-[#f6f6f6]"
                       >
-                        <span className="flex h-7 w-8 items-center justify-center rounded-full bg-gray-100">
-                          <IconBrandX size={18} />
+                        <span className="flex h-7 w-8 items-center justify-center rounded-full bg-pink-100">
+                          <IconBrandInstagram
+                            size={18}
+                            className="text-pink-600"
+                          />
                         </span>
 
-                        <span>X (Twitter)</span>
+                        <span>Instagram</span>
                       </a>
 
                       <a
@@ -437,9 +447,9 @@ export default function ProductDetails({ product }: { product: Product }) {
                       <button
                         type="button"
                         onClick={copyLink}
-                        className="flex w-full items-center gap-2 px-4 py-3 text-left text-sm font-medium transition-all hover:bg-[#f6f6f6]"
+                        className="flex items-center cursor-pointer gap-2 px-4 py-3 text-sm font-medium transition-colors hover:bg-[#f6f6f6]"
                       >
-                        <span className="flex h-8 w-8 items-center justify-center rounded-full bg-black-100">
+                        <span className="flex h-7 w-8 items-center justify-center rounded-full bg-black-100">
                           <IconLink size={18} className="text-orange-600" />
                         </span>
 
@@ -573,7 +583,8 @@ export default function ProductDetails({ product }: { product: Product }) {
           </div>
         </div>
       )}
-      <CartLogin open={showCartLogin} onClose={() => setShowCartLogin(false)} />
+      
+      <LatestDrops productPage />
       {copied && (
         <div className="fixed bottom-6 left-1/2 z-[100] -translate-x-1/2 rounded-full bg-black px-4 py-2 text-sm font-medium text-white shadow-lg">
           Link copied successfully ✓

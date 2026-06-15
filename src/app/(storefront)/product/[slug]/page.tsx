@@ -32,5 +32,11 @@ export default async function ProductPage({
 
   if (!product) notFound();
 
-  return <ProductDetails product={product} />;
+  return (
+    <>
+      <ProductDetails product={product} />
+    
+      {/*<LatestDrops />*/}
+    </>
+  );
 }
