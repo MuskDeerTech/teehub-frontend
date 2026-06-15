@@ -6,10 +6,10 @@ import { IconRestore } from "@tabler/icons-react";
 import {
   FACET_PARAM,
   getFacetCounts,
-  getProductsByCategory,
   paramsToSelections,
   type FacetKey,
   type FacetSelections,
+  type Product,
 } from "@/lib/products";
 
 /**
@@ -69,11 +69,14 @@ const sortOptions = [
 const PRICE_MAX = 5000;
 
 export default function FilterPanel({
-  slug,
+  products,
   open,
   onClose,
 }: {
-  slug: string;
+  /** The current page's products (from Payload via the page) — counts are
+   *  scoped to these: "all" sees the whole catalog, a category page sees only
+   *  its own products. */
+  products: Product[];
   open: boolean;
   onClose: () => void;
 }) {
@@ -125,10 +128,6 @@ export default function FilterPanel({
       else next.add(key);
       return next;
     });
-
-  // Counts are scoped to the current page's products: "all" sees the whole
-  // catalog, a category page sees only its own products.
-  const products = useMemo(() => getProductsByCategory(slug), [slug]);
 
   // Recompute counts whenever a pill changes — this is what makes the numbers
   // reactive to other selections.

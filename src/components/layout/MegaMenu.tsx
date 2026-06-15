@@ -2,14 +2,21 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { menuCollections, menuCategories } from "@/lib/products";
+import { fitTransform, menuCollections, type Category } from "@/lib/products";
 
 type MegaMenuProps = {
   open: boolean;
   onClose: () => void;
+  categories: Category[];
+  loading?: boolean;
 };
 
-export default function MegaMenu({ open, onClose }: MegaMenuProps) {
+export default function MegaMenu({
+  open,
+  onClose,
+  categories,
+  loading = false,
+}: MegaMenuProps) {
   if (!open) return null;
 
   return (
@@ -37,25 +44,52 @@ export default function MegaMenu({ open, onClose }: MegaMenuProps) {
 
           {/* RIGHT — category tiles */}
           <div className="grid flex-1 grid-cols-6 justify-items-center gap-x-10 max-[1024px]:flex max-[1024px]:flex-wrap max-[1024px]:justify-start">
-            {menuCategories.map((cat) => (
-              <Link
-                key={cat.title}
-                href={`/category/${cat.slug}`}
-                onClick={onClose}
-                className="flex w-[104px] cursor-pointer flex-col items-center gap-[35px]"
-              >
-                <span className="whitespace-nowrap text-center text-[12px] font-bold uppercase tracking-[0.4px] text-black">
-                  {cat.title}
-                </span>
-                <Image
-                  src={cat.image}
-                  alt={cat.title}
-                  width={104}
-                  height={104}
-                  className="h-[104px] w-[104px] object-contain transition-transform duration-300 hover:scale-105"
-                />
-              </Link>
-            ))}
+            {loading
+              ? Array.from({ length: 6 }).map((_, index) => (
+                  <div
+                    key={index}
+                    className="flex w-[104px] flex-col items-center gap-[35px]"
+                  >
+                    <span className="h-[14px] w-[90px] rounded bg-[#eeeeee]" />
+                    <span className="h-[104px] w-[104px] rounded-[10px] bg-[#eeeeee]" />
+                  </div>
+                ))
+              : categories.map((cat) => (
+                  <Link
+                    key={cat.slug}
+                    href={`/category/${cat.slug}`}
+                    onClick={onClose}
+                    className="flex w-[104px] cursor-pointer flex-col items-center gap-[35px]"
+                  >
+                    <span className="whitespace-nowrap text-center text-[12px] font-bold uppercase tracking-[0.4px] text-black">
+                      {cat.label}
+                    </span>
+                    {/* Fixed tile: CMS-controlled `bg` colour fills the box, the
+                        transparent cutout thumbnail sits on top (object-contain).
+                        Falls back to the label when no image is set. */}
+                    <span
+                      style={{ backgroundColor: cat.bg ?? "#f1f1f1" }}
+                      className="flex h-[104px] w-[104px] items-center justify-center overflow-hidden rounded-[10px] transition-transform duration-300 hover:scale-105"
+                    >
+                      {cat.thumbnailImage ? (
+                        <Image
+                          src={cat.thumbnailImage.src}
+                          alt={cat.thumbnailImage.alt}
+                          width={104}
+                          height={104}
+                          className="h-[104px] w-[104px] object-contain"
+                          // Replays the drag/zoom fit set in the admin editor;
+                          // overflow is clipped by the rounded tile above.
+                          style={fitTransform(cat.thumbFit)}
+                        />
+                      ) : (
+                        <span className="px-2 text-center text-[11px] font-bold uppercase tracking-[0.4px] text-[#777]">
+                          {cat.label}
+                        </span>
+                      )}
+                    </span>
+                  </Link>
+                ))}
           </div>
         </div>
       </div>

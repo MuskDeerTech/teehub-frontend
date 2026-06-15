@@ -4,19 +4,17 @@ import CategoryFilter from "@/components/category/CategoryFilter";
 import FilterableGrid from "@/components/category/FilterableGrid";
 import PlaceholderTile from "@/components/ui/PlaceholderTile";
 import {
-  categoryList,
+  getCategories,
   getCategory,
-  getPlaceholderColors,
   getProductsByCategory,
-} from "@/lib/products";
+} from "@/lib/catalog";
+import { getPlaceholderColors } from "@/lib/products";
 
 type Params = { slug: string };
 
-// Static export has no server, so every category URL must be enumerated at
-// build time: one page per category slug, plus the "all" (VIEW ALL) page.
-export function generateStaticParams(): Params[] {
-  return [{ slug: "all" }, ...categoryList.map((c) => ({ slug: c.slug }))];
-}
+// Category pages query Payload/Postgres. Render them at request time so deploys
+// do not exhaust the database connection pool while collecting static params.
+export const dynamic = "force-dynamic";
 
 export async function generateMetadata({
   params,
@@ -24,7 +22,7 @@ export async function generateMetadata({
   params: Promise<Params>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const label = slug === "all" ? "Shop All" : getCategory(slug)?.label;
+  const label = slug === "all" ? "Shop All" : (await getCategory(slug))?.label;
   return { title: label ? `${label} - TeeHub` : "Shop - TeeHub" };
 }
 
@@ -34,12 +32,16 @@ export default async function CategoryPage({
   params: Promise<Params>;
 }) {
   const { slug } = await params;
-  const products = getProductsByCategory(slug);
+  const [categories, products] = await Promise.all([
+    getCategories(),
+    getProductsByCategory(slug),
+  ]);
 
   // A known category with no products yet still renders a full grid, but of
   // blank placeholder cards rather than the "no products" message.
   const showPlaceholders =
-    products.length === 0 && (slug === "all" || getCategory(slug) !== undefined);
+    products.length === 0 &&
+    (slug === "all" || categories.some((c) => c.slug === slug));
   const placeholderColors = showPlaceholders ? getPlaceholderColors(slug) : [];
 
   const gridClass =
@@ -48,10 +50,10 @@ export default async function CategoryPage({
   return (
     <main className="mx-auto w-full max-w-[1440px] px-[clamp(16px,4vw,80px)] py-10">
       {/* Suspense boundary: the filter panel and grid read the URL query string
-          via useSearchParams, which Next requires to be wrapped for the static
-          export not to de-opt to fully client-side rendering. */}
+          via useSearchParams, which Next requires to be wrapped to keep the
+          rest of the page statically renderable. */}
       <Suspense fallback={null}>
-        <CategoryFilter active={slug} />
+        <CategoryFilter active={slug} categories={categories} products={products} />
       </Suspense>
 
       {products.length > 0 ? (

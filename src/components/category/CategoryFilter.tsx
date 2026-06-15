@@ -1,14 +1,25 @@
 import Link from "next/link";
-import { categoryList } from "@/lib/products";
+import type { Category, Product } from "@/lib/products";
 import FilterButton from "./FilterButton";
 
 /**
  * The pill row at the top of a category page. The active pill is filled black;
  * the rest link to their own `/category/<slug>` page. `VIEW ALL` (slug `all`)
  * is prepended. FILTERS opens a slide-in filter panel.
+ *
+ * Categories and products come from the page (which reads Payload) so this
+ * stays a server component with no data-fetching of its own.
  */
-export default function CategoryFilter({ active }: { active: string }) {
-  const pills = [{ slug: "all", label: "VIEW ALL" }, ...categoryList];
+export default function CategoryFilter({
+  active,
+  categories,
+  products,
+}: {
+  active: string;
+  categories: Category[];
+  products: Product[];
+}) {
+  const pills = [{ slug: "all", label: "VIEW ALL" }, ...categories];
 
   return (
     <div className="flex items-center justify-between gap-4">
@@ -31,7 +42,7 @@ export default function CategoryFilter({ active }: { active: string }) {
         })}
       </div>
 
-      <FilterButton slug={active} />
+      <FilterButton products={products} />
     </div>
   );
 }
