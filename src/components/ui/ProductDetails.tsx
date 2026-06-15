@@ -5,8 +5,8 @@ import BookmarkButton from "@/components/ui/BookmarkButton";
 import LatestDrops from "@/components/sections/LatestDrops";
 import { productBookmarkId } from "@/lib/bookmarks";
 import { cartFlow } from "@/lib/CartFlow";
-import type { Product } from "@/lib/products";
-import { formatPriceRange } from "@/lib/products";
+import type { ImageFit, Product } from "@/lib/products";
+import { fitTransform, formatPriceRange } from "@/lib/products";
 import { useMemo, useState, useRef, useEffect } from "react";
 import {
   IconShare3,
