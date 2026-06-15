@@ -3,8 +3,8 @@
 import Image from "next/image";
 import BookmarkButton from "@/components/ui/BookmarkButton";
 import { productBookmarkId } from "@/lib/bookmarks";
-import type { Product } from "@/lib/products";
-import { formatPriceRange } from "@/lib/products";
+import type { ImageFit, Product } from "@/lib/products";
+import { fitTransform, formatPriceRange } from "@/lib/products";
 import CartLogin from "@/components/cart/CartLogin";
 import { useMemo, useState, useRef, useEffect } from "react";
 import {
@@ -21,6 +21,16 @@ const tabs = ["details & description", "washcare", "shipping"] as const;
 type ProductTab = (typeof tabs)[number];
 
 function getGallery(product: Product) {
+  // CMS products carry their own gallery (uploaded in the Payload admin);
+  // the hardcoded fallbacks below only cover legacy static data.
+  if (product.images?.length) {
+    return product.images.map((img) => ({
+      src: img.src,
+      alt: img.alt || product.title,
+      fit: img.fit,
+    }));
+  }
+
   if (product.slug === "rcb-jersey-2026") {
     return [
       {
@@ -61,7 +71,7 @@ function GalleryImage({
   priority = false,
   fill = false,
 }: {
-  image: { src: string; alt: string };
+  image: { src: string; alt: string; fit?: ImageFit };
   product: Product;
   priority?: boolean;
   /** Full viewport-height card on desktop (frozen side panels + middle scroll steps). */
@@ -82,9 +92,11 @@ function GalleryImage({
         width={700}
         height={900}
         priority={priority}
-        className={`h-full w-full object-contain ${
-          image.src.includes("back.png") ? "translate-y-[78px]" : ""
-        }`}
+        // Bottom-anchored so the image always sits on the bottom edge no matter
+        // how tall the box gets (full-height on desktop). The admin's Image Fit
+        // crop nudges/zooms from that bottom baseline.
+        className="h-full w-full origin-bottom object-contain object-[50%_90%]"
+        style={fitTransform(image.fit)}
       />
     </div>
   );
