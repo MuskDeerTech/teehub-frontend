@@ -11,9 +11,11 @@ import {
 interface CartLoginProps {
   open: boolean;
   onClose: () => void;
+  onBack?: () => void;
+  onSuccess?: () => void; 
 }
 
-export default function CartLogin({ open, onClose }: CartLoginProps) {
+export default function CartLogin({ open, onClose, onBack, onSuccess }: CartLoginProps) {
   const [mobile, setMobile] = useState("");
   const [updates, setUpdates] = useState(false);
   const [selectedCoupon, setSelectedCoupon] = useState<number | null>(1);
@@ -91,6 +93,7 @@ export default function CartLogin({ open, onClose }: CartLoginProps) {
       return;
     }
     setOtpError("");
+    onSuccess?.();
   };
 
   const handleResend = () => {
@@ -113,7 +116,7 @@ export default function CartLogin({ open, onClose }: CartLoginProps) {
         <div className="px-6 pt-5">
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-2">
-              <button onClick={step === "otp" ? () => setStep("mobile") : onClose}>
+              <button onClick={step === "otp" ? () => setStep("mobile") : onBack || onClose}>
                 <IconChevronLeft size={28} />
               </button>
               <div>
