@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { cartFlow, CartState } from "@/lib/CartFlow";
 import CartDetails from "./CartDetails";
 import CartLogin from "./CartLogin";
+import CartRegister from "./CartRegister";
 
 export default function CartRoot() {
   const [state, setState] = useState<CartState>({
@@ -14,13 +15,12 @@ export default function CartRoot() {
   });
 
   useEffect(() => {
-  console.log("CartRoot mounted");
-
-  return cartFlow.subscribe((s) => {
-    console.log("CartRoot received:", s);
-    setState(s);
-  });
-}, []);
+    console.log("CartRoot mounted");
+    return cartFlow.subscribe((s) => {
+      console.log("CartRoot received:", s);
+      setState(s);
+    });
+  }, []);
 
   if (state.step === "closed") return null;
 
@@ -43,7 +43,20 @@ export default function CartRoot() {
       )}
 
       {state.step === "login" && (
-        <CartLogin open={true} onClose={() =>cartFlow.close()} />
+        <CartLogin
+          open={true}
+          onClose={() => cartFlow.close()}
+          onSuccess={() => cartFlow.goToRegister()}
+        />
+      )}
+
+      {state.step === "register" && (
+        <CartRegister
+          open={true}
+          onClose={() => cartFlow.close()}
+          onSuccess={() => cartFlow.close()}
+        
+        />
       )}
     </>
   );

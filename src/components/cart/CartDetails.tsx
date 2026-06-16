@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
   IconTruckReturn,
   IconCash,
@@ -28,7 +28,24 @@ const PAYMENT_METHODS = [
   { name: "PhonePe", src: "/images/card-logo/phonepay-logo.png" },
 ];
 
-export default function CartDetails({ item, onClose, onProceed }: any) {
+interface CartItem {
+  id: string;
+  name: string;
+  image: string;
+  size: string;
+  quantity: number;
+  price: number;
+  mrp: number;
+  customName?: string;
+}
+
+interface CartDetailsProps {
+  item: CartItem;
+  onClose: () => void;
+  onProceed: () => void;
+}
+
+export default function CartDetails({ item, onClose, onProceed }: CartDetailsProps) {
   const [quantity, setQuantity] = useState<number>(item.quantity ?? 1);
   const [sizeIndex, setSizeIndex] = useState<number>(
     SIZES.indexOf(item.size) !== -1 ? SIZES.indexOf(item.size) : 2,
@@ -65,7 +82,6 @@ export default function CartDetails({ item, onClose, onProceed }: any) {
         <div className="flex-1 overflow-y-auto">
           {/* PRODUCT CARD */}
           <div className="flex gap-3 mx-4 mt-4 border border-gray-200 rounded-xl p-3">
-            {/* image */}
             <Image
               src={item.image}
               alt={item.name}
@@ -75,67 +91,42 @@ export default function CartDetails({ item, onClose, onProceed }: any) {
             />
 
             <div className="flex-1 min-w-0">
-              {/* price / mrp / discount */}
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="font-bold text-black text-base">
-                  ₹{item.price}
-                </span>
-                <span className="line-through text-gray-400 text-sm">
-                  ₹{item.mrp}
-                </span>
-                <span className="text-green-600 text-xs font-medium">
-                  ({discountPct}% Off)
-                </span>
+                <span className="font-bold text-black text-base">₹{item.price}</span>
+                <span className="line-through text-gray-400 text-sm">₹{item.mrp}</span>
+                <span className="text-green-600 text-xs font-medium">({discountPct}% Off)</span>
               </div>
 
-              {/* name */}
-              <h3 className="font-semibold mt-1 text-sm leading-snug">
-                {item.name}
-              </h3>
+              <h3 className="font-semibold mt-1 text-sm leading-snug">{item.name}</h3>
 
-              {/* custom details */}
               {item.customName ? (
                 <p className="text-xs text-gray-500 mt-1">
                   Custom Details :{" "}
-                  <span className="font-medium text-gray-700">
-                    {item.customName}
-                  </span>
+                  <span className="font-medium text-gray-700">{item.customName}</span>
                 </p>
               ) : null}
 
               {/* QUANTITY + SIZE */}
               <div className="flex items-start gap-4 mt-3">
-                {/* QUANTITY */}
-
                 <div>
                   <p className="mb-1.5 text-[11px] font-medium uppercase tracking-wide text-gray-500">
                     Quantity
                   </p>
-
                   <div className="inline-flex items-center gap-4 rounded-lg border border-gray-200 px-3 py-1">
                     <button
                       className={minusBtn}
                       style={{ backgroundColor: btnColor }}
                       onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                    >
-                      −
-                    </button>
-
-                    <span className="w-8 text-center text-sm font-semibold">
-                      {quantity}
-                    </span>
-
+                    >−</button>
+                    <span className="w-8 text-center text-sm font-semibold">{quantity}</span>
                     <button
                       className={plusBtn}
                       style={{ backgroundColor: btnColor }}
                       onClick={() => setQuantity((q) => q + 1)}
-                    >
-                      +
-                    </button>
+                    >+</button>
                   </div>
                 </div>
 
-                {/* SIZE */}
                 <div>
                   <p className="text-[11px] text-gray-500 font-medium mb-1.5 uppercase tracking-wide">
                     Size
@@ -145,21 +136,13 @@ export default function CartDetails({ item, onClose, onProceed }: any) {
                       className={minusBtn}
                       style={{ backgroundColor: btnColor }}
                       onClick={() => setSizeIndex((i) => Math.max(0, i - 1))}
-                    >
-                      −
-                    </button>
-                    <span className="w-8 text-center text-sm font-semibold">
-                      {selectedSize}
-                    </span>
+                    >−</button>
+                    <span className="w-8 text-center text-sm font-semibold">{selectedSize}</span>
                     <button
                       className={plusBtn}
                       style={{ backgroundColor: btnColor }}
-                      onClick={() =>
-                        setSizeIndex((i) => Math.min(SIZES.length - 1, i + 1))
-                      }
-                    >
-                      +
-                    </button>
+                      onClick={() => setSizeIndex((i) => Math.min(SIZES.length - 1, i + 1))}
+                    >+</button>
                   </div>
                 </div>
               </div>
@@ -167,10 +150,7 @@ export default function CartDetails({ item, onClose, onProceed }: any) {
           </div>
 
           {/* YAY FREE DELIVERY */}
-          <div
-            className="mt-4 py-2 text-center text-sm"
-            style={{ backgroundColor: "#EFEFEF" }}
-          >
+          <div className="mt-4 py-2 text-center text-sm" style={{ backgroundColor: "#EFEFEF" }}>
             Yay!{" "}
             <span className="font-semibold text-green-600">Free Delivery</span>{" "}
             On This Order!
@@ -179,7 +159,6 @@ export default function CartDetails({ item, onClose, onProceed }: any) {
           {/* ORDER SUMMARY */}
           <div className="px-4 mt-5">
             <h3 className="font-semibold mb-3">Order Summary</h3>
-
             <div className="flex justify-between text-sm py-2">
               <span className="text-gray-600">Total MRP (Incl. Of Taxes)</span>
               <span>₹{totalMrp}</span>
@@ -220,11 +199,12 @@ export default function CartDetails({ item, onClose, onProceed }: any) {
           <div className="px-6 mt-5 flex flex-wrap items-center gap-9">
             {PAYMENT_METHODS.map(({ name, src }) => (
               <div key={name} className="h-19 flex items-center justify-center">
-                <img
+                <Image
                   src={src}
                   alt={name}
-                  className="h-full w-auto object-contain"
-                  style={{ maxWidth: 52 }}
+                  width={52}
+                  height={28}
+                  className="object-contain"
                 />
               </div>
             ))}
@@ -246,7 +226,7 @@ export default function CartDetails({ item, onClose, onProceed }: any) {
         {/* FOOTER */}
         <div className="px-4 pt-3 pb-4 border-t border-gray-200 bg-white">
           <button
-            onClick={() => onProceed()}
+            onClick={onProceed}
             className="w-full bg-[#f36d43] hover:opacity-90 text-white py-3 rounded-xl font-semibold text-base"
           >
             Proceed To Buy
