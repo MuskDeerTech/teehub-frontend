@@ -19,7 +19,12 @@ interface CartRegisterProps {
 const INPUT =
   "w-full border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-[#f36d43] rounded-sm";
 
-export default function CartRegister({ open, onClose, onBack, onSuccess }: CartRegisterProps) {
+export default function CartRegister({
+  open,
+  onClose,
+  onBack,
+  onSuccess,
+}: CartRegisterProps) {
   const [selectedCoupon, setSelectedCoupon] = useState<number | null>(1);
   const [saveAs, setSaveAs] = useState<"Home" | "Work">("Home");
   const [showSuccess, setShowSuccess] = useState(false);
@@ -47,24 +52,31 @@ export default function CartRegister({ open, onClose, onBack, onSuccess }: CartR
 
   const validate = () => {
     const e: Partial<typeof form> = {};
-    if (!form.pincode || form.pincode.length !== 6) e.pincode = "Enter valid 6-digit pincode";
+    if (!form.pincode || form.pincode.length !== 6) {
+      e.pincode = "Enter valid 6-digit pincode";
+    }
     if (!form.city.trim()) e.city = "Required";
     if (!form.state.trim()) e.state = "Required";
     if (!form.flatHouse.trim()) e.flatHouse = "Required";
     if (!form.fullName.trim()) e.fullName = "Required";
-    if (!form.email.trim() || !/\S+@\S+\.\S+/.test(form.email)) e.email = "Enter valid email";
+    if (!form.email.trim() || !/\S+@\S+\.\S+/.test(form.email)) {
+      e.email = "Enter valid email";
+    }
     return e;
   };
 
   const handleContinue = async () => {
     const e = validate();
-    if (Object.keys(e).length) { setErrors(e); return; }
+    if (Object.keys(e).length) {
+      setErrors(e);
+      return;
+    }
 
     setLoading(true);
     setSubmitError("");
 
     try {
-       /*TODO: replace with real API call when backend is ready
+      /*TODO: replace with real API call when backend is ready
        await fetch("/api/register", {
        method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -76,7 +88,7 @@ export default function CartRegister({ open, onClose, onBack, onSuccess }: CartR
         setShowSuccess(false);
         onSuccess?.();
       }, 2000);
-    } catch{
+    } catch {
       setSubmitError("Something went wrong. Please try again.");
     } finally {
       setLoading(false);
@@ -90,7 +102,6 @@ export default function CartRegister({ open, onClose, onBack, onSuccess }: CartR
 
       {/* SHEET */}
       <div className="fixed bottom-0 left-0 right-0 z-50 mx-auto w-full max-w-2xl max-h-[88vh] overflow-y-auto rounded-t-[28px] bg-[#F5F5F5] shadow-2xl">
-
         {/* HEADER */}
         <div className="px-6 pt-5">
           <div className="flex items-start justify-between">
@@ -175,17 +186,29 @@ export default function CartRegister({ open, onClose, onBack, onSuccess }: CartR
                   setErrors((er) => ({ ...er, pincode: "" }));
                 }}
               />
-              {errors.pincode && <p className="text-[10px] text-red-500 mt-0.5">{errors.pincode}</p>}
+              {errors.pincode && (
+                <p className="text-[10px] text-red-500 mt-0.5">
+                  {errors.pincode}
+                </p>
+              )}
             </div>
             <div>
               <label className="text-xs text-gray-500 mb-1 block">City</label>
               <input className={INPUT} value={form.city} onChange={set("city")} />
-              {errors.city && <p className="text-[10px] text-red-500 mt-0.5">{errors.city}</p>}
+              {errors.city && (
+                <p className="text-[10px] text-red-500 mt-0.5">
+                  {errors.city}
+                </p>
+              )}
             </div>
             <div>
               <label className="text-xs text-gray-500 mb-1 block">State</label>
               <input className={INPUT} value={form.state} onChange={set("state")} />
-              {errors.state && <p className="text-[10px] text-red-500 mt-0.5">{errors.state}</p>}
+              {errors.state && (
+                <p className="text-[10px] text-red-500 mt-0.5">
+                  {errors.state}
+                </p>
+              )}
             </div>
           </div>
 
@@ -193,12 +216,18 @@ export default function CartRegister({ open, onClose, onBack, onSuccess }: CartR
           <div className="mb-3">
             <label className="text-xs text-gray-500 mb-1 block">Flat House Number</label>
             <input className={INPUT} value={form.flatHouse} onChange={set("flatHouse")} />
-            {errors.flatHouse && <p className="text-[10px] text-red-500 mt-0.5">{errors.flatHouse}</p>}
+            {errors.flatHouse && (
+              <p className="text-[10px] text-red-500 mt-0.5">
+                {errors.flatHouse}
+              </p>
+            )}
           </div>
 
           {/* Apartment */}
           <div className="mb-6">
-            <label className="text-xs text-gray-500 mb-1 block">Apartment, Area, Sector, Village</label>
+            <label className="text-xs text-gray-500 mb-1 block">
+              Apartment, Area, Sector, Village
+            </label>
             <input className={INPUT} value={form.apartment} onChange={set("apartment")} />
           </div>
 
@@ -211,13 +240,21 @@ export default function CartRegister({ open, onClose, onBack, onSuccess }: CartR
           <div className="mb-3">
             <label className="text-xs text-gray-500 mb-1 block">Full Name*</label>
             <input className={INPUT} value={form.fullName} onChange={set("fullName")} />
-            {errors.fullName && <p className="text-[10px] text-red-500 mt-0.5">{errors.fullName}</p>}
+            {errors.fullName && (
+              <p className="text-[10px] text-red-500 mt-0.5">
+                {errors.fullName}
+              </p>
+            )}
           </div>
 
           <div className="mb-6">
             <label className="text-xs text-gray-500 mb-1 block">Email Address*</label>
             <input className={INPUT} type="email" value={form.email} onChange={set("email")} />
-            {errors.email && <p className="text-[10px] text-red-500 mt-0.5">{errors.email}</p>}
+            {errors.email && (
+              <p className="text-[10px] text-red-500 mt-0.5">
+                {errors.email}
+              </p>
+            )}
           </div>
 
           {/* SAVE ADDRESS AS */}
@@ -266,7 +303,9 @@ export default function CartRegister({ open, onClose, onBack, onSuccess }: CartR
           {/* GIFT FOOTER */}
           <div className="mt-4 flex items-center justify-center gap-1 text-xs text-gray-500">
             <span>It&apos;s a Gift?</span>
-            <span className="text-[#f36d43] font-medium cursor-pointer">Get it wrapped at just Rs. 30.</span>
+            <span className="text-[#f36d43] font-medium cursor-pointer">
+              Get it wrapped at just Rs. 30.
+            </span>
           </div>
         </div>
       </div>

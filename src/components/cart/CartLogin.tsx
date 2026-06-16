@@ -12,10 +12,15 @@ interface CartLoginProps {
   open: boolean;
   onClose: () => void;
   onBack?: () => void;
-  onSuccess?: () => void; 
+  onSuccess?: () => void;
 }
 
-export default function CartLogin({ open, onClose, onBack, onSuccess }: CartLoginProps) {
+export default function CartLogin({
+  open,
+  onClose,
+  onBack,
+  onSuccess,
+}: CartLoginProps) {
   const [mobile, setMobile] = useState("");
   const [updates, setUpdates] = useState(false);
   const [selectedCoupon, setSelectedCoupon] = useState<number | null>(1);
@@ -34,7 +39,11 @@ export default function CartLogin({ open, onClose, onBack, onSuccess }: CartLogi
     if (!timerActive || secondsLeft <= 0) return;
     const interval = setInterval(() => {
       setSecondsLeft((s) => {
-        if (s <= 1) { clearInterval(interval); setTimerActive(false); return 0; }
+        if (s <= 1) {
+          clearInterval(interval);
+          setTimerActive(false);
+          return 0;
+        }
         return s - 1;
       });
     }, 1000);
@@ -80,7 +89,10 @@ export default function CartLogin({ open, onClose, onBack, onSuccess }: CartLogi
     }
   };
 
-  const handleOtpKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+  const handleOtpKeyDown = (
+    index: number,
+    e: React.KeyboardEvent<HTMLInputElement>,
+  ) => {
     if (e.key === "Backspace" && !otp[index] && index > 0) {
       otpRefs.current[index - 1]?.focus();
     }
@@ -111,12 +123,13 @@ export default function CartLogin({ open, onClose, onBack, onSuccess }: CartLogi
 
       {/* SHEET */}
       <div className="fixed bottom-0 left-0 right-0 z-50 mx-auto w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-t-[28px] bg-[#F5F5F5] shadow-2xl">
-
         {/* HEADER */}
         <div className="px-6 pt-5">
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-2">
-              <button onClick={step === "otp" ? () => setStep("mobile") : onBack || onClose}>
+              <button
+                onClick={step === "otp" ? () => setStep("mobile") : onBack || onClose}
+              >
                 <IconChevronLeft size={28} />
               </button>
               <div>
@@ -199,7 +212,10 @@ export default function CartLogin({ open, onClose, onBack, onSuccess }: CartLogi
               <p className="mt-2 pl-6 text-xs text-red-500">{mobileError}</p>
             )}
 
-            <label className="mt-8 flex cursor-pointer items-center gap-3" onClick={() => setUpdates(!updates)}>
+            <label
+              className="mt-8 flex cursor-pointer items-center gap-3"
+              onClick={() => setUpdates(!updates)}
+            >
               <div className="flex h-6 w-6 items-center justify-center border border-gray-500">
                 {updates && <IconCheck size={16} />}
               </div>
@@ -236,7 +252,9 @@ export default function CartLogin({ open, onClose, onBack, onSuccess }: CartLogi
               {otp.map((digit, i) => (
                 <input
                   key={i}
-                  ref={(el) => { otpRefs.current[i] = el; }}
+                  ref={(el) => {
+                    otpRefs.current[i] = el;
+                  }}
                   type="tel"
                   inputMode="numeric"
                   maxLength={1}
@@ -264,7 +282,12 @@ export default function CartLogin({ open, onClose, onBack, onSuccess }: CartLogi
             {/* RESEND / TIMER */}
             <p className="mt-3 text-center text-sm text-gray-500">
               {secondsLeft > 0 ? (
-                <>Resend In <span className="font-semibold text-[#f36d43]">{formatTime(secondsLeft)}</span></>
+                <>
+                  Resend In{" "}
+                  <span className="font-semibold text-[#f36d43]">
+                    {formatTime(secondsLeft)}
+                  </span>
+                </>
               ) : (
                 <button onClick={handleResend} className="font-semibold text-[#f36d43] underline">
                   Resend OTP
@@ -286,7 +309,6 @@ export default function CartLogin({ open, onClose, onBack, onSuccess }: CartLogi
             </p>
           </div>
         )}
-
       </div>
     </>
   );

@@ -15,11 +15,7 @@ export default function CartRoot() {
   });
 
   useEffect(() => {
-    console.log("CartRoot mounted");
-    return cartFlow.subscribe((s) => {
-      console.log("CartRoot received:", s);
-      setState(s);
-    });
+    return cartFlow.subscribe(setState);
   }, []);
 
   if (state.step === "closed") return null;
@@ -46,6 +42,7 @@ export default function CartRoot() {
         <CartLogin
           open={true}
           onClose={() => cartFlow.close()}
+          onBack={() => cartFlow.goToDetails()}
           onSuccess={() => cartFlow.goToRegister()}
         />
       )}
@@ -54,8 +51,8 @@ export default function CartRoot() {
         <CartRegister
           open={true}
           onClose={() => cartFlow.close()}
+          onBack={() => cartFlow.goToLogin()}
           onSuccess={() => cartFlow.close()}
-        
         />
       )}
     </>
