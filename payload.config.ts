@@ -1,4 +1,9 @@
 import { postgresAdapter } from "@payloadcms/db-postgres";
+import {
+  lexicalEditor,
+  FixedToolbarFeature,
+  EXPERIMENTAL_TableFeature as TableFeature,
+} from "@payloadcms/richtext-lexical";
 import { s3Storage } from "@payloadcms/storage-s3";
 import path from "path";
 import { buildConfig, type CollectionConfig } from "payload";
@@ -467,6 +472,51 @@ const Products: CollectionConfig = {
   ],
 };
 
+// Static content pages (policies, terms, etc.) rendered at /policies/<slug>.
+// One collection backs all of them; the storefront route reads by slug and
+// renders the rich-text body — so adding a new policy never needs a code change.
+const Pages: CollectionConfig = {
+  slug: "pages",
+  access: {
+    read: () => true,
+    create: isLoggedIn,
+    update: isLoggedIn,
+    delete: isLoggedIn,
+  },
+  admin: {
+    useAsTitle: "title",
+    defaultColumns: ["title", "slug", "isPublished"],
+  },
+  fields: [
+    {
+      name: "title",
+      type: "text",
+      required: true,
+    },
+    {
+      name: "slug",
+      label: "Slug (URL)",
+      type: "text",
+      required: true,
+      unique: true,
+      admin: {
+        description: "URL path under /policies, e.g. privacy-policy.",
+      },
+    },
+    {
+      name: "content",
+      type: "richText",
+      required: true,
+    },
+    {
+      name: "isPublished",
+      type: "checkbox",
+      defaultValue: false,
+      admin: { position: "sidebar" },
+    },
+  ],
+};
+
 export default buildConfig({
   admin: {
     user: Admins.slug,
@@ -475,7 +525,20 @@ export default buildConfig({
       baseDir: path.resolve(dirname),
     },
   },
-  collections: [Admins, Categories, Products, Media],
+  // FixedToolbarFeature adds an always-visible toolbar pinned to the top of the
+  // editor (Google-Docs style), alongside the default floating "+" / selection
+  // toolbars.
+  editor: lexicalEditor({
+    features: ({ defaultFeatures }) => [
+      // Drop the floating selection toolbar ("toolbarInline") — the pinned
+      // FixedToolbarFeature below already exposes every control, so the popup
+      // that appears on highlight is redundant.
+      ...defaultFeatures.filter((f) => f.key !== "toolbarInline"),
+      FixedToolbarFeature(),
+      TableFeature(),
+    ],
+  }),
+  collections: [Admins, Categories, Products, Pages, Media],
   db: postgresAdapter({
     pool: {
       connectionString: process.env.DATABASE_URI || "",

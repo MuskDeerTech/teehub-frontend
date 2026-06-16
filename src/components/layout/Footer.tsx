@@ -7,13 +7,15 @@ const paymentLogos = [
   { src: "/images/verisign.png", alt: "VeriSign", width: 136, height: 57 },
 ];
 
+// Policy links point at the CMS-backed /policies/<slug> pages; the rest are
+// still placeholders until those features land.
 const orderSupport = [
-  "Make a return/Exchange",
-  "Refund/Exchange policy",
-  "Track your order",
-  "Shipping policy",
-  "FAQ's",
-  "Terms",
+  { label: "Make a return/Exchange", href: "/policies/return-exchange-policy" },
+  { label: "Refund/Exchange policy", href: "/policies/refund-cancellation-policy" },
+  { label: "Track your order", href: "#" },
+  { label: "Shipping policy", href: "/policies/shipping-policy" },
+  { label: "FAQ's", href: "#" },
+  { label: "Terms", href: "/policies/terms-of-service" },
 ];
 
 const connectWithUs = ["Call", "Whatsapp", "Instagram", "YouTube", "LinkedIn"];
@@ -61,8 +63,8 @@ export default function Footer() {
         <div className="ml-auto flex flex-col gap-[13px] min-w-[220px] max-[1024px]:min-w-[140px] max-[768px]:ml-0">
           <h3 className={colTitleClass}>ORDER SUPPORT</h3>
           {orderSupport.map((link) => (
-            <a key={link} href="#" className={linkClass}>
-              {link}
+            <a key={link.label} href={link.href} className={linkClass}>
+              {link.label}
             </a>
           ))}
         </div>

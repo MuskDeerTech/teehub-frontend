@@ -39,5 +39,5 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 
-# seed build artifact
-scripts/.seed.compiled.mjs
+# esbuild build artifact for the importmap generator
+scripts/.importmap.compiled.mjs

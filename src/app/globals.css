@@ -36,6 +36,56 @@ body {
   background: #fff;
 }
 
+/* Typographic styling for CMS rich-text on /policies/<slug>. Tailwind's
+   preflight strips heading/list styles, and no typography plugin is installed,
+   so the policy body sets its own readable defaults. */
+.policy-content {
+  color: #333;
+  font-size: 15px;
+  line-height: 1.7;
+}
+
+.policy-content h2 {
+  margin: 1.6em 0 0.5em;
+  font-size: 20px;
+  font-weight: 700;
+  color: #111;
+}
+
+.policy-content h3 {
+  margin: 1.3em 0 0.4em;
+  font-size: 17px;
+  font-weight: 600;
+  color: #111;
+}
+
+.policy-content p {
+  margin: 0 0 1em;
+}
+
+.policy-content ul,
+.policy-content ol {
+  margin: 0 0 1em;
+  padding-left: 1.4em;
+}
+
+.policy-content ul {
+  list-style: disc;
+}
+
+.policy-content ol {
+  list-style: decimal;
+}
+
+.policy-content li {
+  margin: 0.3em 0;
+}
+
+.policy-content a {
+  color: #f1571f;
+  text-decoration: underline;
+}
+
 /* Price-range slider in the filter panel. `--pct` (set inline from React) fills
    the track up to the current value in orange and leaves the rest grey. */
 .price-slider {

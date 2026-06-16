@@ -19,10 +19,10 @@ export default function BottomBanner() {
             Teehub © 2026. All Rights Reserved
           </a>
           <div className="flex gap-[64px] max-[480px]:gap-7 max-[360px]:gap-4">
-            <a href="#" className={footerLinkClass}>
+            <a href="/policies/terms-of-service" className={footerLinkClass}>
               Terms & Conditions
             </a>
-            <a href="#" className={footerLinkClass}>
+            <a href="/policies/privacy-policy" className={footerLinkClass}>
               Privacy Policy
             </a>
           </div>

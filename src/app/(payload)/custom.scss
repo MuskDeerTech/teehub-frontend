@@ -1,1 +1,8 @@
-
+// Hide the lexical editor's floating "+" add-block button and the drag handle
+// in the left gutter. The FixedToolbarFeature (pinned toolbar at the top of the
+// editor) already exposes every block type, so these are redundant. Loaded
+// admin-wide via the import in (payload)/layout.tsx.
+.add-block-menu,
+.draggable-block-menu {
+  display: none !important;
+}
