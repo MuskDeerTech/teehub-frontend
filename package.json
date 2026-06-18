@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "generate:types": "payload generate:types",
+    "generate:types": "esbuild scripts/gen-types.ts --bundle --platform=node --format=esm --packages=external --outfile=scripts/.gentypes.compiled.mjs && node --env-file=.env scripts/.gentypes.compiled.mjs",
     "generate:importmap": "esbuild scripts/gen-importmap.ts --bundle --platform=node --format=esm --packages=external --outfile=scripts/.importmap.compiled.mjs && node --env-file=.env scripts/.importmap.compiled.mjs"
   },
   "dependencies": {

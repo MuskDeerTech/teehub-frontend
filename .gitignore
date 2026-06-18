@@ -39,5 +39,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 
-# esbuild build artifact for the importmap generator
+# esbuild build artifacts for the importmap / types generators
 scripts/.importmap.compiled.mjs
+scripts/.gentypes.compiled.mjs

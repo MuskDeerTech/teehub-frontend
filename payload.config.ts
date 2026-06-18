@@ -6,7 +6,12 @@ import {
 } from "@payloadcms/richtext-lexical";
 import { s3Storage } from "@payloadcms/storage-s3";
 import path from "path";
-import { buildConfig, type CollectionConfig } from "payload";
+import {
+  buildConfig,
+  type Access,
+  type CollectionConfig,
+  type GlobalConfig,
+} from "payload";
 import { fileURLToPath } from "url";
 import sharp from "sharp";
 
@@ -14,6 +19,15 @@ const filename = fileURLToPath(import.meta.url);
 const dirname = path.dirname(filename);
 
 const isLoggedIn = ({ req }: { req: { user?: unknown } }) => Boolean(req.user);
+
+// For PII-bearing customer records: an admin sees everything; a logged-in
+// customer is scoped to their own document (Payload turns the returned query
+// constraint into a `where id = self` filter). Anyone not logged in is denied.
+const adminOrSelf: Access = ({ req: { user } }) => {
+  if (!user) return false;
+  if (user.collection === "admins") return true;
+  return { id: { equals: user.id } };
+};
 
 const Admins: CollectionConfig = {
   slug: "admins",
@@ -517,6 +531,402 @@ const Pages: CollectionConfig = {
   ],
 };
 
+// Storefront customer accounts (separate from `Admins`, which is staff-only).
+// `auth: true` gives Payload's built-in email + password login, sessions, and
+// the standard /api/customers/login|logout|me endpoints. The phone-OTP UX in
+// the checkout login UI is a frontend concern layered on later; this collection
+// is the account model it will sit on. `addresses` mirrors the fields the
+// checkout register step collects, so a saved address fills the form 1:1.
+const Customers: CollectionConfig = {
+  slug: "customers",
+  auth: true,
+  access: {
+    // Public signup; reads/edits are self-scoped (or admin). Deletes are staff.
+    create: () => true,
+    read: adminOrSelf,
+    update: adminOrSelf,
+    delete: isLoggedIn,
+  },
+  admin: {
+    useAsTitle: "email",
+    defaultColumns: ["fullName", "email", "phone"],
+  },
+  fields: [
+    {
+      name: "fullName",
+      type: "text",
+    },
+    {
+      name: "phone",
+      type: "text",
+      index: true,
+      admin: {
+        description: "Primary contact number (also used by phone-OTP login later).",
+      },
+    },
+    // Saved delivery addresses — same shape as the checkout register form, so
+    // the frontend can prefill from a chosen address with no remapping.
+    {
+      name: "addresses",
+      type: "array",
+      labels: { singular: "Address", plural: "Addresses" },
+      fields: [
+        {
+          name: "label",
+          type: "text",
+          admin: { description: 'e.g. "Home", "Work".' },
+        },
+        { name: "fullName", type: "text" },
+        { name: "phone", type: "text" },
+        { name: "address", type: "textarea", required: true },
+        {
+          type: "row",
+          fields: [
+            { name: "city", type: "text", admin: { width: "50%" } },
+            { name: "state", type: "text", admin: { width: "50%" } },
+          ],
+        },
+        { name: "pincode", type: "text" },
+        {
+          name: "isDefault",
+          type: "checkbox",
+          defaultValue: false,
+          admin: { description: "Use this address by default at checkout." },
+        },
+      ],
+    },
+  ],
+};
+
+// Customer orders. Field names/shapes mirror the checkout flow so a submit is a
+// 1:1 map: `items` ↔ the cart's CartItem[], `customer` ↔ CustomerData (the
+// register step), `payment` ↔ the CartPayment selections, `totals` ↔ the cart
+// totals. Line items SNAPSHOT title/price/etc. at purchase time (with an
+// optional product relationship for reference) so later edits to a product or
+// its price never rewrite order history.
+//
+// Orders hold buyer PII, so unlike the public catalog collections they are not
+// world-readable. They're created server-side by the checkout route via the
+// Local API (overrideAccess), so `create` here stays locked to admins too — the
+// public REST endpoint must not be able to forge orders. A `customer`
+// relationship will be added once the Customers collection exists; existing
+// orders keep their snapshotted buyer details regardless.
+const Orders: CollectionConfig = {
+  slug: "orders",
+  access: {
+    read: isLoggedIn,
+    create: isLoggedIn,
+    update: isLoggedIn,
+    delete: isLoggedIn,
+  },
+  admin: {
+    useAsTitle: "orderNumber",
+    defaultColumns: ["orderNumber", "status", "totalPrice", "createdAt"],
+  },
+  hooks: {
+    beforeChange: [
+      ({ data, operation }) => {
+        // Human-friendly id generated once on create; the DB id stays the PK.
+        if (operation === "create" && data && !data.orderNumber) {
+          const stamp = Date.now().toString(36).toUpperCase();
+          const rand = Math.random().toString(36).slice(2, 6).toUpperCase();
+          data.orderNumber = `TH-${stamp}-${rand}`;
+        }
+        return data;
+      },
+    ],
+  },
+  fields: [
+    {
+      name: "orderNumber",
+      type: "text",
+      unique: true,
+      admin: {
+        readOnly: true,
+        description: "Auto-generated on creation.",
+        position: "sidebar",
+      },
+    },
+    // Fulfilment + payment state live in the sidebar so they're editable from
+    // any tab as the order moves through its lifecycle.
+    {
+      name: "status",
+      type: "select",
+      defaultValue: "pending",
+      options: ["pending", "confirmed", "shipped", "delivered", "cancelled"],
+      admin: { position: "sidebar" },
+    },
+    // Optional link to the account that placed the order. Left empty for guest
+    // checkouts; the snapshotted buyer details below are always the record of
+    // truth either way.
+    {
+      name: "customer",
+      type: "relationship",
+      relationTo: "customers",
+      admin: { position: "sidebar" },
+    },
+    {
+      type: "tabs",
+      tabs: [
+        {
+          label: "Items",
+          fields: [
+            {
+              name: "items",
+              type: "array",
+              minRows: 1,
+              labels: { singular: "Item", plural: "Items" },
+              admin: {
+                description:
+                  "One row per cart line. Title/price/size are snapshotted at purchase time.",
+              },
+              fields: [
+                {
+                  name: "product",
+                  type: "relationship",
+                  relationTo: "products",
+                  admin: {
+                    description:
+                      "Reference only — the snapshot fields below are the source of truth.",
+                  },
+                },
+                { name: "name", type: "text", required: true },
+                { name: "image", type: "text" },
+                { name: "size", type: "text" },
+                {
+                  name: "quantity",
+                  type: "number",
+                  required: true,
+                  defaultValue: 1,
+                  min: 1,
+                },
+                // Per-unit sale price and struck-through MRP at time of purchase.
+                { name: "price", type: "number", required: true, min: 0 },
+                { name: "mrp", type: "number", min: 0 },
+                {
+                  name: "customName",
+                  type: "text",
+                  admin: {
+                    description: "Name/number printed on the jersey, if any.",
+                  },
+                },
+              ],
+            },
+          ],
+        },
+        {
+          label: "Customer",
+          description: "Buyer + delivery details captured at checkout.",
+          fields: [
+            { name: "fullName", type: "text", required: true },
+            { name: "phone", type: "text", required: true },
+            { name: "email", type: "email" },
+            { name: "address", type: "textarea", required: true },
+            {
+              type: "row",
+              fields: [
+                { name: "city", type: "text", admin: { width: "50%" } },
+                { name: "state", type: "text", admin: { width: "50%" } },
+              ],
+            },
+            { name: "pincode", type: "text" },
+          ],
+        },
+        {
+          label: "Payment & Totals",
+          fields: [
+            {
+              name: "payment",
+              type: "group",
+              fields: [
+                {
+                  name: "method",
+                  type: "select",
+                  options: ["online", "cod", "wallet", "netbanking", "card"],
+                },
+                {
+                  name: "status",
+                  type: "select",
+                  defaultValue: "pending",
+                  options: ["pending", "paid", "failed", "refunded"],
+                },
+              ],
+            },
+            {
+              name: "giftWrap",
+              label: "Gift wrap",
+              type: "checkbox",
+              defaultValue: false,
+            },
+            {
+              name: "couponCode",
+              type: "text",
+              admin: { description: "Coupon entered at checkout (not yet validated)." },
+            },
+            // Mirrors the cart's running totals so the order is self-contained.
+            {
+              name: "totalCount",
+              label: "Total items",
+              type: "number",
+              min: 0,
+            },
+            { name: "totalMrp", type: "number", min: 0 },
+            { name: "totalPrice", type: "number", min: 0 },
+          ],
+        },
+      ],
+    },
+  ],
+};
+
+// Editable homepage content — a single global (one record, not a list) that
+// replaces the hardcoded arrays in src/lib/products.ts. The product sections
+// (Latest Drops / Football Hoodies / Polo Shirts) pick from the real Products
+// collection so there's a single source of truth; the hero + banner fields hold
+// the purely editorial imagery/copy. Category pills come from the Categories
+// collection, so they're intentionally not duplicated here. World-readable so
+// the homepage can render it; only staff can edit.
+const HomePage: GlobalConfig = {
+  slug: "homepage",
+  access: {
+    read: () => true,
+    update: isLoggedIn,
+  },
+  fields: [
+    {
+      type: "tabs",
+      tabs: [
+        {
+          label: "Hero",
+          fields: [
+            {
+              type: "row",
+              fields: [
+                {
+                  name: "heroLeftImage",
+                  type: "upload",
+                  relationTo: "media",
+                  admin: { width: "50%" },
+                },
+                {
+                  name: "heroRightImage",
+                  type: "upload",
+                  relationTo: "media",
+                  admin: { width: "50%" },
+                },
+              ],
+            },
+            {
+              name: "heroCtaLabel",
+              type: "text",
+              defaultValue: "SHOP NOW",
+            },
+            {
+              name: "heroCtaHref",
+              type: "text",
+              admin: { description: "Where the hero button links, e.g. /category/all." },
+            },
+            // The IPL team logos in the hero slider.
+            {
+              name: "heroTeams",
+              type: "array",
+              labels: { singular: "Team", plural: "Teams" },
+              fields: [
+                { name: "name", type: "text", required: true },
+                { name: "logo", type: "upload", relationTo: "media", required: true },
+              ],
+            },
+          ],
+        },
+        {
+          label: "Product Sections",
+          description:
+            "Each row of products is picked from the catalog. Order here is the display order.",
+          fields: [
+            {
+              name: "latestDrops",
+              type: "relationship",
+              relationTo: "products",
+              hasMany: true,
+            },
+            {
+              name: "footballHoodies",
+              type: "relationship",
+              relationTo: "products",
+              hasMany: true,
+            },
+            {
+              name: "poloShirts",
+              type: "relationship",
+              relationTo: "products",
+              hasMany: true,
+            },
+          ],
+        },
+        {
+          label: "Banners",
+          description: "Full-width promo sections between the product rows.",
+          fields: [
+            // Hoodies banner: single background image + heading/count + CTA.
+            {
+              name: "hoodiesBanner",
+              type: "group",
+              fields: [
+                { name: "image", type: "upload", relationTo: "media" },
+                { name: "heading", type: "text", defaultValue: "HOODIES" },
+                {
+                  name: "subtext",
+                  type: "text",
+                  admin: { description: 'e.g. "13 Products".' },
+                },
+                { name: "ctaLabel", type: "text", defaultValue: "SHOP NOW" },
+                { name: "ctaHref", type: "text" },
+              ],
+            },
+            // Jacket section: split left/right image with overlaid heading + CTA.
+            {
+              name: "jacketBanner",
+              type: "group",
+              fields: [
+                {
+                  type: "row",
+                  fields: [
+                    {
+                      name: "leftImage",
+                      type: "upload",
+                      relationTo: "media",
+                      admin: { width: "50%" },
+                    },
+                    {
+                      name: "rightImage",
+                      type: "upload",
+                      relationTo: "media",
+                      admin: { width: "50%" },
+                    },
+                  ],
+                },
+                {
+                  name: "heading",
+                  type: "text",
+                  defaultValue: "NEW JACKET AT BEST PRICE",
+                },
+                { name: "ctaLabel", type: "text", defaultValue: "SHOP NOW" },
+                { name: "ctaHref", type: "text" },
+              ],
+            },
+            // "Play Bold" promo is a composed graphic; just a swappable backdrop.
+            {
+              name: "playBoldImage",
+              type: "upload",
+              relationTo: "media",
+            },
+          ],
+        },
+      ],
+    },
+  ],
+};
+
 export default buildConfig({
   admin: {
     user: Admins.slug,
@@ -538,7 +948,8 @@ export default buildConfig({
       TableFeature(),
     ],
   }),
-  collections: [Admins, Categories, Products, Pages, Media],
+  collections: [Admins, Customers, Categories, Products, Orders, Pages, Media],
+  globals: [HomePage],
   db: postgresAdapter({
     pool: {
       connectionString: process.env.DATABASE_URI || "",
