@@ -2,7 +2,7 @@
 
 import type { Product } from "@/lib/products";
 
-export type CartStep = "closed" | "details" | "login" | "register";
+export type CartStep = "closed" | "details" | "login" | "register" | "payment" ;
 
 export interface CartState {
   step: CartStep;
@@ -52,6 +52,10 @@ class CartFlow {
 
   goToRegister() {
     this.state = { ...this.state, step: "register" };
+    this.emit();
+  }
+  gotoPayment() {
+    this.state = { ...this.state, step: "payment" };
     this.emit();
   }
 

@@ -44,8 +44,8 @@ export default function CartRegister({
 
   if (!open) return null;
 
-  const set = (key: keyof typeof form) =>
-    (e: React.ChangeEvent<HTMLInputElement>) => {
+  const set =
+    (key: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement>) => {
       setForm((f) => ({ ...f, [key]: e.target.value }));
       setErrors((er) => ({ ...er, [key]: "" }));
     };
@@ -84,10 +84,7 @@ export default function CartRegister({
      });*/
 
       setShowSuccess(true);
-      setTimeout(() => {
-        setShowSuccess(false);
-        onSuccess?.();
-      }, 2000);
+      onSuccess?.();
     } catch {
       setSubmitError("Something went wrong. Please try again.");
     } finally {
@@ -102,29 +99,44 @@ export default function CartRegister({
 
       {/* SHEET */}
       <div className="fixed bottom-0 left-0 right-0 z-50 mx-auto w-full max-w-2xl max-h-[88vh] overflow-y-auto rounded-t-[28px] bg-[#F5F5F5] shadow-2xl">
-        {/* HEADER */}
-        <div className="px-6 pt-5">
-          <div className="flex items-start justify-between">
-            <div className="flex items-center gap-2">
-              <button onClick={onBack ?? onClose}>
-                <IconChevronLeft size={28} />
-              </button>
-              <Image
-                src="/images/teehub-logo.png"
-                alt="TeeHub Logo"
-                width={120}
-                height={40}
-                className="h-14 w-auto"
-              />
-            </div>
-            <div className="text-right">
-              <p className="text-sm text-gray-500">Free gift added • 6 Items</p>
-              <div className="flex items-center justify-end gap-2">
-                <span className="text-xl text-gray-400 line-through">₹2500</span>
-                <span className="text-4xl font-bold text-[#F26522]">₹1200</span>
-              </div>
+         {/*HEADER*/}
+          <div className="px-6 pt-5"></div>
+        <div className="flex items-start justify-between">
+      
+         
+          <div className="flex flex-1 items-center gap-2">
+            <button onClick={onBack ?? onClose}>
+              <IconChevronLeft size={28} />
+            </button>
+
+            <Image
+              src="/images/teehub-logo.png"
+              alt="TeeHub Logo"
+              width={120}
+              height={40}
+              className="h-14 w-auto"
+            />
+          </div>
+          
+
+          {/* Price section */}
+          <div className="ml-auto text-right">
+            <p className="text-sm text-gray-500">Free gift added • 6 Items</p>
+
+            <div className="flex items-center justify-end gap-2">
+              <span className="text-xl text-gray-400 line-through">₹2500</span>
+
+              <span className="text-4xl font-bold text-[#F26522]">₹1200</span>
             </div>
           </div>
+
+          {/* Close button */}
+          <button
+            onClick={onClose}
+            className="self-center ml-4 text-xl leading-none"
+          >
+            ✕
+          </button>
         </div>
 
         {/* BANNER */}
@@ -140,11 +152,15 @@ export default function CartRegister({
                 key={item}
                 onClick={() => setSelectedCoupon(item)}
                 className={`min-w-[150px] flex-shrink-0 cursor-pointer rounded-lg border p-3 transition ${
-                  selectedCoupon === item ? "border-[#F26522]" : "border-gray-200 bg-white"
+                  selectedCoupon === item
+                    ? "border-[#F26522]"
+                    : "border-gray-200 bg-white"
                 }`}
               >
                 <div className="mb-1 flex justify-between">
-                  <span className="text-xs font-semibold">Coupon Name {item}</span>
+                  <span className="text-xs font-semibold">
+                    Coupon Name {item}
+                  </span>
                   <span className="text-[10px] text-gray-500">{item}/6</span>
                 </div>
                 <div className="text-[11px] text-gray-500 leading-snug">
@@ -164,17 +180,20 @@ export default function CartRegister({
         )}
 
         <div className="px-6 pb-8 pt-4">
-
           {/* DELIVERY ADDRESS */}
           <div className="mb-4 flex items-center gap-2">
             <IconMapPin size={20} />
-            <span className="font-semibold text-base">Add Delivery Address</span>
+            <span className="font-semibold text-base">
+              Add Delivery Address
+            </span>
           </div>
 
           {/* Pincode / City / State */}
           <div className="grid grid-cols-3 gap-3 mb-3">
             <div>
-              <label className="text-xs text-gray-500 mb-1 block">Pincode</label>
+              <label className="text-xs text-gray-500 mb-1 block">
+                Pincode
+              </label>
               <input
                 className={INPUT}
                 inputMode="numeric"
@@ -194,16 +213,22 @@ export default function CartRegister({
             </div>
             <div>
               <label className="text-xs text-gray-500 mb-1 block">City</label>
-              <input className={INPUT} value={form.city} onChange={set("city")} />
+              <input
+                className={INPUT}
+                value={form.city}
+                onChange={set("city")}
+              />
               {errors.city && (
-                <p className="text-[10px] text-red-500 mt-0.5">
-                  {errors.city}
-                </p>
+                <p className="text-[10px] text-red-500 mt-0.5">{errors.city}</p>
               )}
             </div>
             <div>
               <label className="text-xs text-gray-500 mb-1 block">State</label>
-              <input className={INPUT} value={form.state} onChange={set("state")} />
+              <input
+                className={INPUT}
+                value={form.state}
+                onChange={set("state")}
+              />
               {errors.state && (
                 <p className="text-[10px] text-red-500 mt-0.5">
                   {errors.state}
@@ -214,8 +239,14 @@ export default function CartRegister({
 
           {/* Flat / House */}
           <div className="mb-3">
-            <label className="text-xs text-gray-500 mb-1 block">Flat House Number</label>
-            <input className={INPUT} value={form.flatHouse} onChange={set("flatHouse")} />
+            <label className="text-xs text-gray-500 mb-1 block">
+              Flat House Number
+            </label>
+            <input
+              className={INPUT}
+              value={form.flatHouse}
+              onChange={set("flatHouse")}
+            />
             {errors.flatHouse && (
               <p className="text-[10px] text-red-500 mt-0.5">
                 {errors.flatHouse}
@@ -228,18 +259,30 @@ export default function CartRegister({
             <label className="text-xs text-gray-500 mb-1 block">
               Apartment, Area, Sector, Village
             </label>
-            <input className={INPUT} value={form.apartment} onChange={set("apartment")} />
+            <input
+              className={INPUT}
+              value={form.apartment}
+              onChange={set("apartment")}
+            />
           </div>
 
           {/* CUSTOMER INFO */}
           <div className="mb-4 flex items-center gap-2">
             <IconUser size={20} />
-            <span className="font-semibold text-base">Customer Information</span>
+            <span className="font-semibold text-base">
+              Customer Information
+            </span>
           </div>
 
           <div className="mb-3">
-            <label className="text-xs text-gray-500 mb-1 block">Full Name*</label>
-            <input className={INPUT} value={form.fullName} onChange={set("fullName")} />
+            <label className="text-xs text-gray-500 mb-1 block">
+              Full Name*
+            </label>
+            <input
+              className={INPUT}
+              value={form.fullName}
+              onChange={set("fullName")}
+            />
             {errors.fullName && (
               <p className="text-[10px] text-red-500 mt-0.5">
                 {errors.fullName}
@@ -248,12 +291,17 @@ export default function CartRegister({
           </div>
 
           <div className="mb-6">
-            <label className="text-xs text-gray-500 mb-1 block">Email Address*</label>
-            <input className={INPUT} type="email" value={form.email} onChange={set("email")} />
+            <label className="text-xs text-gray-500 mb-1 block">
+              Email Address*
+            </label>
+            <input
+              className={INPUT}
+              type="email"
+              value={form.email}
+              onChange={set("email")}
+            />
             {errors.email && (
-              <p className="text-[10px] text-red-500 mt-0.5">
-                {errors.email}
-              </p>
+              <p className="text-[10px] text-red-500 mt-0.5">{errors.email}</p>
             )}
           </div>
 
@@ -284,7 +332,9 @@ export default function CartRegister({
 
           {/* CONTINUE */}
           {submitError && (
-            <p className="mb-3 text-center text-sm text-red-500">{submitError}</p>
+            <p className="mb-3 text-center text-sm text-red-500">
+              {submitError}
+            </p>
           )}
           <button
             onClick={handleContinue}
