@@ -8,12 +8,19 @@ import {
   IconUser,
   IconFileCheck,
 } from "@tabler/icons-react";
+import type { CustomerData } from "./CartContext";
+import CheckoutOverlay from "./CheckoutOverlay";
 
 interface CartRegisterProps {
   open: boolean;
+  totalCount: number;
+  totalMrp: number;
+  totalPrice: number;
+  phone: string;
+  customer?: CustomerData | null;
   onClose: () => void;
   onBack?: () => void;
-  onSuccess?: () => void;
+  onSuccess?: (customer: CustomerData) => void;
 }
 
 const INPUT =
@@ -21,6 +28,11 @@ const INPUT =
 
 export default function CartRegister({
   open,
+  totalCount,
+  totalMrp,
+  totalPrice,
+  phone,
+  customer,
   onClose,
   onBack,
   onSuccess,
@@ -32,17 +44,15 @@ export default function CartRegister({
   const [submitError, setSubmitError] = useState("");
 
   const [form, setForm] = useState({
-    pincode: "",
-    city: "",
-    state: "",
-    flatHouse: "",
-    apartment: "",
-    fullName: "",
-    email: "",
+    pincode: customer?.pincode ?? "",
+    city: customer?.city ?? "",
+    state: customer?.state ?? "",
+    flatHouse: customer?.address.split(",")[0]?.trim() ?? "",
+    apartment: customer?.address.split(",").slice(1).join(",").trim() ?? "",
+    fullName: customer?.fullName ?? "",
+    email: customer?.email ?? "",
   });
   const [errors, setErrors] = useState<Partial<typeof form>>({});
-
-  if (!open) return null;
 
   const set =
     (key: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -84,7 +94,17 @@ export default function CartRegister({
      });*/
 
       setShowSuccess(true);
-      onSuccess?.();
+      onSuccess?.({
+        fullName: form.fullName.trim(),
+        address: [form.flatHouse.trim(), form.apartment.trim()]
+          .filter(Boolean)
+          .join(", "),
+        pincode: form.pincode,
+        city: form.city.trim(),
+        state: form.state.trim(),
+        phone: phone ? `+91 ${phone}` : "",
+        email: form.email.trim(),
+      });
     } catch {
       setSubmitError("Something went wrong. Please try again.");
     } finally {
@@ -93,12 +113,11 @@ export default function CartRegister({
   };
 
   return (
-    <>
-      {/* BACKDROP */}
-      <div className="fixed inset-0 z-40 bg-black/50" onClick={onClose} />
-
-      {/* SHEET */}
-      <div className="fixed bottom-0 left-0 right-0 z-50 mx-auto w-full max-w-2xl max-h-[88vh] overflow-y-auto rounded-t-[28px] bg-[#F5F5F5] shadow-2xl">
+    <CheckoutOverlay
+      open={open}
+      onClose={onClose}
+      ariaLabel="Delivery address"
+    >
          {/*HEADER*/}
           <div className="px-6 pt-5"></div>
         <div className="flex items-start justify-between">
@@ -121,18 +140,26 @@ export default function CartRegister({
 
           {/* Price section */}
           <div className="ml-auto text-right">
-            <p className="text-sm text-gray-500">Free gift added • 6 Items</p>
+            <p className="text-sm text-gray-500">
+              Free gift added • {totalCount} Items
+            </p>
 
             <div className="flex items-center justify-end gap-2">
-              <span className="text-xl text-gray-400 line-through">₹2500</span>
+              <span className="text-xl text-gray-400 line-through">
+                ₹{totalMrp}
+              </span>
 
-              <span className="text-4xl font-bold text-[#F26522]">₹1200</span>
+              <span className="text-4xl font-bold text-[#F26522]">
+                ₹{totalPrice}
+              </span>
             </div>
           </div>
 
           {/* Close button */}
           <button
+            type="button"
             onClick={onClose}
+            aria-label="Close address form"
             className="self-center ml-4 text-xl leading-none"
           >
             ✕
@@ -148,10 +175,12 @@ export default function CartRegister({
         <div className="mt-4 px-6">
           <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
             {[1, 2, 3].map((item) => (
-              <div
+              <button
+                type="button"
                 key={item}
                 onClick={() => setSelectedCoupon(item)}
-                className={`min-w-[150px] flex-shrink-0 cursor-pointer rounded-lg border p-3 transition ${
+                aria-pressed={selectedCoupon === item}
+                className={`min-w-[150px] flex-shrink-0 rounded-lg border p-3 text-left transition ${
                   selectedCoupon === item
                     ? "border-[#F26522]"
                     : "border-gray-200 bg-white"
@@ -166,7 +195,7 @@ export default function CartRegister({
                 <div className="text-[11px] text-gray-500 leading-snug">
                   Extra discount on selected items
                 </div>
-              </div>
+              </button>
             ))}
           </div>
         </div>
@@ -358,7 +387,6 @@ export default function CartRegister({
             </span>
           </div>
         </div>
-      </div>
-    </>
+    </CheckoutOverlay>
   );
 }

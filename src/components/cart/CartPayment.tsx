@@ -17,34 +17,19 @@ import {
   IconPlus,
   IconQrcode,
 } from "@tabler/icons-react";
-
-interface CustomerData {
-  fullName: string;
-  address: string;
-  pincode: string;
-  city: string;
-  state: string;
-  phone: string;
-  email: string;
-}
+import type { CustomerData } from "./CartContext";
+import CheckoutOverlay from "./CheckoutOverlay";
 
 interface CartPaymentProps {
   open: boolean;
+  totalCount: number;
+  totalMrp: number;
+  totalPrice: number;
   onClose: () => void;
   onBack?: () => void;
   onSuccess?: () => void;
   customer?: CustomerData | null;
 }
-
-const PLACEHOLDER_CUSTOMER: CustomerData = {
-  fullName: "Your Name",
-  address: "Your Address, Area",
-  pincode: "000000",
-  city: "City",
-  state: "State",
-  phone: "+91 00000 00000",
-  email: "yourmail@example.com",
-};
 
 const WALLETS = [
   {
@@ -66,6 +51,9 @@ const BANKS = [
 
 export default function CartPayment({
   open,
+  totalCount,
+  totalMrp,
+  totalPrice,
   onClose,
   onBack,
   onSuccess,
@@ -82,10 +70,7 @@ export default function CartPayment({
   const [loading, setLoading] = useState(false);
   const [submitError, setSubmitError] = useState("");
 
-  const displayCustomer = customer ?? PLACEHOLDER_CUSTOMER;
-  const isPlaceholder = !customer;
-
-  if (!open) return null;
+  const onlineTotal = Math.max(0, totalPrice - 30);
 
   const toggleSection = (id: string) => {
     setExpandedSection((prev) => (prev === id ? null : id));
@@ -129,10 +114,7 @@ export default function CartPayment({
   };
 
   return (
-    <>
-      <div className="fixed inset-0 z-40 bg-black/50" onClick={onClose} />
-
-      <div className="fixed bottom-0 left-0 right-0 z-50 mx-auto w-full max-w-2xl max-h-[88vh] overflow-y-auto rounded-t-[28px] bg-[#F5F5F5] shadow-2xl">
+    <CheckoutOverlay open={open} onClose={onClose} ariaLabel="Payment">
         {/* HEADER */}
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-2">
@@ -150,17 +132,23 @@ export default function CartPayment({
 
           <div className="flex items-center gap-4">
             <div className="text-right">
-              <p className="text-sm text-gray-500">Free gift added • 6 Items</p>
+              <p className="text-sm text-gray-500">
+                Free gift added • {totalCount} Items
+              </p>
               <div className="flex items-center justify-end gap-2">
                 <span className="text-xl text-gray-400 line-through">
-                  ₹2500
+                  ₹{totalMrp}
                 </span>
-                <span className="text-4xl font-bold text-[#F26522]">₹1200</span>
+                <span className="text-4xl font-bold text-[#F26522]">
+                  ₹{totalPrice}
+                </span>
               </div>
             </div>
 
             <button
+              type="button"
               onClick={onClose}
+              aria-label="Close payment"
               className="text-xl leading-none self-start mt-1"
             >
               ✕
@@ -177,10 +165,12 @@ export default function CartPayment({
         <div className="mt-4 px-6">
           <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
             {[1, 2, 3].map((item) => (
-              <div
+              <button
+                type="button"
                 key={item}
                 onClick={() => setSelectedCoupon(item)}
-                className={`min-w-[150px] flex-shrink-0 cursor-pointer rounded-lg border p-3 transition ${
+                aria-pressed={selectedCoupon === item}
+                className={`min-w-[150px] flex-shrink-0 rounded-lg border p-3 text-left transition ${
                   selectedCoupon === item
                     ? "border-[#F26522]"
                     : "border-gray-200 bg-white"
@@ -195,7 +185,7 @@ export default function CartPayment({
                 <div className="text-[11px] text-gray-500 leading-snug">
                   Extra discount on selected items
                 </div>
-              </div>
+              </button>
             ))}
           </div>
         </div>
@@ -215,20 +205,21 @@ export default function CartPayment({
                 Change
               </button>
             </div>
-            {isPlaceholder ? (
-              <p className="text-xs text-gray-400 italic">BACKEND.</p>
-            ) : (
+            {customer ? (
               <div className="text-sm text-gray-700 leading-relaxed">
-                <p className="font-semibold">{displayCustomer.fullName}</p>
-                <p>{displayCustomer.address}</p>
+                <p className="font-semibold">{customer.fullName}</p>
+                <p>{customer.address}</p>
                 <p>
-                  {displayCustomer.city}, {displayCustomer.state} -{" "}
-                  {displayCustomer.pincode}
+                  {customer.city}, {customer.state} - {customer.pincode}
                 </p>
                 <p className="mt-1 text-gray-500">
-                  {displayCustomer.phone} &nbsp; {displayCustomer.email}
+                  {customer.phone} &nbsp; {customer.email}
                 </p>
               </div>
+            ) : (
+              <p className="text-xs text-gray-400 italic">
+                Add a delivery address to continue.
+              </p>
             )}
           </div>
 
@@ -239,7 +230,7 @@ export default function CartPayment({
                 FREE Shipping (Delivery 2-5 Days)
               </p>
               <p className="text-xs text-green-600">
-                Estimated Delivery By 4 June
+                Estimated delivery in 2-5 business days
               </p>
             </div>
             <span className="text-[10px] bg-green-600 text-white px-2 py-0.5 rounded flex-shrink-0">
@@ -304,9 +295,11 @@ export default function CartPayment({
             </div>
 
             {/* ONLINE PAYMENT */}
-            <div
+            <button
+              type="button"
               onClick={toggleOnline}
-              className="flex items-center justify-between px-4 py-3 cursor-pointer bg-white border-t border-gray-100"
+              aria-pressed={selectedPayment === "online"}
+              className="flex w-full items-center justify-between border-t border-gray-100 bg-white px-4 py-3 text-left"
             >
               <div className="flex items-center gap-3">
                 <Image
@@ -325,8 +318,12 @@ export default function CartPayment({
               </div>
               <div className="flex items-center gap-2 flex-shrink-0">
                 <div className="text-right">
-                  <p className="text-sm font-bold text-green-600">₹659</p>
-                  <p className="text-xs text-gray-400 line-through">₹699</p>
+                  <p className="text-sm font-bold text-green-600">
+                    ₹{onlineTotal}
+                  </p>
+                  <p className="text-xs text-gray-400 line-through">
+                    ₹{totalPrice}
+                  </p>
                 </div>
                 <div
                   className={`w-6 h-6 border-2 rounded-md flex items-center justify-center flex-shrink-0 ${
@@ -340,7 +337,7 @@ export default function CartPayment({
                   )}
                 </div>
               </div>
-            </div>
+            </button>
 
             {/* EXTRA DISCOUNT BANNER */}
             <div className="flex items-center justify-center gap-2 bg-gray-50 border-t border-b border-gray-100 py-2">
@@ -352,9 +349,11 @@ export default function CartPayment({
 
             {/* UPI  */}
             <div className="border-t border-gray-100">
-              <div
+              <button
+                type="button"
                 onClick={() => toggleSection("upi")}
-                className="flex items-center justify-between px-4 py-3 cursor-pointer"
+                aria-expanded={expandedSection === "upi"}
+                className="flex w-full items-center justify-between px-4 py-3 text-left"
               >
                 <div>
                   <p className="text-sm font-semibold">Pay By an UPI App</p>
@@ -367,7 +366,7 @@ export default function CartPayment({
                 ) : (
                   <IconChevronDown size={18} className="text-gray-400" />
                 )}
-              </div>
+              </button>
 
               {expandedSection === "upi" && (
                 <div className="px-4 pb-4 bg-gray-50 border-t border-gray-100">
@@ -439,9 +438,11 @@ export default function CartPayment({
 
             {/* WALLET — toggle on/off */}
             <div className="border-t border-gray-100">
-              <div
+              <button
+                type="button"
                 onClick={() => toggleSection("wallet")}
-                className="flex items-center justify-between px-4 py-3 cursor-pointer"
+                aria-expanded={expandedSection === "wallet"}
+                className="flex w-full items-center justify-between px-4 py-3 text-left"
               >
                 <div>
                   <p className="text-sm font-semibold">Wallet</p>
@@ -454,15 +455,17 @@ export default function CartPayment({
                 ) : (
                   <IconChevronDown size={18} className="text-gray-400" />
                 )}
-              </div>
+              </button>
 
               {expandedSection === "wallet" && (
                 <div className="bg-gray-50 border-t border-gray-100">
                   {WALLETS.map((w) => (
-                    <div
+                    <button
+                      type="button"
                       key={w.id}
                       onClick={() => toggleWallet(w.id)}
-                      className="flex items-start gap-3 px-4 py-3 border-b border-gray-100 last:border-b-0 cursor-pointer"
+                      aria-pressed={selectedWallet === w.id}
+                      className="flex w-full items-start gap-3 border-b border-gray-100 px-4 py-3 text-left last:border-b-0"
                     >
                       <div className="w-9 h-9 bg-white border border-gray-200 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
                         <IconWallet size={18} className="text-gray-500" />
@@ -486,7 +489,7 @@ export default function CartPayment({
                           <IconCheck size={13} color="white" strokeWidth={3} />
                         )}
                       </div>
-                    </div>
+                    </button>
                   ))}
                 </div>
               )}
@@ -494,9 +497,11 @@ export default function CartPayment({
 
             {/* DEBIT / CREDIT CARD */}
             <div className="border-t border-gray-100">
-              <div
+              <button
+                type="button"
                 onClick={() => toggleSection("card")}
-                className="flex items-center justify-between px-4 py-3 cursor-pointer"
+                aria-expanded={expandedSection === "card"}
+                className="flex w-full items-center justify-between px-4 py-3 text-left"
               >
                 <p className="text-sm font-semibold">Debit/ Credit Card</p>
                 {expandedSection === "card" ? (
@@ -504,7 +509,7 @@ export default function CartPayment({
                 ) : (
                   <IconChevronDown size={18} className="text-gray-400" />
                 )}
-              </div>
+              </button>
 
               {expandedSection === "card" && (
                 <div className="bg-gray-50 border-t border-gray-100 px-4 py-4">
@@ -518,9 +523,11 @@ export default function CartPayment({
 
             {/* NET BANKING — single column list, tick box on each */}
             <div className="border-t border-gray-100">
-              <div
+              <button
+                type="button"
                 onClick={() => toggleSection("netbanking")}
-                className="flex items-center justify-between px-4 py-3 cursor-pointer"
+                aria-expanded={expandedSection === "netbanking"}
+                className="flex w-full items-center justify-between px-4 py-3 text-left"
               >
                 <p className="text-sm font-semibold">Net Banking</p>
                 {expandedSection === "netbanking" ? (
@@ -528,17 +535,19 @@ export default function CartPayment({
                 ) : (
                   <IconChevronDown size={18} className="text-gray-400" />
                 )}
-              </div>
+              </button>
 
               {expandedSection === "netbanking" && (
                 <div className="bg-gray-50 border-t border-gray-100 px-4 py-4">
                   <p className="text-xs text-gray-500 mb-3">Select your bank</p>
                   <div className="flex flex-col gap-2">
                     {BANKS.map((bank) => (
-                      <div
+                      <button
+                        type="button"
                         key={bank}
                         onClick={() => toggleBank(bank)}
-                        className={`flex items-center justify-between gap-2 border rounded-lg px-3 py-2 bg-white cursor-pointer transition ${
+                        aria-pressed={selectedBank === bank}
+                        className={`flex items-center justify-between gap-2 border rounded-lg px-3 py-2 bg-white text-left transition ${
                           selectedBank === bank
                             ? "border-[#f36d43]"
                             : "border-gray-200"
@@ -568,7 +577,7 @@ export default function CartPayment({
                             />
                           )}
                         </div>
-                      </div>
+                      </button>
                     ))}
                   </div>
                 </div>
@@ -576,16 +585,18 @@ export default function CartPayment({
             </div>
 
             {/* CASH ON DELIVERY */}
-            <div
+            <button
+              type="button"
               onClick={toggleCod}
-              className="flex items-center justify-between px-4 py-3 border-t border-gray-100 cursor-pointer"
+              aria-pressed={selectedPayment === "cod"}
+              className="flex w-full items-center justify-between border-t border-gray-100 px-4 py-3 text-left"
             >
               <div className="flex items-center gap-3">
                 <IconCash size={20} className="text-gray-600" />
                 <p className="text-sm font-semibold">Cash On Delivery</p>
               </div>
               <div className="flex items-center gap-2">
-                <p className="text-sm font-bold">₹699</p>
+                <p className="text-sm font-bold">₹{totalPrice}</p>
                 <div
                   className={`w-6 h-6 border-2 rounded-md flex items-center justify-center flex-shrink-0 ${
                     selectedPayment === "cod"
@@ -598,7 +609,7 @@ export default function CartPayment({
                   )}
                 </div>
               </div>
-            </div>
+            </button>
           </div>
 
           {submitError && (
@@ -626,7 +637,6 @@ export default function CartPayment({
             </span>
           </div>
         </div>
-      </div>
-    </>
+    </CheckoutOverlay>
   );
 }
