@@ -4,7 +4,7 @@ import Image from "next/image";
 import BookmarkButton from "@/components/ui/BookmarkButton";
 import LatestDrops from "@/components/sections/LatestDrops";
 import { productBookmarkId } from "@/lib/bookmarks";
-import { cartFlow } from "@/lib/CartFlow";
+import { useCart } from "@/components/cart/CartContext";
 import type { ImageFit, Product } from "@/lib/products";
 import { fitTransform, formatPriceRange } from "@/lib/products";
 import { useMemo, useState, useRef, useEffect } from "react";
@@ -105,6 +105,7 @@ function GalleryImage({
 }
 
 export default function ProductDetails({ product }: { product: Product }) {
+  const { addItem } = useCart();
   const productSizes = product.detailSizes?.length
     ? product.detailSizes
     : fallbackSizes;
@@ -353,7 +354,24 @@ export default function ProductDetails({ product }: { product: Product }) {
               <div className="mt-4 flex h-[58px] gap-3 max-[480px]:mt-4 max-[480px]:h-[54px] max-[480px]:gap-2">
                 <button
                   type="button"
-                  onClick={() => cartFlow.open(product, selectedSize, quantity)}
+                  onClick={() =>
+                    addItem({
+                      id: product.slug,
+                      name: product.title,
+                      image: product.image ?? gallery[0]?.src ?? "",
+                      size: selectedSize,
+                      quantity,
+                      price: product.price ?? product.priceMin,
+                      mrp:
+                        product.originalPrice ??
+                        product.price ??
+                        product.priceMin,
+                      customName:
+                        nameValue || numberValue
+                          ? `${nameValue.trim()} ${numberValue.trim()}`.trim()
+                          : undefined,
+                    })
+                  }
                   className="flex min-w-0 flex-1 items-center justify-center gap-3 rounded-[10px] bg-[#f36d43] px-4 text-white transition-opacity hover:opacity-90 max-[480px]:gap-2 max-[480px]:px-3"
                 >
                   <span className="flex min-w-0 flex-col items-start leading-none">

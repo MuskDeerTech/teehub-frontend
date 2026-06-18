@@ -7,21 +7,30 @@ import {
   IconUserCircle,
   IconCheck,
 } from "@tabler/icons-react";
+import CheckoutOverlay from "./CheckoutOverlay";
 
 interface CartLoginProps {
   open: boolean;
+  initialPhone?: string;
+  totalCount: number;
+  totalMrp: number;
+  totalPrice: number;
   onClose: () => void;
   onBack?: () => void;
-  onSuccess?: () => void;
+  onSuccess?: (mobile: string) => void;
 }
 
 export default function CartLogin({
   open,
+  initialPhone = "",
+  totalCount,
+  totalMrp,
+  totalPrice,
   onClose,
   onBack,
   onSuccess,
 }: CartLoginProps) {
-  const [mobile, setMobile] = useState("");
+  const [mobile, setMobile] = useState(initialPhone);
   const [updates, setUpdates] = useState(false);
   const [selectedCoupon, setSelectedCoupon] = useState<number | null>(1);
   const [mobileError, setMobileError] = useState("");
@@ -57,8 +66,6 @@ export default function CartLogin({
     const sec = (s % 60).toString().padStart(2, "0");
     return `${m}:${sec} min`;
   };
-
-  if (!open) return null;
 
   const handleMobileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value.replace(/\D/g, "").slice(0, 10);
@@ -107,7 +114,7 @@ export default function CartLogin({
       return;
     }
     setOtpError("");
-    onSuccess?.();
+    onSuccess?.(mobile);
   };
 
   const handleResend = () => {
@@ -119,12 +126,7 @@ export default function CartLogin({
   };
 
   return (
-    <>
-      {/* BACKDROP */}
-      <div className="fixed inset-0 z-40 bg-black/50" onClick={onClose} />
-
-      {/* SHEET */}
-      <div className="fixed bottom-0 left-0 right-0 z-50 mx-auto w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-t-[28px] bg-[#F5F5F5] shadow-2xl">
+    <CheckoutOverlay open={open} onClose={onClose} ariaLabel="Customer login">
         
         {/* HEADER */}
         <div className="px-6 pt-5">
@@ -149,19 +151,28 @@ export default function CartLogin({
             />
 
             <div className="text-right">
-              <p className="text-sm text-gray-500">Free gift added • 6 Items</p>
+              <p className="text-sm text-gray-500">
+                Free gift added • {totalCount} Items
+              </p>
 
               <div className="flex items-center justify-end gap-2">
                 <span className="text-xl text-gray-400 line-through">
-                  ₹2500
+                  ₹{totalMrp}
                 </span>
 
-                <span className="text-4xl font-bold text-[#F26522]">₹1200</span>
+                <span className="text-4xl font-bold text-[#F26522]">
+                  ₹{totalPrice}
+                </span>
               </div>
             </div>
           </div>
-           <button onClick={onClose} className="text-xl leading-none">
-              ✕
+           <button
+             type="button"
+             onClick={onClose}
+             aria-label="Close login"
+             className="text-xl leading-none"
+           >
+              ×
             </button>
           </div>
 
@@ -174,10 +185,12 @@ export default function CartLogin({
         <div className="mt-4 px-6">
           <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
             {[1, 2, 3].map((item) => (
-              <div
+              <button
+                type="button"
                 key={item}
                 onClick={() => setSelectedCoupon(item)}
-                className={`min-w-[150px] flex-shrink-0 cursor-pointer rounded-lg border p-3 transition ${
+                aria-pressed={selectedCoupon === item}
+                className={`min-w-[150px] flex-shrink-0 rounded-lg border p-3 text-left transition ${
                   selectedCoupon === item
                     ? "border-[#F26522]"
                     : "border-gray-200 bg-white"
@@ -192,7 +205,7 @@ export default function CartLogin({
                 <div className="text-[11px] text-gray-500 leading-snug">
                   Extra discount on selected items
                 </div>
-              </div>
+              </button>
             ))}
           </div>
         </div>
@@ -334,7 +347,6 @@ export default function CartLogin({
             </p>
           </div>
         )}
-      </div>
-    </>
+    </CheckoutOverlay>
   );
 }

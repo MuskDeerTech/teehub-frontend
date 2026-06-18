@@ -1,14 +1,16 @@
 "use client";
 
 import Image from "next/image";
-import { useState } from "react";
 import {
-  IconTruckReturn,
-  IconCash,
-  IconTruck,
-  IconShieldCheck,
   IconBolt,
+  IconCash,
+  IconShieldCheck,
+  IconShoppingBag,
+  IconTruck,
+  IconTruckReturn,
 } from "@tabler/icons-react";
+import type { CartItem } from "./CartContext";
+import CheckoutOverlay from "./CheckoutOverlay";
 
 const SIZES = ["XS", "S", "M", "L", "XL", "XXL"];
 const POLICY_ITEMS = [
@@ -20,190 +22,296 @@ const POLICY_ITEMS = [
 ];
 
 const PAYMENT_METHODS = [
-  { name: "Visa", src: "/images/card-logo/visa-logo.png" },
-  { name: "RuPay", src: "/images/card-logo/rupay-logo.png" },
-  { name: "Mastercard", src: "/images/card-logo/mastercard-logo.webp" },
-  { name: "GPay", src: "/images/card-logo/gpay-logo.png" },
-  { name: "Paytm", src: "/images/card-logo/paytm-logo.jpg" },
-  { name: "PhonePe", src: "/images/card-logo/phonepay-logo.png" },
+  { name: "Visa", src: "/images/card-logo/visa-logo.png", scale: 0.95 },
+  { name: "RuPay", src: "/images/card-logo/rupay-logo.png", scale: 1 },
+  {
+    name: "Mastercard",
+    src: "/images/card-logo/mastercard-logo.webp",
+    scale: 0.95,
+  },
+  { name: "GPay", src: "/images/card-logo/gpay-logo.png", scale: 1.12 },
+  { name: "Paytm", src: "/images/card-logo/paytm-logo.jpg", scale: 1.12 },
+  {
+    name: "PhonePe",
+    src: "/images/card-logo/phonepay-logo.png",
+    scale: 0.9,
+  },
 ];
 
-interface CartItem {
-  id: string;
-  name: string;
-  image: string;
-  size: string;
-  quantity: number;
-  price: number;
-  mrp: number;
-  customName?: string;
-}
-
-interface CartDetailsProps {
-  item: CartItem;
+type CartDetailsProps = {
+  open: boolean;
+  item: CartItem | null;
+  totalCount: number;
+  totalMrp: number;
+  totalPrice: number;
+  onUpdate: (lineId: string, changes: Partial<CartItem>) => void;
   onClose: () => void;
   onProceed: () => void;
-}
+};
 
-export default function CartDetails({ item, onClose, onProceed }: CartDetailsProps) {
-  const [quantity, setQuantity] = useState<number>(item.quantity ?? 1);
-  const [sizeIndex, setSizeIndex] = useState<number>(
-    SIZES.indexOf(item.size) !== -1 ? SIZES.indexOf(item.size) : 2,
-  );
-
-  const selectedSize = SIZES[sizeIndex];
-  const totalMrp = item.mrp * quantity;
-  const totalPrice = item.price * quantity;
-  const discount = totalMrp - totalPrice;
-  const discountPct = Math.round(((item.mrp - item.price) / item.mrp) * 100);
-
-  const btnColor = "#564E4E";
-
-  const StepBtn = ({ onClick, children }: { onClick: () => void; children: React.ReactNode }) => (
+function StepButton({
+  label,
+  onClick,
+  children,
+}: {
+  label: string;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
     <button
+      type="button"
+      aria-label={label}
       onClick={onClick}
-      className="w-5 h-5 flex items-center justify-center text-white text-sm font-bold rounded-md flex-shrink-0"
-      style={{ backgroundColor: btnColor }}
+      className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-[#564E4E] text-sm font-bold text-white"
     >
       {children}
     </button>
   );
+}
+
+export default function CartDetails({
+  open,
+  item,
+  totalCount,
+  totalMrp,
+  totalPrice,
+  onUpdate,
+  onClose,
+  onProceed,
+}: CartDetailsProps) {
+  const discount = totalMrp - totalPrice;
+  const discountPercent =
+    item && item.mrp > 0
+      ? Math.round(((item.mrp - item.price) / item.mrp) * 100)
+      : 0;
+  const sizeIndex = item ? Math.max(0, SIZES.indexOf(item.size)) : 0;
 
   return (
-    // Single scroll container — no nested overflow
-    <div className="fixed inset-0 z-[99] overflow-hidden">
-      {/* BACKDROP */}
-      <div className="absolute inset-0 bg-black/50" onClick={onClose} />
-
-      {/* DRAWER */}
-      <div className="absolute right-0 top-0 h-full w-full max-w-[420px] bg-white flex flex-col shadow-2xl overflow-y-auto">
-
-        {/* HEADER  */}
-        <div className="sticky top-0 z-10 bg-white flex items-center justify-between px-5 py-5 border-b border-gray-200">
-          <h2 className="font-semibold text-base">Your Cart [{item ? 1 : 0}]</h2>
-          <button onClick={onClose} className="text-xl leading-none">✕</button>
-        </div>
-
-        {/* PRODUCT CARD */}
-        <div className="flex gap-3 mx-4 mt-3 border border-gray-200 rounded-xl p-3">
-          <Image
-            src={item.image}
-            alt={item.name}
-            width={80}
-            height={80}
-            className="rounded-lg object-cover flex-shrink-0 self-start"
-          />
-
-          {/* right side  */}
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="font-bold text-black text-sm">₹{item.price}</span>
-              <span className="line-through text-gray-400 text-xs">₹{item.mrp}</span>
-              <span className="text-green-600 text-[11px] font-medium">({discountPct}% Off)</span>
-            </div>
-
-            <h3 className="font-semibold mt-1 text-sm leading-snug truncate">{item.name}</h3>
-
-            {item.customName && (
-              <p className="text-xs text-gray-500 mt-1 truncate">
-                Custom: <span className="font-medium text-gray-700">{item.customName}</span>
-              </p>
-            )}
-
-            {/* QUANTITY + SIZE  */}
-            <div className="flex items-start gap-2 mt-2">
-              {/* Quantity */}
-              <div className="min-w-0">
-                <p className="mb-1 text-[10px] font-medium uppercase tracking-wide text-gray-500">QUANTITY</p>
-                <div className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 px-1.5 py-1">
-                  <StepBtn onClick={() => setQuantity((q) => Math.max(1, q - 1))}>−</StepBtn>
-                  <span className="w-12 text-center text-sm font-semibold">{quantity}</span>
-                  <StepBtn onClick={() => setQuantity((q) => q + 1)}>+</StepBtn>
-                </div>
-              </div>
-
-              {/* Size */}
-              <div className="min-w-0">
-                <p className="mb-1 text-[10px] font-medium uppercase tracking-wide text-gray-500">Size</p>
-                <div className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 px-1.5 py-1">
-                  <StepBtn onClick={() => setSizeIndex((i) => Math.max(0, i - 1))}>−</StepBtn>
-                  <span className="w-12 text-center text-sm font-semibold">{selectedSize}</span>
-                  <StepBtn onClick={() => setSizeIndex((i) => Math.min(SIZES.length - 1, i + 1))}>+</StepBtn>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* YAY FREE DELIVERY */}
-        <div className="mt-3 py-1.5 text-center text-sm" style={{ backgroundColor: "#EFEFEF" }}>
-          Yay! <span className="font-semibold text-green-600">Free Delivery</span> On This Order!
-        </div>
-
-        {/* ORDER SUMMARY */}
-        <div className="px-4 mt-3">
-          <h3 className="font-semibold mb-1.5 text-sm">Order Summary</h3>
-          {[
-            { label: "Total MRP (Incl. Of Taxes)", value: `₹${totalMrp}`, color: "" },
-            { label: "Discount On MRP", value: `-₹${discount}`, color: "text-green-600" },
-            { label: "Coupon Discount", value: "₹0", color: "text-green-600" },
-            { label: "Delivery Fee", value: "FREE", color: "text-green-600" },
-          ].map(({ label, value, color }) => (
-            <div key={label} className="flex justify-between text-sm py-1">
-              <span className="text-gray-600">{label}</span>
-              <span className={color}>{value}</span>
-            </div>
-          ))}
-          <div className="flex justify-between font-bold text-sm py-1.5 border-t border-b border-gray-200 mt-1">
-            <span>Total Payable</span>
-            <span>₹{totalPrice}</span>
-          </div>
-        </div>
-
-        {/* POLICY ICONS */}
-        <div className="px-4 mt-3 grid grid-cols-5 gap-1 text-center">
-          {POLICY_ITEMS.map(({ Icon, label }) => (
-            <div key={label} className="flex flex-col items-center gap-1">
-              <div className="w-9 h-9 rounded-full bg-gray-200 flex items-center justify-center">
-                <Icon size={20} stroke={1.5} className="text-gray-600" />
-              </div>
-              <span className="text-[9px] text-gray-500 leading-tight whitespace-pre-line">{label}</span>
-            </div>
-          ))}
-        </div>
-
-        {/* PAYMENT LOGOS */}
-        <div className="px-4 mt-7 flex flex-wrap items-center gap-3">
-          {PAYMENT_METHODS.map(({ name, src }) => (
-            <div key={name} className="h-4 flex items-center">
-              <Image src={src} alt={name} width={54} height={10} className="object-contain" />
-            </div>
-          ))}
-        </div>
-
-        {/* SHIPPING + ESTIMATED TOTAL */}
-        <div className="px-4 mt-7 flex flex-col gap-1">
-          <div className="flex justify-between text-sm text-gray-500">
-            <span>Shipping</span>
-            <span className="text-gray-700 font-medium">FREE</span>
-          </div>
-          <div className="flex justify-between font-bold text-sm">
-            <span>Estimated Total</span>
-            <span>₹{totalPrice}</span>
-          </div>
-        </div>
-
-        {/* FOOTER */}
-        <div className="px-4 pt-3 pb-4 mt-3 border-t border-gray-200 bg-white">
+    <CheckoutOverlay
+      open={open}
+      onClose={onClose}
+      variant="drawer"
+      ariaLabel="Shopping cart"
+    >
+      <div className="flex min-h-full flex-col">
+        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-gray-200 bg-white px-5 py-5">
+          <h2 className="text-base font-semibold">Your Cart [{totalCount}]</h2>
           <button
-            onClick={onProceed}
-            className="w-full bg-[#f36d43] hover:opacity-90 text-white py-2.5 rounded-xl font-semibold text-sm"
+            type="button"
+            onClick={onClose}
+            aria-label="Close cart"
+            className="text-xl leading-none"
           >
-            Proceed To Buy
+            ×
           </button>
-          <p className="text-center text-xs text-gray-400 mt-1.5">🔒 Safe and Secure Check out</p>
         </div>
+
+        {!item ? (
+          <div className="flex flex-1 flex-col items-center justify-center px-6 py-16 text-center">
+            <IconShoppingBag size={42} stroke={1.3} className="text-gray-300" />
+            <h3 className="mt-4 text-base font-semibold">Your cart is empty</h3>
+            <p className="mt-1 text-sm text-gray-500">
+              Add a product to begin checkout.
+            </p>
+          </div>
+        ) : (
+          <>
+            <div className="mx-4 mt-3 flex gap-3 rounded-xl border border-gray-200 p-3">
+              <Image
+                src={item.image}
+                alt={item.name}
+                width={80}
+                height={80}
+                className="shrink-0 self-start rounded-lg object-cover"
+              />
+
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-sm font-bold text-black">
+                    ₹{item.price}
+                  </span>
+                  <span className="text-xs text-gray-400 line-through">
+                    ₹{item.mrp}
+                  </span>
+                  <span className="text-[11px] font-medium text-green-600">
+                    ({discountPercent}% Off)
+                  </span>
+                </div>
+
+                <h3 className="mt-1 truncate text-sm font-semibold leading-snug">
+                  {item.name}
+                </h3>
+
+                <div className="mt-2 flex items-start gap-2">
+                  <div className="min-w-0">
+                    <p className="mb-1 text-[10px] font-medium uppercase tracking-wide text-gray-500">
+                      Quantity
+                    </p>
+                    <div className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 px-1.5 py-1">
+                      <StepButton
+                        label="Decrease quantity"
+                        onClick={() =>
+                          onUpdate(item.lineId, {
+                            quantity: Math.max(1, item.quantity - 1),
+                          })
+                        }
+                      >
+                        −
+                      </StepButton>
+                      <span className="w-12 text-center text-sm font-semibold">
+                        {item.quantity}
+                      </span>
+                      <StepButton
+                        label="Increase quantity"
+                        onClick={() =>
+                          onUpdate(item.lineId, {
+                            quantity: item.quantity + 1,
+                          })
+                        }
+                      >
+                        +
+                      </StepButton>
+                    </div>
+                  </div>
+
+                  <div className="min-w-0">
+                    <p className="mb-1 text-[10px] font-medium uppercase tracking-wide text-gray-500">
+                      Size
+                    </p>
+                    <div className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 px-1.5 py-1">
+                      <StepButton
+                        label="Previous size"
+                        onClick={() =>
+                          onUpdate(item.lineId, {
+                            size: SIZES[Math.max(0, sizeIndex - 1)],
+                          })
+                        }
+                      >
+                        −
+                      </StepButton>
+                      <span className="w-12 text-center text-sm font-semibold">
+                        {item.size}
+                      </span>
+                      <StepButton
+                        label="Next size"
+                        onClick={() =>
+                          onUpdate(item.lineId, {
+                            size: SIZES[
+                              Math.min(SIZES.length - 1, sizeIndex + 1)
+                            ],
+                          })
+                        }
+                      >
+                        +
+                      </StepButton>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-3 bg-[#EFEFEF] py-1.5 text-center text-sm">
+              Yay!{" "}
+              <span className="font-semibold text-green-600">Free Delivery</span>{" "}
+              On This Order!
+            </div>
+
+            <div className="mt-3 px-4">
+              <h3 className="mb-1.5 text-sm font-semibold">Order Summary</h3>
+              {[
+                {
+                  label: "Total MRP (Incl. Of Taxes)",
+                  value: `₹${totalMrp}`,
+                  color: "",
+                },
+                {
+                  label: "Discount On MRP",
+                  value: `-₹${discount}`,
+                  color: "text-green-600",
+                },
+                {
+                  label: "Coupon Discount",
+                  value: "₹0",
+                  color: "text-green-600",
+                },
+                {
+                  label: "Delivery Fee",
+                  value: "FREE",
+                  color: "text-green-600",
+                },
+              ].map(({ label, value, color }) => (
+                <div
+                  key={label}
+                  className="flex justify-between py-1 text-sm"
+                >
+                  <span className="text-gray-600">{label}</span>
+                  <span className={color}>{value}</span>
+                </div>
+              ))}
+              <div className="mt-1 flex justify-between border-y border-gray-200 py-1.5 text-sm font-bold">
+                <span>Total Payable</span>
+                <span>₹{totalPrice}</span>
+              </div>
+            </div>
+
+            <div className="mt-3 grid grid-cols-5 gap-1 px-4 text-center">
+              {POLICY_ITEMS.map(({ Icon, label }) => (
+                <div key={label} className="flex flex-col items-center gap-1">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gray-200">
+                    <Icon size={20} stroke={1.5} className="text-gray-600" />
+                  </div>
+                  <span className="whitespace-pre-line text-[9px] leading-tight text-gray-500">
+                    {label}
+                  </span>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-7 flex items-center justify-between gap-2.5 px-4">
+              {PAYMENT_METHODS.map(({ name, src, scale }) => (
+                <div
+                  key={name}
+                  className="flex h-10 w-[52px] shrink-0 items-center justify-center"
+                >
+                  <Image
+                    src={src}
+                    alt={name}
+                    width={52}
+                    height={32}
+                    className="h-8 w-[52px] object-contain"
+                    style={{ transform: `scale(${scale})` }}
+                  />
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-7 flex flex-col gap-1 px-4">
+              <div className="flex justify-between text-sm text-gray-500">
+                <span>Shipping</span>
+                <span className="font-medium text-gray-700">FREE</span>
+              </div>
+              <div className="flex justify-between text-sm font-bold">
+                <span>Estimated Total</span>
+                <span>₹{totalPrice}</span>
+              </div>
+            </div>
+
+            <div className="mt-3 border-t border-gray-200 bg-white px-4 pb-4 pt-3">
+              <button
+                type="button"
+                onClick={onProceed}
+                className="w-full rounded-xl bg-[#f36d43] py-2.5 text-sm font-semibold text-white hover:opacity-90"
+              >
+                Proceed To Buy
+              </button>
+              <p className="mt-1.5 text-center text-xs text-gray-400">
+                Safe and secure checkout
+              </p>
+            </div>
+          </>
+        )}
       </div>
-    </div>
+    </CheckoutOverlay>
   );
 }

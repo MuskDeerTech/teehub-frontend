@@ -1,70 +1,90 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { cartFlow, CartState } from "@/lib/CartFlow";
+import { useCart } from "./CartContext";
 import CartDetails from "./CartDetails";
 import CartLogin from "./CartLogin";
 import CartRegister from "./CartRegister";
 import CartPayment from "./CartPayment";
 
 export default function CartRoot() {
-  const [state, setState] = useState<CartState>({
-    step: "closed",
-    product: null,
-    quantity: 1,
-    size: null,
-  });
+  const {
+    activeItem,
+    cartOpen,
+    step,
+    customer,
+    phone,
+    totalCount,
+    totalMrp,
+    totalPrice,
+    closeCart,
+    goToStep,
+    updateItem,
+    setPhone,
+    setCustomer,
+  } = useCart();
 
-  useEffect(() => {
-    return cartFlow.subscribe(setState);
-  }, []);
+  if (step === "details") {
+    return (
+      <CartDetails
+        open={cartOpen}
+        item={activeItem}
+        totalCount={totalCount}
+        totalMrp={totalMrp}
+        totalPrice={totalPrice}
+        onUpdate={updateItem}
+        onClose={closeCart}
+        onProceed={() => goToStep("login")}
+      />
+    );
+  }
 
-  if (state.step === "closed") return null;
+  if (step === "login") {
+    return (
+      <CartLogin
+        open={cartOpen}
+        totalCount={totalCount}
+        totalMrp={totalMrp}
+        totalPrice={totalPrice}
+        initialPhone={phone}
+        onClose={closeCart}
+        onBack={() => goToStep("details")}
+        onSuccess={(mobile) => {
+          setPhone(mobile);
+          goToStep("register");
+        }}
+      />
+    );
+  }
+
+  if (step === "register") {
+    return (
+      <CartRegister
+        open={cartOpen}
+        totalCount={totalCount}
+        totalMrp={totalMrp}
+        totalPrice={totalPrice}
+        phone={phone}
+        customer={customer}
+        onClose={closeCart}
+        onBack={() => goToStep("login")}
+        onSuccess={(nextCustomer) => {
+          setCustomer(nextCustomer);
+          goToStep("payment");
+        }}
+      />
+    );
+  }
 
   return (
-    <>
-      {state.step === "details" && (
-        <CartDetails
-          item={{
-            id: state.product?.slug ?? "",
-            name: state.product?.title ?? "",
-            image: state.product?.image ?? "",
-            size: state.size ?? "",
-            quantity: state.quantity ?? 1,
-            price: state.product?.price ?? 0,
-            mrp: state.product?.originalPrice ?? 0,
-          }}
-          onClose={() => cartFlow.close()}
-          onProceed={() => cartFlow.goToLogin()}
-        />
-      )}
-
-      {state.step === "login" && (
-        <CartLogin
-          open={true}
-          onClose={() => cartFlow.close()}
-          onBack={() => cartFlow.goToDetails()}
-          onSuccess={() => cartFlow.goToRegister()}
-        />
-      )}
-
-      {state.step === "register" && (
-        <CartRegister
-          open={true}
-          onClose={() => cartFlow.close()}
-          onBack={() => cartFlow.goToLogin()}
-          onSuccess={() => cartFlow.gotoPayment()}
-        />
-      )}
-
-      {state.step === "payment" && (
-        <CartPayment
-          open={true}
-          onClose={() => cartFlow.close()}
-          onBack={() => cartFlow.goToRegister()}
-          //customer={customerData}
-        />
-      )}
-    </>
+    <CartPayment
+      open={cartOpen}
+      totalCount={totalCount}
+      totalMrp={totalMrp}
+      totalPrice={totalPrice}
+      customer={customer}
+      onClose={closeCart}
+      onBack={() => goToStep("register")}
+      onSuccess={closeCart}
+    />
   );
 }
