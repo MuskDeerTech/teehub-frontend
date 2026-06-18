@@ -51,7 +51,9 @@ export default function CartLogin({
   }, [timerActive, secondsLeft]);
 
   const formatTime = (s: number) => {
-    const m = Math.floor(s / 60).toString().padStart(2, "0");
+    const m = Math.floor(s / 60)
+      .toString()
+      .padStart(2, "0");
     const sec = (s % 60).toString().padStart(2, "0");
     return `${m}:${sec} min`;
   };
@@ -123,38 +125,49 @@ export default function CartLogin({
 
       {/* SHEET */}
       <div className="fixed bottom-0 left-0 right-0 z-50 mx-auto w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-t-[28px] bg-[#F5F5F5] shadow-2xl">
+        
         {/* HEADER */}
         <div className="px-6 pt-5">
-          <div className="flex items-start justify-between">
-            <div className="flex items-center gap-2">
-              <button
-                onClick={step === "otp" ? () => setStep("mobile") : onBack || onClose}
-              >
-                <IconChevronLeft size={28} />
-              </button>
-              <div>
-                <Image
-                  src="/images/teehub-logo.png"
-                  alt="TeeHub Logo"
-                  width={120}
-                  height={40}
-                  className="h-14 w-auto"
-                />
-              </div>
-            </div>
+         
+          <div className="flex items-center justify-between">
+            <button
+              onClick={
+                step === "otp" ? () => setStep("mobile") : onBack || onClose
+              }
+            >
+              <IconChevronLeft size={28} />
+            </button>
+
+
+          <div className="flex flex-1 items-center justify-between px-4">
+            <Image
+              src="/images/teehub-logo.png"
+              alt="TeeHub Logo"
+              width={120}
+              height={40}
+              className="h-12 w-auto"
+            />
 
             <div className="text-right">
               <p className="text-sm text-gray-500">Free gift added • 6 Items</p>
+
               <div className="flex items-center justify-end gap-2">
-                <span className="text-xl text-gray-400 line-through">₹2500</span>
+                <span className="text-xl text-gray-400 line-through">
+                  ₹2500
+                </span>
+
                 <span className="text-4xl font-bold text-[#F26522]">₹1200</span>
               </div>
             </div>
           </div>
-        </div>
+           <button onClick={onClose} className="text-xl leading-none">
+              ✕
+            </button>
+          </div>
 
-        <div className="mt-5 bg-[#EAEAEA] py-3 text-center text-xl font-semibold">
-          2 Lakhs Happy Customers
+          <div className="mt-5 bg-[#EAEAEA] py-3 text-center text-xl font-semibold">
+            2 Lakhs Happy Customers
+          </div>
         </div>
 
         {/* COUPONS */}
@@ -165,11 +178,15 @@ export default function CartLogin({
                 key={item}
                 onClick={() => setSelectedCoupon(item)}
                 className={`min-w-[150px] flex-shrink-0 cursor-pointer rounded-lg border p-3 transition ${
-                  selectedCoupon === item ? "border-[#F26522]" : "border-gray-200 bg-white"
+                  selectedCoupon === item
+                    ? "border-[#F26522]"
+                    : "border-gray-200 bg-white"
                 }`}
               >
                 <div className="mb-1 flex justify-between">
-                  <span className="text-xs font-semibold">Coupon Name {item}</span>
+                  <span className="text-xs font-semibold">
+                    Coupon Name {item}
+                  </span>
                   <span className="text-[10px] text-gray-500">{item}/6</span>
                 </div>
                 <div className="text-[11px] text-gray-500 leading-snug">
@@ -196,7 +213,9 @@ export default function CartLogin({
             </div>
 
             <div className="relative">
-              <span className="absolute left-6 top-1/2 -translate-y-1/2 font-semibold">+91</span>
+              <span className="absolute left-6 top-1/2 -translate-y-1/2 font-semibold">
+                +91
+              </span>
               <input
                 type="tel"
                 inputMode="numeric"
@@ -270,13 +289,16 @@ export default function CartLogin({
             </div>
 
             {otpError && (
-              <p className="mt-3 text-center text-xs text-red-500">{otpError}</p>
+              <p className="mt-3 text-center text-xs text-red-500">
+                {otpError}
+              </p>
             )}
 
             {/* INFO TEXT */}
             <p className="mt-6 text-center text-sm text-gray-500">
               You Must Have Received a{" "}
-              <span className="font-semibold text-[#f36d43]">5 digit OTP</span> On Your Registered Number
+              <span className="font-semibold text-[#f36d43]">5 digit OTP</span>{" "}
+              On Your Registered Number
             </p>
 
             {/* RESEND / TIMER */}
@@ -289,7 +311,10 @@ export default function CartLogin({
                   </span>
                 </>
               ) : (
-                <button onClick={handleResend} className="font-semibold text-[#f36d43] underline">
+                <button
+                  onClick={handleResend}
+                  className="font-semibold text-[#f36d43] underline"
+                >
                   Resend OTP
                 </button>
               )}

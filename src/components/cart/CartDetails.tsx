@@ -185,8 +185,8 @@ export default function CartDetails({ item, onClose, onProceed }: CartDetailsPro
           <div className="px-6 mt-5 grid grid-cols-5 gap-2 text-center">
             {POLICY_ITEMS.map(({ Icon, label }) => (
               <div key={label} className="flex flex-col items-center gap-1">
-                <div className="w-15 h-15 rounded-full bg-gray-200 flex items-center justify-center">
-                  <Icon size={35} stroke={1.5} className="text-gray-600" />
+                <div className="w-13 h-13 rounded-full bg-gray-200 flex items-center justify-center">
+                  <Icon size={30} stroke={1.5} className="text-gray-600" />
                 </div>
                 <span className="text-[12px] text-gray-500 leading-tight whitespace-pre-line">
                   {label}

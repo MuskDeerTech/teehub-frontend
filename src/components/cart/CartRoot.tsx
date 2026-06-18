@@ -5,6 +5,7 @@ import { cartFlow, CartState } from "@/lib/CartFlow";
 import CartDetails from "./CartDetails";
 import CartLogin from "./CartLogin";
 import CartRegister from "./CartRegister";
+import CartPayment from "./CartPayment";
 
 export default function CartRoot() {
   const [state, setState] = useState<CartState>({
@@ -52,7 +53,16 @@ export default function CartRoot() {
           open={true}
           onClose={() => cartFlow.close()}
           onBack={() => cartFlow.goToLogin()}
-          onSuccess={() => cartFlow.close()}
+          onSuccess={() => cartFlow.gotoPayment()}
+        />
+      )}
+
+      {state.step === "payment" && (
+        <CartPayment
+          open={true}
+          onClose={() => cartFlow.close()}
+          onBack={() => cartFlow.goToRegister()}
+          //customer={customerData}
         />
       )}
     </>
