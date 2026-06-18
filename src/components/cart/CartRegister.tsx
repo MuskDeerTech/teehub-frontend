@@ -117,9 +117,10 @@ export default function CartRegister({
       open={open}
       onClose={onClose}
       ariaLabel="Delivery address"
+      variant="drawer"
     >
          {/*HEADER*/}
-          <div className="px-6 pt-5"></div>
+          <div className="px-4 pt-5"></div>
         <div className="flex items-start justify-between">
       
          
@@ -133,7 +134,7 @@ export default function CartRegister({
               alt="TeeHub Logo"
               width={120}
               height={40}
-              className="h-14 w-auto"
+              className="h-12 w-auto"
             />
           </div>
           
@@ -145,11 +146,11 @@ export default function CartRegister({
             </p>
 
             <div className="flex items-center justify-end gap-2">
-              <span className="text-xl text-gray-400 line-through">
+              <span className="text-lg text-gray-400 line-through">
                 ₹{totalMrp}
               </span>
 
-              <span className="text-4xl font-bold text-[#F26522]">
+              <span className="text-2xl font-bold text-[#F26522]">
                 ₹{totalPrice}
               </span>
             </div>

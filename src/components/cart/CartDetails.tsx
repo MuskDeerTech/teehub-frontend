@@ -103,7 +103,7 @@ export default function CartDetails({
             aria-label="Close cart"
             className="text-xl leading-none"
           >
-            ×
+            ✕
           </button>
         </div>
 

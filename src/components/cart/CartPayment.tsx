@@ -114,8 +114,9 @@ export default function CartPayment({
   };
 
   return (
-    <CheckoutOverlay open={open} onClose={onClose} ariaLabel="Payment">
+    <CheckoutOverlay open={open} onClose={onClose} ariaLabel="Payment" variant="drawer">
         {/* HEADER */}
+        <div className="px-4 pt-5"></div>
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-2">
             <button onClick={onBack ?? onClose}>
@@ -126,7 +127,7 @@ export default function CartPayment({
               alt="TeeHub Logo"
               width={120}
               height={40}
-              className="h-14 w-auto"
+              className="h-12 w-auto"
             />
           </div>
 
@@ -136,10 +137,10 @@ export default function CartPayment({
                 Free gift added • {totalCount} Items
               </p>
               <div className="flex items-center justify-end gap-2">
-                <span className="text-xl text-gray-400 line-through">
+                <span className="text-lg text-gray-400 line-through">
                   ₹{totalMrp}
                 </span>
-                <span className="text-4xl font-bold text-[#F26522]">
+                <span className="text-2xl font-bold text-[#F26522]">
                   ₹{totalPrice}
                 </span>
               </div>
@@ -149,7 +150,7 @@ export default function CartPayment({
               type="button"
               onClick={onClose}
               aria-label="Close payment"
-              className="text-xl leading-none self-start mt-1"
+              className="text-xl leading-none "
             >
               ✕
             </button>
