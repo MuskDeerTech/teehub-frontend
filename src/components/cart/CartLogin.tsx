@@ -136,7 +136,11 @@ export default function CartLogin({
         <div className="px-4 pt-5"></div>
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-2">
-            <button onClick={onBack ?? onClose}>
+            <button
+              onClick={
+                step === "otp" ? () => setStep("mobile") : onBack ?? onClose
+              }
+            >
               <IconChevronLeft size={28} />
             </button>
             <Image

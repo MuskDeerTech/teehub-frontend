@@ -1,6 +1,6 @@
 import Link from "next/link";
 import JerseyCard from "@/components/ui/JerseyCard";
-import { latestDrops, iplJerseys } from "@/lib/products";
+import { formatPriceRange, latestDrops, iplJerseys } from "@/lib/products";
 import type { JerseyDrop } from "@/lib/products";
 
 type DropWithMeta = JerseyDrop & { slug?: string; bgColor?: string };
@@ -24,7 +24,7 @@ export default function LatestDrops({
           alt: p.title,
           bg: "",           // not used — bgColor takes over
           bgColor: p.bg,    // raw hex, applied via inline style
-          price: `₹${p.priceMin}.00 – ₹${p.priceMax}.00`,
+          price: formatPriceRange(p),
         }))
     : latestDrops;
 
