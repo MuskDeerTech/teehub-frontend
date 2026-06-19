@@ -1,14 +1,13 @@
 import Link from "next/link";
 import JerseyCard from "@/components/ui/JerseyCard";
-import { latestDrops, iplJerseys } from "@/lib/products";
+import { formatPriceRange, latestDrops, iplJerseys } from "@/lib/products";
 import type { JerseyDrop } from "@/lib/products";
 
 type DropWithMeta = JerseyDrop & { slug?: string; bgColor?: string };
 
-// Match a latestDrop to its slug by finding the iplJersey with the same title
 function findSlug(title: string): string | undefined {
   return iplJerseys.find(
-    (p) => p.title.toLowerCase() === title.toLowerCase()
+    (product) => product.title.toLowerCase() === title.toLowerCase(),
   )?.slug;
 }
 
@@ -21,21 +20,24 @@ export default function LatestDrops({
 }) {
   const drops: DropWithMeta[] = productPage
     ? iplJerseys
-        .filter((p) => p.slug !== excludeSlug)
-        .filter((p, i, arr) => arr.findIndex((x) => x.title === p.title) === i)
+        .filter((product) => product.slug !== excludeSlug)
+        .filter(
+          (product, index, products) =>
+            products.findIndex((item) => item.title === product.title) === index,
+        )
         .slice(0, 4)
-        .map((p) => ({
-          slug: p.slug,
-          title: p.title,
-          image: p.image ?? "",
-          alt: p.title,
+        .map((product) => ({
+          slug: product.slug,
+          title: product.title,
+          image: product.image ?? "",
+          alt: product.title,
           bg: "",
-          bgColor: p.bg,
-          price: `₹${p.priceMin}.00 – ₹${p.priceMax}.00`,
+          bgColor: product.bg,
+          price: formatPriceRange(product),
         }))
-    : latestDrops.map((d) => ({
-        ...d,
-        slug: findSlug(d.title),
+    : latestDrops.map((drop) => ({
+        ...drop,
+        slug: findSlug(drop.title),
       }));
 
   return (

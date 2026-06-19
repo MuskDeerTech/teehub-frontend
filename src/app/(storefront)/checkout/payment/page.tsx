@@ -29,9 +29,9 @@ const WALLETS = [
 ];
 
 const BANKS = [
-  { name: "RAJORPAY", logo: "/images/bank-logo/rajorpay-logo.png" },
+  { name: "Razorpay", logo: "/images/bank-logo/rajorpay-logo.png" },
   { name: "HDFC Bank", logo: "/images/bank-logo/hdfc-logo.png" },
-  { name: "ICICi Bank", logo: "/images/bank-logo/icici-logo.png" },
+  { name: "ICICI Bank", logo: "/images/bank-logo/icici-logo.png" },
   { name: "Axis Bank", logo: "/images/bank-logo/axis-logo.png" },
   {
     name: "STATE Bank of India",
