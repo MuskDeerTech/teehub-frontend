@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 import BookmarkButton from "@/components/ui/BookmarkButton";
 import { jerseyBookmarkId } from "@/lib/bookmarks";
 import type { JerseyDrop } from "@/lib/products";
@@ -7,10 +8,12 @@ export default function JerseyCard({
   drop,
   compact = false,
   bgColor,
+  href,
 }: {
   drop: JerseyDrop;
   compact?: boolean;
   bgColor?: string;
+  href?: string;
 }) {
   return (
     <div className="group w-full max-[1024px]:w-[calc(50%_-_10px)] max-[1024px]:shrink-0 max-[1024px]:snap-start max-[480px]:w-[80%] max-[360px]:h-[460px] max-[360px]:w-full">
@@ -43,20 +46,37 @@ export default function JerseyCard({
       </div>
 
       <div className="pt-2.5">
-        <h3 className={`line-clamp-2 overflow-hidden leading-[1.3] text-black ${
-          compact
-            ? "text-[15px] font-semibold"
-            : "min-h-[calc(1.3em*2)] text-[18px] font-normal min-[1440px]:mt-5 min-[1440px]:line-clamp-3 min-[1440px]:text-[18px] min-[1440px]:font-bold min-[1440px]:leading-[1.4] max-[1024px]:mt-[30px] max-[1024px]:line-clamp-3 max-[1024px]:text-[25px] max-[1024px]:font-bold max-[1024px]:leading-[1.4] max-[768px]:text-[18px] max-[360px]:text-[15px]"
-        }`}>
-          {drop.title}
+        <h3
+          className={`line-clamp-2 overflow-hidden leading-[1.3] text-black ${
+            compact
+              ? "text-[15px] font-semibold"
+              : "min-h-[calc(1.3em*2)] text-[18px] font-normal min-[1440px]:mt-5 min-[1440px]:line-clamp-3 min-[1440px]:text-[18px] min-[1440px]:font-bold min-[1440px]:leading-[1.4] max-[1024px]:mt-[30px] max-[1024px]:line-clamp-3 max-[1024px]:text-[25px] max-[1024px]:font-bold max-[1024px]:leading-[1.4] max-[768px]:text-[18px] max-[360px]:text-[15px]"
+          }`}
+        >
+          {href ? (
+            <Link
+              href={href}
+              className="hover:text-[#f36d43] transition-colors"
+            >
+              {drop.title}
+            </Link>
+          ) : (
+            drop.title
+          )}
         </h3>
-        <div className={`flex items-center justify-between ${compact ? "mt-1" : "min-[1440px]:pt-5"} max-[768px]:text-[10px]`}>
-          <span className={`text-[#444] ${compact ? "text-[14px]" : "mt-[-30px] text-[18px] min-[1440px]:text-[15px]"}`}>
+        <div
+          className={`flex items-center justify-between ${compact ? "mt-1" : "min-[1440px]:pt-5"} max-[768px]:text-[10px]`}
+        >
+          <span
+            className={`text-[#444] ${compact ? "text-[14px]" : "mt-[-30px] text-[18px] min-[1440px]:text-[15px]"}`}
+          >
             {drop.price}
           </span>
-          <button className={`cursor-pointer text-[#111] ${compact ? "text-[24px]" : "mt-[-30px] w-5 text-[30px]"}`}>
+         {/* <button
+            className={`cursor-pointer text-[#111] ${compact ? "text-[24px]" : "mt-[-30px] w-5 text-[30px]"}`}
+          >
             +
-          </button>
+          </button>*/}
         </div>
       </div>
     </div>

@@ -148,7 +148,7 @@ export default function CartLogin({
               alt="TeeHub Logo"
               width={120}
               height={40}
-              className="h-12 w-auto"
+              className="h-10 w-auto"
             />
           </div>
 
@@ -158,10 +158,10 @@ export default function CartLogin({
                 Free gift added • {totalCount} Items
               </p>
               <div className="flex items-center justify-end gap-2">
-                <span className="text-lg text-gray-400 line-through">
+                <span className="text-l text-gray-400 line-through">
                   ₹{totalMrp}
                 </span>
-                <span className="text-2xl font-bold text-[#F26522]">
+                <span className="text-xl font-bold text-[#F26522]">
                   ₹{totalPrice}
                 </span>
               </div>

@@ -5,6 +5,12 @@ import type { JerseyDrop } from "@/lib/products";
 
 type DropWithMeta = JerseyDrop & { slug?: string; bgColor?: string };
 
+function findSlug(title: string): string | undefined {
+  return iplJerseys.find(
+    (product) => product.title.toLowerCase() === title.toLowerCase(),
+  )?.slug;
+}
+
 export default function LatestDrops({
   productPage = false,
   excludeSlug,
@@ -14,19 +20,25 @@ export default function LatestDrops({
 }) {
   const drops: DropWithMeta[] = productPage
     ? iplJerseys
-        .filter((p) => p.slug !== excludeSlug)
-        .filter((p, i, arr) => arr.findIndex((x) => x.title === p.title) === i)
+        .filter((product) => product.slug !== excludeSlug)
+        .filter(
+          (product, index, products) =>
+            products.findIndex((item) => item.title === product.title) === index,
+        )
         .slice(0, 4)
-        .map((p) => ({
-          slug: p.slug,
-          title: p.title,
-          image: p.image ?? "",
-          alt: p.title,
-          bg: "",           // not used — bgColor takes over
-          bgColor: p.bg,    // raw hex, applied via inline style
-          price: formatPriceRange(p),
+        .map((product) => ({
+          slug: product.slug,
+          title: product.title,
+          image: product.image ?? "",
+          alt: product.title,
+          bg: "",
+          bgColor: product.bg,
+          price: formatPriceRange(product),
         }))
-    : latestDrops;
+    : latestDrops.map((drop) => ({
+        ...drop,
+        slug: findSlug(drop.title),
+      }));
 
   return (
     <section className="w-full bg-[#f5f5f5] px-[clamp(16px,4vw,80px)] py-[60px]">
@@ -56,6 +68,7 @@ export default function LatestDrops({
             drop={drop}
             compact={productPage}
             bgColor={drop.bgColor}
+            href={drop.slug ? `/product/${drop.slug}` : undefined}
           />
         ))}
       </div>

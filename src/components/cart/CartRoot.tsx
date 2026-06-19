@@ -1,17 +1,16 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useCart } from "./CartContext";
 import CartDetails from "./CartDetails";
 import CartLogin from "./CartLogin";
-import CartRegister from "./CartRegister";
-import CartPayment from "./CartPayment";
 
 export default function CartRoot() {
+  const router = useRouter();
   const {
     activeItem,
     cartOpen,
     step,
-    customer,
     phone,
     totalCount,
     totalMrp,
@@ -20,24 +19,10 @@ export default function CartRoot() {
     goToStep,
     updateItem,
     setPhone,
-    setCustomer,
   } = useCart();
 
-  if (step === "details") {
-    return (
-      <CartDetails
-        open={cartOpen}
-        item={activeItem}
-        totalCount={totalCount}
-        totalMrp={totalMrp}
-        totalPrice={totalPrice}
-        onUpdate={updateItem}
-        onClose={closeCart}
-        onProceed={() => goToStep("login")}
-      />
-    );
-  }
-
+  // register/payment now live on their own pages (/checkout/address,
+  // /checkout/payment) — the drawer no longer renders them.
   if (step === "login") {
     return (
       <CartLogin
@@ -50,41 +35,23 @@ export default function CartRoot() {
         onBack={() => goToStep("details")}
         onSuccess={(mobile) => {
           setPhone(mobile);
-          goToStep("register");
-        }}
-      />
-    );
-  }
-
-  if (step === "register") {
-    return (
-      <CartRegister
-        open={cartOpen}
-        totalCount={totalCount}
-        totalMrp={totalMrp}
-        totalPrice={totalPrice}
-        phone={phone}
-        customer={customer}
-        onClose={closeCart}
-        onBack={() => goToStep("login")}
-        onSuccess={(nextCustomer) => {
-          setCustomer(nextCustomer);
-          goToStep("payment");
+          closeCart();
+          router.push("/checkout/address");
         }}
       />
     );
   }
 
   return (
-    <CartPayment
+    <CartDetails
       open={cartOpen}
+      item={activeItem}
       totalCount={totalCount}
       totalMrp={totalMrp}
       totalPrice={totalPrice}
-      customer={customer}
+      onUpdate={updateItem}
       onClose={closeCart}
-      onBack={() => goToStep("register")}
-      onSuccess={closeCart}
+      onProceed={() => goToStep("login")}
     />
   );
 }
