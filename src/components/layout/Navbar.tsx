@@ -3,7 +3,13 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { IconUser,IconSearch ,IconMapPin ,IconShoppingBag, IconBrandInstagram } from "@tabler/icons-react";
+import {
+  IconUser,
+  IconSearch,
+  IconMapPin,
+  IconShoppingBag,
+  IconBrandInstagram,
+} from "@tabler/icons-react";
 import { navLinks, type Category } from "@/lib/products";
 import MegaMenu from "@/components/layout/MegaMenu";
 import { useCart } from "@/components/cart/CartContext";
@@ -14,7 +20,11 @@ type PayloadCategory = {
   slug: string;
   bg?: string | null;
   thumbnailImage?: number | PayloadMedia | null;
-  thumbFit?: { scale?: number | null; x?: number | null; y?: number | null } | null;
+  thumbFit?: {
+    scale?: number | null;
+    x?: number | null;
+    y?: number | null;
+  } | null;
 };
 
 function mapCategory(doc: PayloadCategory): Category {
@@ -30,7 +40,11 @@ function mapCategory(doc: PayloadCategory): Category {
       ? { src: thumbnail.url, alt: thumbnail.alt || doc.name }
       : undefined,
     thumbFit: doc.thumbFit
-      ? { scale: doc.thumbFit.scale ?? undefined, x: doc.thumbFit.x ?? undefined, y: doc.thumbFit.y ?? undefined }
+      ? {
+          scale: doc.thumbFit.scale ?? undefined,
+          x: doc.thumbFit.x ?? undefined,
+          y: doc.thumbFit.y ?? undefined,
+        }
       : undefined,
   };
 }
@@ -53,7 +67,9 @@ export default function Navbar() {
       limit: "200",
     });
     fetch(`/api/categories?${params.toString()}`, { signal: controller.signal })
-      .then((res) => (res.ok ? res.json() : Promise.reject(new Error("Failed"))))
+      .then((res) =>
+        res.ok ? res.json() : Promise.reject(new Error("Failed")),
+      )
       .then((data: { docs?: PayloadCategory[] }) => {
         setCategories((data.docs ?? []).map(mapCategory));
         setCategoriesLoaded(true);
@@ -69,41 +85,55 @@ export default function Navbar() {
   const toggleMenu = () => {
     const next = !menuOpen;
     setMenuOpen(next);
-    if (next && !categoriesLoaded && !categoriesLoading) setCategoriesLoading(true);
+    if (next && !categoriesLoaded && !categoriesLoading)
+      setCategoriesLoading(true);
   };
 
   return (
     <nav className="sticky top-0 z-[100] flex h-[72px] w-full items-center justify-between border-b border-[#e7e7e7] bg-[#f8f8f8] px-[42px] max-[768px]:px-5 max-[360px]:h-[70px] max-[360px]:justify-center max-[360px]:px-0">
       <div className="flex items-center gap-[34px] max-[768px]:flex-1 max-[768px]:justify-start max-[768px]:gap-[15px] max-[360px]:hidden">
         {navLinks.map((link) => (
-          <span key={link} className="cursor-pointer text-[13px] font-bold tracking-[1px] text-black transition-colors duration-200 hover:text-[#ff5b1f]">
+          <span
+            key={link}
+            className="cursor-pointer text-[13px] font-bold tracking-[1px] text-black transition-colors duration-200 hover:text-[#ff5b1f]"
+          >
             {link}
           </span>
         ))}
       </div>
 
       {/* LOGO */}
-      <Link href="/" aria-label="TeeHub home" className="absolute left-1/2 -translate-x-1/2 max-[768px]:left-[55%]">
-        <Image src="/images/teehub-logo.png" alt="TeeHub Logo" width={181} height={57} priority className="h-[52px] w-auto" />
+      <Link
+        href="/"
+        aria-label="TeeHub home"
+        className="absolute left-1/2 -translate-x-1/2 max-[768px]:left-[55%]"
+      >
+        <Image
+          src="/images/teehub-logo.png"
+          alt="TeeHub Logo"
+          width={181}
+          height={57}
+          priority
+          className="h-[52px] w-auto"
+        />
       </Link>
 
-     {/* ICONS */}
-<div className="flex items-center gap-7 max-[768px]:flex-1 max-[768px]:justify-end max-[768px]:gap-5 max-[360px]:hidden">
- 
-  {/* LOCATION */}
-  <span className="flex h-7 w-7 cursor-pointer items-center justify-center">
-    <IconMapPin size={26} stroke={1.5} className="text-black" />
-  </span>
- 
-  {/* SEARCH */}
-  <span className="flex h-7 w-7 cursor-pointer items-center justify-center">
-    <IconSearch size={26} stroke={1.5} className="text-black" />
-  </span>
- 
-  {/* PROFILE */}
-  <span className="flex h-7 w-7 cursor-pointer items-center justify-center">
-    <IconUser size={26} stroke={1.5} className="text-black" />
-  </span>
+      {/* ICONS */}
+      <div className="flex items-center gap-7 max-[768px]:flex-1 max-[768px]:justify-end max-[768px]:gap-5 max-[360px]:hidden">
+        {/* LOCATION */}
+        <span className="flex h-7 w-7 cursor-pointer items-center justify-center">
+          <IconMapPin size={26} stroke={1.5} className="text-black" />
+        </span>
+
+        {/* SEARCH */}
+        <span className="flex h-7 w-7 cursor-pointer items-center justify-center">
+          <IconSearch size={26} stroke={1.5} className="text-black" />
+        </span>
+
+        {/* PROFILE */}
+        <span className="flex h-7 w-7 cursor-pointer items-center justify-center">
+          <IconUser size={26} stroke={1.5} className="text-black" />
+        </span>
 
         {/* INSTAGRAM */}
         <span className="flex h-7 w-7 cursor-pointer items-center justify-center">
@@ -129,12 +159,29 @@ export default function Navbar() {
           )}
         </button>
 
-        <button type="button" aria-label="Menu" aria-expanded={menuOpen} onClick={toggleMenu} className="flex h-7 w-11 cursor-pointer items-center justify-center">
-          <Image src="/svg/icons/hamburg.svg" alt="Menu" width={56} height={35} className="h-auto max-h-full w-auto max-w-full object-contain" />
+        <button
+          type="button"
+          aria-label="Menu"
+          aria-expanded={menuOpen}
+          onClick={toggleMenu}
+          className="flex h-7 w-11 cursor-pointer items-center justify-center"
+        >
+          <Image
+            src="/svg/icons/hamburg.svg"
+            alt="Menu"
+            width={56}
+            height={35}
+            className="h-auto max-h-full w-auto max-w-full object-contain"
+          />
         </button>
       </div>
 
-      <MegaMenu open={menuOpen} onClose={() => setMenuOpen(false)} categories={categories} loading={categoriesLoading && !categoriesLoaded} />
+      <MegaMenu
+        open={menuOpen}
+        onClose={() => setMenuOpen(false)}
+        categories={categories}
+        loading={categoriesLoading && !categoriesLoaded}
+      />
     </nav>
   );
 }
