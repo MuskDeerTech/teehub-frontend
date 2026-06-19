@@ -258,7 +258,7 @@ const JERSEY_FACETS: Pick<Product, "themes" | "type" | "sleeve"> = {
 export const iplJerseys: Product[] = [
   {
     slug: "rcb-jersey-2026",
-    title: "RCB JERSEY 2026",
+    title: "BENGALURU PRACTICE JERSEY 2026",
     bg: "#BF5550",
     priceMin: 899,
     priceMax: 1099,

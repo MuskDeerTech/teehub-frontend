@@ -5,6 +5,13 @@ import type { JerseyDrop } from "@/lib/products";
 
 type DropWithMeta = JerseyDrop & { slug?: string; bgColor?: string };
 
+// Match a latestDrop to its slug by finding the iplJersey with the same title
+function findSlug(title: string): string | undefined {
+  return iplJerseys.find(
+    (p) => p.title.toLowerCase() === title.toLowerCase()
+  )?.slug;
+}
+
 export default function LatestDrops({
   productPage = false,
   excludeSlug,
@@ -22,11 +29,14 @@ export default function LatestDrops({
           title: p.title,
           image: p.image ?? "",
           alt: p.title,
-          bg: "",           // not used — bgColor takes over
-          bgColor: p.bg,    // raw hex, applied via inline style
+          bg: "",
+          bgColor: p.bg,
           price: `₹${p.priceMin}.00 – ₹${p.priceMax}.00`,
         }))
-    : latestDrops;
+    : latestDrops.map((d) => ({
+        ...d,
+        slug: findSlug(d.title),
+      }));
 
   return (
     <section className="w-full bg-[#f5f5f5] px-[clamp(16px,4vw,80px)] py-[60px]">
@@ -56,6 +66,7 @@ export default function LatestDrops({
             drop={drop}
             compact={productPage}
             bgColor={drop.bgColor}
+            href={drop.slug ? `/product/${drop.slug}` : undefined}
           />
         ))}
       </div>

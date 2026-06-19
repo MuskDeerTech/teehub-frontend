@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Image from "next/image";
 import {
   IconChevronLeft,
@@ -8,35 +9,25 @@ import {
   IconUser,
   IconFileCheck,
 } from "@tabler/icons-react";
-import type { CustomerData } from "./CartContext";
-import CheckoutOverlay from "./CheckoutOverlay";
-
-interface CartRegisterProps {
-  open: boolean;
-  totalCount: number;
-  totalMrp: number;
-  totalPrice: number;
-  phone: string;
-  customer?: CustomerData | null;
-  onClose: () => void;
-  onBack?: () => void;
-  onSuccess?: (customer: CustomerData) => void;
-}
+import { useCart } from "@/components/cart/CartContext";
 
 const INPUT =
   "w-full border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-[#f36d43] rounded-sm";
 
-export default function CartRegister({
-  open,
-  totalCount,
-  totalMrp,
-  totalPrice,
-  phone,
-  customer,
-  onClose,
-  onBack,
-  onSuccess,
-}: CartRegisterProps) {
+export default function CheckoutAddressPage() {
+  const router = useRouter();
+  const {
+    items,
+    totalCount,
+    totalMrp,
+    totalPrice,
+    phone,
+    customer,
+    closeCart,
+    goToStep,
+    setCustomer,
+  } = useCart();
+
   const [selectedCoupon, setSelectedCoupon] = useState<number | null>(1);
   const [saveAs, setSaveAs] = useState<"Home" | "Work">("Home");
   const [showSuccess, setShowSuccess] = useState(false);
@@ -75,6 +66,19 @@ export default function CartRegister({
     return e;
   };
 
+  // Back goes to the login step of the drawer (login/details still live
+  // there), so we re-open the drawer at "login" and land on the storefront.
+  const handleBack = () => {
+    goToStep("login");
+    router.push("/");
+  };
+
+  // Close abandons checkout entirely.
+  const handleClose = () => {
+    closeCart();
+    router.push("/");
+  };
+
   const handleContinue = async () => {
     const e = validate();
     if (Object.keys(e).length) {
@@ -94,7 +98,7 @@ export default function CartRegister({
      });*/
 
       setShowSuccess(true);
-      onSuccess?.({
+      setCustomer({
         fullName: form.fullName.trim(),
         address: [form.flatHouse.trim(), form.apartment.trim()]
           .filter(Boolean)
@@ -105,6 +109,7 @@ export default function CartRegister({
         phone: phone ? `+91 ${phone}` : "",
         email: form.email.trim(),
       });
+      router.push("/checkout/payment");
     } catch {
       setSubmitError("Something went wrong. Please try again.");
     } finally {
@@ -113,103 +118,97 @@ export default function CartRegister({
   };
 
   return (
-    <CheckoutOverlay
-      open={open}
-      onClose={onClose}
-      ariaLabel="Delivery address"
-      variant="drawer"
-    >
-         {/*HEADER*/}
-          <div className="px-4 pt-5"></div>
-        <div className="flex items-start justify-between">
-      
-         
-          <div className="flex flex-1 items-center gap-2">
-            <button onClick={onBack ?? onClose}>
-              <IconChevronLeft size={28} />
-            </button>
-
-            <Image
-              src="/images/teehub-logo.png"
-              alt="TeeHub Logo"
-              width={120}
-              height={40}
-              className="h-12 w-auto"
-            />
-          </div>
-          
-
-          {/* Price section */}
-          <div className="ml-auto text-right">
-            <p className="text-sm text-gray-500">
-              Free gift added • {totalCount} Items
-            </p>
-
-            <div className="flex items-center justify-end gap-2">
-              <span className="text-lg text-gray-400 line-through">
-                ₹{totalMrp}
-              </span>
-
-              <span className="text-2xl font-bold text-[#F26522]">
-                ₹{totalPrice}
-              </span>
-            </div>
-          </div>
-
-          {/* Close button */}
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Close address form"
-            className="self-center ml-4 text-xl leading-none"
-          >
-            ✕
+    <div className="mx-auto min-h-screen w-full max-w-6xl bg-white">
+      {/* HEADER */}
+      <div className="px-4 pt-5" />
+      <div className="flex items-start justify-between px-6">
+        <div className="flex flex-1 items-center gap-2">
+          <button onClick={handleBack} aria-label="Back to login">
+            <IconChevronLeft size={28} />
           </button>
+
+          {/*<Image
+            src="/images/teehub-logo.png"
+            alt="TeeHub Logo"
+            width={120}
+            height={40}
+            className="h-10 w-auto"
+          />*/}
         </div>
 
-        {/* BANNER */}
-        <div className="mt-5 bg-[#EAEAEA] py-3 text-center text-xl font-semibold">
-          9000+ Orders Delivered Last Month
-        </div>
+        {/* Price section 
+        <div className="ml-auto text-right">
+          <p className="text-sm text-gray-500">
+            Free gift added • {totalCount} Items
+          </p>
 
-        {/* COUPONS */}
-        <div className="mt-4 px-6">
-          <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
-            {[1, 2, 3].map((item) => (
-              <button
-                type="button"
-                key={item}
-                onClick={() => setSelectedCoupon(item)}
-                aria-pressed={selectedCoupon === item}
-                className={`min-w-[150px] flex-shrink-0 rounded-lg border p-3 text-left transition ${
-                  selectedCoupon === item
-                    ? "border-[#F26522]"
-                    : "border-gray-200 bg-white"
-                }`}
-              >
-                <div className="mb-1 flex justify-between">
-                  <span className="text-xs font-semibold">
-                    Coupon Name {item}
-                  </span>
-                  <span className="text-[10px] text-gray-500">{item}/6</span>
-                </div>
-                <div className="text-[11px] text-gray-500 leading-snug">
-                  Extra discount on selected items
-                </div>
-              </button>
-            ))}
+          <div className="flex items-center justify-end gap-2">
+            <span className="text-l text-gray-400 line-through">
+              ₹{totalMrp}
+            </span>
+
+            <span className="text-xl font-bold text-[#F26522]">
+              ₹{totalPrice}
+            </span>
           </div>
+        </div>*/}
+
+        {/* Close button */}
+        <button
+          type="button"
+          onClick={handleClose}
+          aria-label="Close and return to store"
+          className="flex flex-0 self-right ml-4 text-xl leading-none"
+        >
+          ✕
+        </button>
+      </div>
+
+      {/* BANNER */}
+      <div className="mt-5 bg-[#EAEAEA] py-3 text-center text-xl font-semibold">
+        9000+ Orders Delivered Last Month
+      </div>
+
+      {/* COUPONS */}
+      <div className="mt-4 px-6">
+        <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
+          {[1, 2, 3].map((item) => (
+            <button
+              type="button"
+              key={item}
+              onClick={() => setSelectedCoupon(item)}
+              aria-pressed={selectedCoupon === item}
+              className={`min-w-[357px] flex-shrink-0 rounded-lg border p-3 text-left transition ${
+                selectedCoupon === item
+                  ? "border-[#F26522]"
+                  : "border-gray-200 bg-white"
+              }`}
+            >
+              <div className="mb-1 flex justify-between">
+                <span className="text-xs font-semibold">
+                  Coupon Name {item}
+                </span>
+                <span className="text-[10px] text-gray-500">{item}/6</span>
+              </div>
+              <div className="text-[11px] text-gray-500 leading-snug">
+                Extra discount on selected items
+              </div>
+            </button>
+          ))}
         </div>
+      </div>
 
-        {/* SUCCESS BANNER */}
-        {showSuccess && (
-          <div className="mx-6 mt-4 flex items-center justify-center gap-2 rounded-md bg-green-100 py-2 text-sm font-semibold text-green-700">
-            <IconFileCheck size={18} />
-            Registered Successfully
-          </div>
-        )}
+      <div className="grid grid-cols-1 gap-6 px-6 pb-8 pt-4 lg:grid-cols-[minmax(0,1fr)_380px]">
+        {/* LEFT — FORM */}
+        <div>
+          {/* SUCCESS BANNER */}
+          {showSuccess && (
+            <div className="mb-4 flex items-center justify-center gap-2 rounded-md bg-green-100 py-2 text-sm font-semibold text-green-700">
+              <IconFileCheck size={18} />
+              Registered Successfully
+            </div>
+          )}
 
-        <div className="px-6 pb-8 pt-4">
           {/* DELIVERY ADDRESS */}
           <div className="mb-4 flex items-center gap-2">
             <IconMapPin size={20} />
@@ -388,6 +387,82 @@ export default function CartRegister({
             </span>
           </div>
         </div>
-    </CheckoutOverlay>
+
+        {/* RIGHT — ORDER SUMMARY */}
+        <div className="lg:row-start-right">
+          <div className="rounded-lg border border-[#e5e5e5] bg-white p-5 lg:sticky lg:top-20">
+            <h2 className="mb-3 text-base font-semibold text-black">
+              Order Summary
+            </h2>
+
+            <div className="flex max-h-[420px] flex-col gap-3 overflow-y-auto pr-1">
+              {items.length === 0 && (
+                <p className="text-sm text-gray-400">Your cart is empty.</p>
+              )}
+
+              {items.map((item) => (
+                <div key={item.lineId} className="flex gap-3">
+                  <div className="relative h-16 w-14 flex-shrink-0 overflow-hidden rounded-md border border-[#eee] bg-[#fafafa]">
+                    {item.image && (
+                      <Image
+                        src={item.image}
+                        alt={item.name}
+                        fill
+                        className="object-contain"
+                      />
+                    )}
+                    <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-gray-700 text-[10px] font-semibold text-white">
+                      {item.quantity}
+                    </span>
+                  </div>
+
+                  <div className="flex flex-1 flex-col justify-center">
+                    <p className="line-clamp-2 text-sm font-medium leading-snug text-black">
+                      {item.name}
+                    </p>
+                    <p className="mt-0.5 text-xs text-gray-500">
+                      Size: {item.size}
+                      {item.customName && <span> • {item.customName}</span>}
+                    </p>
+                  </div>
+
+                  <div className="flex-shrink-0 text-right">
+                    <p className="text-sm font-semibold text-black">
+                      ₹{item.price * item.quantity}
+                    </p>
+                    {item.mrp > item.price && (
+                      <p className="text-xs text-gray-400 line-through">
+                        ₹{item.mrp * item.quantity}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-4 space-y-1.5 border-t border-[#eee] pt-3 text-sm">
+              <div className="flex justify-between text-gray-600">
+                <span>Subtotal ({totalCount} items)</span>
+                <span>₹{totalMrp}</span>
+              </div>
+              {totalMrp > totalPrice && (
+                <div className="flex justify-between text-green-600">
+                  <span>Discount</span>
+                  <span>-₹{totalMrp - totalPrice}</span>
+                </div>
+              )}
+              <div className="flex justify-between text-gray-600">
+                <span>Shipping</span>
+                <span className="text-green-600">Free</span>
+              </div>
+              <div className="mt-2 flex justify-between border-t border-[#eee] pt-2 text-base font-semibold text-black">
+                <span>Total</span>
+                <span>₹{totalPrice}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }

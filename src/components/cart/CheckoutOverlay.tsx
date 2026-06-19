@@ -44,7 +44,7 @@ export default function CheckoutOverlay({
 
   return (
     <div
-      className={`fixed inset-0 z-[130] overflow-hidden ${
+      className={`fixed inset-0 z-[9999] overflow-hidden ${
         open ? "pointer-events-auto" : "pointer-events-none"
       }`}
       aria-hidden={!open}

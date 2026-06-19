@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Image from "next/image";
 import {
   IconChevronLeft,
@@ -16,19 +17,7 @@ import {
   IconPlus,
   IconQrcode,
 } from "@tabler/icons-react";
-import type { CustomerData } from "./CartContext";
-import CheckoutOverlay from "./CheckoutOverlay";
-
-interface CartPaymentProps {
-  open: boolean;
-  totalCount: number;
-  totalMrp: number;
-  totalPrice: number;
-  onClose: () => void;
-  onBack?: () => void;
-  onSuccess?: () => void;
-  customer?: CustomerData | null;
-}
+import { useCart } from "@/components/cart/CartContext";
 
 const WALLETS = [
   {
@@ -50,16 +39,10 @@ const BANKS = [
   },
 ];
 
-export default function CartPayment({
-  open,
-  totalCount,
-  totalMrp,
-  totalPrice,
-  onClose,
-  onBack,
-  onSuccess,
-  customer,
-}: CartPaymentProps) {
+export default function CheckoutPaymentPage() {
+  const router = useRouter();
+  const { totalCount, totalMrp, totalPrice, customer, closeCart } = useCart();
+
   const [selectedCoupon, setSelectedCoupon] = useState<number | null>(1);
   const [selectedPayment, setSelectedPayment] = useState("online");
   const [expandedSection, setExpandedSection] = useState<string | null>(null);
@@ -72,6 +55,15 @@ export default function CartPayment({
   const [submitError, setSubmitError] = useState("");
 
   const onlineTotal = Math.max(0, totalPrice - 30);
+
+  // Back goes to the address page (previous step).
+  const handleBack = () => router.push("/checkout/address");
+
+  // Close abandons checkout entirely.
+  const handleClose = () => {
+    closeCart();
+    router.push("/");
+  };
 
   const toggleSection = (id: string) => {
     setExpandedSection((prev) => (prev === id ? null : id));
@@ -106,7 +98,8 @@ export default function CartPayment({
       //   headers: { "Content-Type": "application/json" },
       //   body: JSON.stringify({ paymentMethod: selectedPayment, couponCode, makeGift }),
       // });
-      onSuccess?.();
+      closeCart();
+      router.push("/");
     } catch {
       setSubmitError("Something went wrong. Please try again.");
     } finally {
@@ -115,52 +108,50 @@ export default function CartPayment({
   };
 
   return (
-    <CheckoutOverlay
-      open={open}
-      onClose={onClose}
-      ariaLabel="Payment"
-      variant="drawer"
-    >
-      {/* HEADER */}
-      <div className="px-4 pt-5"></div>
-      <div className="flex items-start justify-between">
-        <div className="flex items-center gap-2">
-          <button onClick={onBack ?? onClose}>
+    <div className="mx-auto min-h-screen w-full max-w-2xl bg-white">
+       {/* HEADER */}
+      <div className="px-4 pt-5" />
+      <div className="flex items-start justify-between px-6">
+        <div className="flex flex-1 items-center gap-2">
+          <button onClick={handleBack} aria-label="Back to login">
             <IconChevronLeft size={28} />
           </button>
-          <Image
+
+          {/*<Image
             src="/images/teehub-logo.png"
             alt="TeeHub Logo"
             width={120}
             height={40}
-            className="h-12 w-auto"
-          />
+            className="h-10 w-auto"
+          />*/}
         </div>
 
-        <div className="flex items-center gap-4">
-          <div className="text-right">
-            <p className="text-sm text-gray-500">
-              Free gift added • {totalCount} Items
-            </p>
-            <div className="flex items-center justify-end gap-2">
-              <span className="text-lg text-gray-400 line-through">
-                ₹{totalMrp}
-              </span>
-              <span className="text-2xl font-bold text-[#F26522]">
-                ₹{totalPrice}
-              </span>
-            </div>
+        {/* Price section*/} 
+        <div className="ml-auto text-right">
+          <p className="text-sm text-gray-500">
+            Free gift added • {totalCount} Items
+          </p>
+
+          <div className="flex items-center justify-end gap-2">
+            <span className="text-l text-gray-400 line-through">
+              ₹{totalMrp}
+            </span>
+
+            <span className="text-xl font-bold text-[#F26522]">
+              ₹{totalPrice}
+            </span>
           </div>
-
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Close payment"
-            className="text-xl leading-none "
-          >
-            ✕
-          </button>
         </div>
+
+        {/* Close button */}
+        <button
+          type="button"
+          onClick={handleClose}
+          aria-label="Close and return to store"
+          className="flex flex-0 self-right ml-4 text-xl leading-none"
+        >
+          ✕
+        </button>
       </div>
 
       {/* BANNER */}
@@ -206,7 +197,7 @@ export default function CartPayment({
               <span className="font-semibold text-sm">Delivery To</span>
             </div>
             <button
-              onClick={onBack}
+              onClick={handleBack}
               className="text-sm font-semibold text-white bg-[#f36d43] px-4 py-1 rounded-md cursor-pointer"
             >
               Change
@@ -645,6 +636,6 @@ export default function CartPayment({
           </span>
         </div>
       </div>
-    </CheckoutOverlay>
+    </div>
   );
 }
