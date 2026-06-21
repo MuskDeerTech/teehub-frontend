@@ -30,7 +30,7 @@ async function findEvent(payload: Payload, deliveryId: string) {
 }
 
 export async function POST(request: Request) {
-  const secret = process.env.WOOCOMMERCE_WEBHOOK_SECRET;
+  const secret = process.env.WOOCOMMERCE_WEBHOOK_SECRET?.trim();
   if (!secret) {
     return Response.json(
       { error: "Webhook secret is not configured." },

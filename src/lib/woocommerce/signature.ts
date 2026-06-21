@@ -9,10 +9,21 @@ export function verifyWooSignature(
   signature: string | null,
   secret: string,
 ) {
-  if (!signature || !secret) return false;
-  const expected = Buffer.from(createWooSignature(rawBody, secret));
-  const received = Buffer.from(signature);
-  return (
-    expected.length === received.length && timingSafeEqual(expected, received)
-  );
+  const normalizedSecret = secret.trim();
+  const normalizedSignature = signature?.trim();
+  if (!normalizedSignature || !normalizedSecret) return false;
+
+  try {
+    const expected = Buffer.from(
+      createWooSignature(rawBody, normalizedSecret),
+      "base64",
+    );
+    const received = Buffer.from(normalizedSignature, "base64");
+    return (
+      expected.length === received.length &&
+      timingSafeEqual(expected, received)
+    );
+  } catch {
+    return false;
+  }
 }
