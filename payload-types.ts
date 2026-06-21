@@ -73,6 +73,7 @@ export interface Config {
     categories: Category;
     products: Product;
     orders: Order;
+    'webhook-events': WebhookEvent;
     pages: Page;
     media: Media;
     'payload-kv': PayloadKv;
@@ -87,6 +88,7 @@ export interface Config {
     categories: CategoriesSelect<false> | CategoriesSelect<true>;
     products: ProductsSelect<false> | ProductsSelect<true>;
     orders: OrdersSelect<false> | OrdersSelect<true>;
+    'webhook-events': WebhookEventsSelect<false> | WebhookEventsSelect<true>;
     pages: PagesSelect<false> | PagesSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
@@ -183,11 +185,29 @@ export interface Admin {
  */
 export interface Customer {
   id: number;
+  woocommerceId?: number | null;
+  /**
+   * Imported accounts receive a random password and must reset it before signing in.
+   */
+  requiresPasswordReset?: boolean | null;
+  woocommerceData?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
   fullName?: string | null;
   /**
    * Primary contact number (also used by phone-OTP login later).
    */
   phone?: string | null;
+  registeredAt?: string | null;
+  lastActiveAt?: string | null;
+  orderCount?: number | null;
+  totalSpent?: number | null;
   addresses?:
     | {
         /**
@@ -262,6 +282,7 @@ export interface Category {
  */
 export interface Media {
   id: number;
+  woocommerceId?: number | null;
   alt: string;
   updatedAt: string;
   createdAt: string;
@@ -281,9 +302,63 @@ export interface Media {
  */
 export interface Product {
   id: number;
+  woocommerceId?: number | null;
   title: string;
   slug: string;
   category: number | Category;
+  sku?: string | null;
+  woocommerceStatus?: ('draft' | 'pending' | 'private' | 'publish' | 'trash') | null;
+  woocommerceType?: ('simple' | 'grouped' | 'external' | 'variable') | null;
+  originalCreatedAt?: string | null;
+  stockStatus?: ('instock' | 'outofstock' | 'onbackorder') | null;
+  stockQuantity?: number | null;
+  shortDescription?: string | null;
+  /**
+   * All WooCommerce category IDs. The primary category remains in the category relationship.
+   */
+  woocommerceCategoryIds?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  variations?:
+    | {
+        woocommerceId: number;
+        sku?: string | null;
+        price?: number | null;
+        regularPrice?: number | null;
+        salePrice?: number | null;
+        stockQuantity?: number | null;
+        stockStatus?: ('instock' | 'outofstock' | 'onbackorder') | null;
+        attributes?:
+          | {
+              [k: string]: unknown;
+            }
+          | unknown[]
+          | string
+          | number
+          | boolean
+          | null;
+        imageUrl?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Original WooCommerce fields retained for auditing and plugin-specific metadata.
+   */
+  woocommerceData?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
   isPublished?: boolean | null;
   isFeatured?: boolean | null;
   sortOrder?: number | null;
@@ -376,11 +451,15 @@ export interface Product {
  */
 export interface Order {
   id: number;
+  woocommerceId?: number | null;
   /**
    * Auto-generated on creation.
    */
   orderNumber?: string | null;
   status?: ('pending' | 'confirmed' | 'shipped' | 'delivered' | 'cancelled') | null;
+  woocommerceStatus?: string | null;
+  originalCreatedAt?: string | null;
+  currency?: string | null;
   customer?: (number | null) | Customer;
   /**
    * One row per cart line. Title/price/size are snapshotted at purchase time.
@@ -392,6 +471,8 @@ export interface Order {
          */
         product?: (number | null) | Product;
         name: string;
+        woocommerceProductId?: number | null;
+        woocommerceVariationId?: number | null;
         image?: string | null;
         size?: string | null;
         quantity: number;
@@ -411,9 +492,35 @@ export interface Order {
   city?: string | null;
   state?: string | null;
   pincode?: string | null;
+  /**
+   * Original WooCommerce billing address.
+   */
+  billing?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  /**
+   * Original WooCommerce shipping address.
+   */
+  shipping?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
   payment?: {
     method?: ('online' | 'cod' | 'wallet' | 'netbanking' | 'card') | null;
     status?: ('pending' | 'paid' | 'failed' | 'refunded') | null;
+    transactionId?: string | null;
+    title?: string | null;
   };
   giftWrap?: boolean | null;
   /**
@@ -423,6 +530,45 @@ export interface Order {
   totalCount?: number | null;
   totalMrp?: number | null;
   totalPrice?: number | null;
+  shippingTotal?: number | null;
+  discountTotal?: number | null;
+  taxTotal?: number | null;
+  refundedTotal?: number | null;
+  customerNote?: string | null;
+  woocommerceData?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "webhook-events".
+ */
+export interface WebhookEvent {
+  id: number;
+  deliveryId: string;
+  topic: string;
+  resourceId?: number | null;
+  status: 'received' | 'processed' | 'failed' | 'ignored';
+  attempts?: number | null;
+  processedAt?: string | null;
+  error?: string | null;
+  payload:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -499,6 +645,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'orders';
         value: number | Order;
+      } | null)
+    | ({
+        relationTo: 'webhook-events';
+        value: number | WebhookEvent;
       } | null)
     | ({
         relationTo: 'pages';
@@ -589,8 +739,15 @@ export interface AdminsSelect<T extends boolean = true> {
  * via the `definition` "customers_select".
  */
 export interface CustomersSelect<T extends boolean = true> {
+  woocommerceId?: T;
+  requiresPasswordReset?: T;
+  woocommerceData?: T;
   fullName?: T;
   phone?: T;
+  registeredAt?: T;
+  lastActiveAt?: T;
+  orderCount?: T;
+  totalSpent?: T;
   addresses?:
     | T
     | {
@@ -648,9 +805,33 @@ export interface CategoriesSelect<T extends boolean = true> {
  * via the `definition` "products_select".
  */
 export interface ProductsSelect<T extends boolean = true> {
+  woocommerceId?: T;
   title?: T;
   slug?: T;
   category?: T;
+  sku?: T;
+  woocommerceStatus?: T;
+  woocommerceType?: T;
+  originalCreatedAt?: T;
+  stockStatus?: T;
+  stockQuantity?: T;
+  shortDescription?: T;
+  woocommerceCategoryIds?: T;
+  variations?:
+    | T
+    | {
+        woocommerceId?: T;
+        sku?: T;
+        price?: T;
+        regularPrice?: T;
+        salePrice?: T;
+        stockQuantity?: T;
+        stockStatus?: T;
+        attributes?: T;
+        imageUrl?: T;
+        id?: T;
+      };
+  woocommerceData?: T;
   isPublished?: T;
   isFeatured?: T;
   sortOrder?: T;
@@ -703,14 +884,20 @@ export interface ProductsSelect<T extends boolean = true> {
  * via the `definition` "orders_select".
  */
 export interface OrdersSelect<T extends boolean = true> {
+  woocommerceId?: T;
   orderNumber?: T;
   status?: T;
+  woocommerceStatus?: T;
+  originalCreatedAt?: T;
+  currency?: T;
   customer?: T;
   items?:
     | T
     | {
         product?: T;
         name?: T;
+        woocommerceProductId?: T;
+        woocommerceVariationId?: T;
         image?: T;
         size?: T;
         quantity?: T;
@@ -726,17 +913,43 @@ export interface OrdersSelect<T extends boolean = true> {
   city?: T;
   state?: T;
   pincode?: T;
+  billing?: T;
+  shipping?: T;
   payment?:
     | T
     | {
         method?: T;
         status?: T;
+        transactionId?: T;
+        title?: T;
       };
   giftWrap?: T;
   couponCode?: T;
   totalCount?: T;
   totalMrp?: T;
   totalPrice?: T;
+  shippingTotal?: T;
+  discountTotal?: T;
+  taxTotal?: T;
+  refundedTotal?: T;
+  customerNote?: T;
+  woocommerceData?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "webhook-events_select".
+ */
+export interface WebhookEventsSelect<T extends boolean = true> {
+  deliveryId?: T;
+  topic?: T;
+  resourceId?: T;
+  status?: T;
+  attempts?: T;
+  processedAt?: T;
+  error?: T;
+  payload?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -757,6 +970,7 @@ export interface PagesSelect<T extends boolean = true> {
  * via the `definition` "media_select".
  */
 export interface MediaSelect<T extends boolean = true> {
+  woocommerceId?: T;
   alt?: T;
   updatedAt?: T;
   createdAt?: T;

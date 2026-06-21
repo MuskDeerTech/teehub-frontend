@@ -10,6 +10,7 @@ import {
   buildConfig,
   type Access,
   type CollectionConfig,
+  type FieldAccess,
   type GlobalConfig,
 } from "payload";
 import { fileURLToPath } from "url";
@@ -18,7 +19,10 @@ import sharp from "sharp";
 const filename = fileURLToPath(import.meta.url);
 const dirname = path.dirname(filename);
 
-const isLoggedIn = ({ req }: { req: { user?: unknown } }) => Boolean(req.user);
+const isAdmin: Access = ({ req: { user } }) =>
+  Boolean(user && user.collection === "admins");
+const isAdminField: FieldAccess = ({ req: { user } }) =>
+  Boolean(user && user.collection === "admins");
 
 // For PII-bearing customer records: an admin sees everything; a logged-in
 // customer is scoped to their own document (Payload turns the returned query
@@ -27,6 +31,31 @@ const adminOrSelf: Access = ({ req: { user } }) => {
   if (!user) return false;
   if (user.collection === "admins") return true;
   return { id: { equals: user.id } };
+};
+
+const adminOrOrderOwner: Access = ({ req: { user } }) => {
+  if (!user) return false;
+  if (user.collection === "admins") return true;
+  if (user.collection === "customers") {
+    return { customer: { equals: user.id } };
+  }
+  return false;
+};
+
+const woocommerceIdField = {
+  name: "woocommerceId",
+  label: "WooCommerce ID",
+  type: "number" as const,
+  unique: true,
+  index: true,
+  access: {
+    create: isAdminField,
+    update: isAdminField,
+  },
+  admin: {
+    position: "sidebar" as const,
+    readOnly: true,
+  },
 };
 
 const Admins: CollectionConfig = {
@@ -59,15 +88,16 @@ const Media: CollectionConfig = {
   slug: "media",
   access: {
     read: () => true,
-    create: isLoggedIn,
-    update: isLoggedIn,
-    delete: isLoggedIn,
+    create: isAdmin,
+    update: isAdmin,
+    delete: isAdmin,
   },
   admin: {
     useAsTitle: "alt",
   },
   upload: true,
   fields: [
+    woocommerceIdField,
     {
       name: "alt",
       type: "text",
@@ -80,9 +110,9 @@ const Categories: CollectionConfig = {
   slug: "categories",
   access: {
     read: () => true,
-    create: isLoggedIn,
-    update: isLoggedIn,
-    delete: isLoggedIn,
+    create: isAdmin,
+    update: isAdmin,
+    delete: isAdmin,
   },
   admin: {
     useAsTitle: "name",
@@ -183,17 +213,25 @@ const Categories: CollectionConfig = {
 // src/components/category/FilterPanel.tsx.
 const Products: CollectionConfig = {
   slug: "products",
+  defaultSort: "-originalCreatedAt",
   access: {
     read: () => true,
-    create: isLoggedIn,
-    update: isLoggedIn,
-    delete: isLoggedIn,
+    create: isAdmin,
+    update: isAdmin,
+    delete: isAdmin,
   },
   admin: {
     useAsTitle: "title",
-    defaultColumns: ["title", "category", "priceMin", "isPublished"],
+    defaultColumns: [
+      "title",
+      "category",
+      "priceMin",
+      "isPublished",
+      "originalCreatedAt",
+    ],
   },
   fields: [
+    woocommerceIdField,
     // Identity — shared by every screen.
     {
       name: "title",
@@ -211,6 +249,89 @@ const Products: CollectionConfig = {
       type: "relationship",
       relationTo: "categories",
       required: true,
+    },
+    {
+      name: "sku",
+      label: "SKU",
+      type: "text",
+      index: true,
+    },
+    {
+      name: "woocommerceStatus",
+      type: "select",
+      options: ["draft", "pending", "private", "publish", "trash"],
+      admin: { position: "sidebar" },
+    },
+    {
+      name: "woocommerceType",
+      type: "select",
+      options: ["simple", "grouped", "external", "variable"],
+      admin: { position: "sidebar" },
+    },
+    {
+      name: "originalCreatedAt",
+      label: "Date",
+      type: "date",
+      index: true,
+      admin: {
+        readOnly: true,
+        position: "sidebar",
+        components: {
+          Cell: "/src/components/admin/OrderDateCell#default",
+        },
+      },
+    },
+    {
+      name: "stockStatus",
+      type: "select",
+      options: ["instock", "outofstock", "onbackorder"],
+      admin: { position: "sidebar" },
+    },
+    {
+      name: "stockQuantity",
+      type: "number",
+      min: 0,
+      admin: { position: "sidebar" },
+    },
+    {
+      name: "shortDescription",
+      type: "textarea",
+    },
+    {
+      name: "woocommerceCategoryIds",
+      type: "json",
+      admin: {
+        description:
+          "All WooCommerce category IDs. The primary category remains in the category relationship.",
+      },
+    },
+    {
+      name: "variations",
+      type: "array",
+      fields: [
+        { name: "woocommerceId", type: "number", required: true },
+        { name: "sku", type: "text" },
+        { name: "price", type: "number", min: 0 },
+        { name: "regularPrice", type: "number", min: 0 },
+        { name: "salePrice", type: "number", min: 0 },
+        { name: "stockQuantity", type: "number", min: 0 },
+        {
+          name: "stockStatus",
+          type: "select",
+          options: ["instock", "outofstock", "onbackorder"],
+        },
+        { name: "attributes", type: "json" },
+        { name: "imageUrl", type: "text" },
+      ],
+    },
+    {
+      name: "woocommerceData",
+      label: "WooCommerce legacy snapshot",
+      type: "json",
+      admin: {
+        description:
+          "Original WooCommerce fields retained for auditing and plugin-specific metadata.",
+      },
     },
     // Publishing controls live in the sidebar so they're reachable from any tab.
     {
@@ -493,9 +614,9 @@ const Pages: CollectionConfig = {
   slug: "pages",
   access: {
     read: () => true,
-    create: isLoggedIn,
-    update: isLoggedIn,
-    delete: isLoggedIn,
+    create: isAdmin,
+    update: isAdmin,
+    delete: isAdmin,
   },
   admin: {
     useAsTitle: "title",
@@ -540,18 +661,49 @@ const Pages: CollectionConfig = {
 const Customers: CollectionConfig = {
   slug: "customers",
   auth: true,
+  defaultSort: "-lastActiveAt",
   access: {
     // Public signup; reads/edits are self-scoped (or admin). Deletes are staff.
     create: () => true,
     read: adminOrSelf,
     update: adminOrSelf,
-    delete: isLoggedIn,
+    delete: isAdmin,
   },
   admin: {
     useAsTitle: "email",
-    defaultColumns: ["fullName", "email", "phone"],
+    defaultColumns: [
+      "fullName",
+      "lastActiveAt",
+      "orderCount",
+      "totalSpent",
+      "email",
+    ],
   },
   fields: [
+    woocommerceIdField,
+    {
+      name: "requiresPasswordReset",
+      type: "checkbox",
+      defaultValue: false,
+      access: {
+        create: isAdminField,
+        update: isAdminField,
+      },
+      admin: {
+        position: "sidebar",
+        description:
+          "Imported accounts receive a random password and must reset it before signing in.",
+      },
+    },
+    {
+      name: "woocommerceData",
+      label: "WooCommerce legacy snapshot",
+      type: "json",
+      access: {
+        create: isAdminField,
+        update: isAdminField,
+      },
+    },
     {
       name: "fullName",
       type: "text",
@@ -562,6 +714,48 @@ const Customers: CollectionConfig = {
       index: true,
       admin: {
         description: "Primary contact number (also used by phone-OTP login later).",
+      },
+    },
+    {
+      name: "registeredAt",
+      label: "Date registered",
+      type: "date",
+      admin: {
+        readOnly: true,
+        position: "sidebar",
+      },
+    },
+    {
+      name: "lastActiveAt",
+      label: "Last active",
+      type: "date",
+      index: true,
+      admin: {
+        readOnly: true,
+        components: {
+          Cell: "/src/components/admin/OrderDateCell#default",
+        },
+      },
+    },
+    {
+      name: "orderCount",
+      label: "Orders",
+      type: "number",
+      defaultValue: 0,
+      min: 0,
+      admin: { readOnly: true },
+    },
+    {
+      name: "totalSpent",
+      label: "Total spent",
+      type: "number",
+      defaultValue: 0,
+      min: 0,
+      admin: {
+        readOnly: true,
+        components: {
+          Cell: "/src/components/admin/CurrencyCell#default",
+        },
       },
     },
     // Saved delivery addresses — same shape as the checkout register form, so
@@ -613,15 +807,21 @@ const Customers: CollectionConfig = {
 // orders keep their snapshotted buyer details regardless.
 const Orders: CollectionConfig = {
   slug: "orders",
+  defaultSort: "-originalCreatedAt",
   access: {
-    read: isLoggedIn,
-    create: isLoggedIn,
-    update: isLoggedIn,
-    delete: isLoggedIn,
+    read: adminOrOrderOwner,
+    create: isAdmin,
+    update: isAdmin,
+    delete: isAdmin,
   },
   admin: {
     useAsTitle: "orderNumber",
-    defaultColumns: ["orderNumber", "status", "totalPrice", "createdAt"],
+    defaultColumns: [
+      "orderNumber",
+      "originalCreatedAt",
+      "status",
+      "totalPrice",
+    ],
   },
   hooks: {
     beforeChange: [
@@ -637,14 +837,19 @@ const Orders: CollectionConfig = {
     ],
   },
   fields: [
+    woocommerceIdField,
     {
       name: "orderNumber",
+      label: "Order",
       type: "text",
       unique: true,
       admin: {
         readOnly: true,
         description: "Auto-generated on creation.",
         position: "sidebar",
+        components: {
+          Cell: "/src/components/admin/OrderNumberCell#default",
+        },
       },
     },
     // Fulfilment + payment state live in the sidebar so they're editable from
@@ -654,6 +859,28 @@ const Orders: CollectionConfig = {
       type: "select",
       defaultValue: "pending",
       options: ["pending", "confirmed", "shipped", "delivered", "cancelled"],
+      admin: { position: "sidebar" },
+    },
+    {
+      name: "woocommerceStatus",
+      type: "text",
+      admin: { position: "sidebar" },
+    },
+    {
+      name: "originalCreatedAt",
+      label: "Date",
+      type: "date",
+      admin: {
+        position: "sidebar",
+        components: {
+          Cell: "/src/components/admin/OrderDateCell#default",
+        },
+      },
+    },
+    {
+      name: "currency",
+      type: "text",
+      defaultValue: "INR",
       admin: { position: "sidebar" },
     },
     // Optional link to the account that placed the order. Left empty for guest
@@ -691,6 +918,8 @@ const Orders: CollectionConfig = {
                   },
                 },
                 { name: "name", type: "text", required: true },
+                { name: "woocommerceProductId", type: "number" },
+                { name: "woocommerceVariationId", type: "number" },
                 { name: "image", type: "text" },
                 { name: "size", type: "text" },
                 {
@@ -730,6 +959,16 @@ const Orders: CollectionConfig = {
               ],
             },
             { name: "pincode", type: "text" },
+            {
+              name: "billing",
+              type: "json",
+              admin: { description: "Original WooCommerce billing address." },
+            },
+            {
+              name: "shipping",
+              type: "json",
+              admin: { description: "Original WooCommerce shipping address." },
+            },
           ],
         },
         {
@@ -750,6 +989,8 @@ const Orders: CollectionConfig = {
                   defaultValue: "pending",
                   options: ["pending", "paid", "failed", "refunded"],
                 },
+                { name: "transactionId", type: "text" },
+                { name: "title", type: "text" },
               ],
             },
             {
@@ -772,10 +1013,59 @@ const Orders: CollectionConfig = {
             },
             { name: "totalMrp", type: "number", min: 0 },
             { name: "totalPrice", type: "number", min: 0 },
+            { name: "shippingTotal", type: "number", min: 0 },
+            { name: "discountTotal", type: "number", min: 0 },
+            { name: "taxTotal", type: "number", min: 0 },
+            { name: "refundedTotal", type: "number", min: 0 },
           ],
         },
       ],
     },
+    {
+      name: "customerNote",
+      type: "textarea",
+    },
+    {
+      name: "woocommerceData",
+      label: "WooCommerce legacy snapshot",
+      type: "json",
+    },
+  ],
+};
+
+const WebhookEvents: CollectionConfig = {
+  slug: "webhook-events",
+  access: {
+    read: isAdmin,
+    create: isAdmin,
+    update: isAdmin,
+    delete: isAdmin,
+  },
+  admin: {
+    useAsTitle: "deliveryId",
+    defaultColumns: ["deliveryId", "topic", "status", "processedAt"],
+  },
+  fields: [
+    {
+      name: "deliveryId",
+      type: "text",
+      required: true,
+      unique: true,
+      index: true,
+    },
+    { name: "topic", type: "text", required: true },
+    { name: "resourceId", type: "number" },
+    {
+      name: "status",
+      type: "select",
+      required: true,
+      defaultValue: "received",
+      options: ["received", "processed", "failed", "ignored"],
+    },
+    { name: "attempts", type: "number", defaultValue: 1, min: 1 },
+    { name: "processedAt", type: "date" },
+    { name: "error", type: "textarea" },
+    { name: "payload", type: "json", required: true },
   ],
 };
 
@@ -790,7 +1080,7 @@ const HomePage: GlobalConfig = {
   slug: "homepage",
   access: {
     read: () => true,
-    update: isLoggedIn,
+    update: isAdmin,
   },
   fields: [
     {
@@ -948,7 +1238,16 @@ export default buildConfig({
       TableFeature(),
     ],
   }),
-  collections: [Admins, Customers, Categories, Products, Orders, Pages, Media],
+  collections: [
+    Admins,
+    Customers,
+    Categories,
+    Products,
+    Orders,
+    WebhookEvents,
+    Pages,
+    Media,
+  ],
   globals: [HomePage],
   db: postgresAdapter({
     pool: {
