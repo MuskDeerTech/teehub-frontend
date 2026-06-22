@@ -214,6 +214,16 @@ const Categories: CollectionConfig = {
 const Products: CollectionConfig = {
   slug: "products",
   defaultSort: "-originalCreatedAt",
+  hooks: {
+    beforeChange: [
+      ({ data, operation }) => {
+        if (operation === "create" && data && !data.originalCreatedAt) {
+          data.originalCreatedAt = new Date().toISOString();
+        }
+        return data;
+      },
+    ],
+  },
   access: {
     read: () => true,
     create: isAdmin,
@@ -277,7 +287,7 @@ const Products: CollectionConfig = {
         readOnly: true,
         position: "sidebar",
         components: {
-          Cell: "/src/components/admin/OrderDateCell#default",
+          Cell: "/src/components/admin/ProductDateCell#default",
         },
       },
     },
