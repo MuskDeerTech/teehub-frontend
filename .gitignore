@@ -46,7 +46,9 @@ scripts/.gentypes.compiled.mjs
 scripts/.migrate-woocommerce.mjs
 scripts/.repair-woocommerce.mjs
 scripts/.sync-woocommerce-customers.mjs
+scripts/.sync-woocommerce-customer-metrics.mjs
 scripts/.sync-woocommerce-products.mjs
 scripts/.verify-woocommerce.mjs
 scripts/.woocommerce.test.mjs
 scripts/.woocommerce-migration-checkpoint.json
+scripts/.woocommerce-customer-sync-checkpoint.json

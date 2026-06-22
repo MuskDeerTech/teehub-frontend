@@ -17,6 +17,9 @@ const WOOCOMMERCE_STORE_OFFSET_MS = 5.5 * 60 * 60 * 1000;
 
 function formatOrderDate(value: unknown) {
   const storedDate = new Date(String(value ?? ""));
+  if (!Number.isNaN(storedDate.getTime()) && storedDate.getUTCFullYear() <= 1900) {
+    return "\u2014";
+  }
   if (Number.isNaN(storedDate.getTime())) return "—";
   const date = new Date(
     storedDate.getTime() - WOOCOMMERCE_STORE_OFFSET_MS,
