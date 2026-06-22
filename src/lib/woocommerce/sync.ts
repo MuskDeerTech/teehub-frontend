@@ -291,9 +291,12 @@ export async function syncCustomer(
     phone: customer.billing?.phone || customer.shipping?.phone,
     addresses: customerAddresses(customer),
     registeredAt: customer.date_created,
-    lastActiveAt: customer.date_modified,
-    orderCount: customer.orders_count ?? 0,
-    totalSpent: numberOrZero(customer.total_spent),
+    ...(typeof customer.orders_count === "number"
+      ? { orderCount: customer.orders_count }
+      : {}),
+    ...(customer.total_spent !== undefined
+      ? { totalSpent: numberOrZero(customer.total_spent) }
+      : {}),
     requiresPasswordReset: true,
     woocommerceData: customer,
   };
