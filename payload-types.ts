@@ -206,6 +206,7 @@ export interface Customer {
   phone?: string | null;
   registeredAt?: string | null;
   lastActiveAt?: string | null;
+  lastActiveSource?: ('woocommerce' | 'payload') | null;
   orderCount?: number | null;
   totalSpent?: number | null;
   addresses?:
@@ -746,6 +747,7 @@ export interface CustomersSelect<T extends boolean = true> {
   phone?: T;
   registeredAt?: T;
   lastActiveAt?: T;
+  lastActiveSource?: T;
   orderCount?: T;
   totalSpent?: T;
   addresses?:

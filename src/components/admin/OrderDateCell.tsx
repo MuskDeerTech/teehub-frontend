@@ -10,21 +10,17 @@ const exactDate = new Intl.DateTimeFormat("en", {
   timeZone: "Asia/Kolkata",
 });
 
-// WooCommerce's `date_created` is store-local time without an offset. During
-// the legacy import it was persisted as though that wall-clock value were UTC.
-// Shift it back to the store's UTC+05:30 timezone before calculating "ago".
+// Legacy WooCommerce dates were saved as store-local wall-clock values.
 const WOOCOMMERCE_STORE_OFFSET_MS = 5.5 * 60 * 60 * 1000;
 
-function formatOrderDate(value: unknown) {
+function formatDate(value: unknown, shiftWooCommerceDate: boolean) {
   const storedDate = new Date(String(value ?? ""));
-  if (!Number.isNaN(storedDate.getTime()) && storedDate.getUTCFullYear() <= 1900) {
-    return "\u2014";
-  }
   if (Number.isNaN(storedDate.getTime())) return "—";
-  const date = new Date(
-    storedDate.getTime() - WOOCOMMERCE_STORE_OFFSET_MS,
-  );
+  if (storedDate.getUTCFullYear() <= 1900) return "—";
 
+  const date = shiftWooCommerceDate
+    ? new Date(storedDate.getTime() - WOOCOMMERCE_STORE_OFFSET_MS)
+    : storedDate;
   const elapsedMs = Date.now() - date.getTime();
   if (elapsedMs < 0) return exactDate.format(date);
 
@@ -40,6 +36,22 @@ function formatOrderDate(value: unknown) {
 
 export default function OrderDateCell({
   cellData,
+  collectionSlug,
+  rowData,
 }: DefaultCellComponentProps) {
-  return <span title={String(cellData ?? "")}>{formatOrderDate(cellData)}</span>;
+  const shiftWooCommerceDate =
+    collectionSlug === "orders"
+      ? rowData.woocommerceId !== undefined && rowData.woocommerceId !== null
+      : collectionSlug === "customers"
+        ? rowData.lastActiveSource === "woocommerce" ||
+          (!rowData.lastActiveSource &&
+            rowData.woocommerceId !== undefined &&
+            rowData.woocommerceId !== null)
+        : false;
+
+  return (
+    <span title={String(cellData ?? "")}>
+      {formatDate(cellData, shiftWooCommerceDate)}
+    </span>
+  );
 }

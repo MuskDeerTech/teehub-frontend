@@ -672,6 +672,23 @@ const Customers: CollectionConfig = {
   slug: "customers",
   auth: true,
   defaultSort: "-lastActiveAt",
+  hooks: {
+    beforeChange: [
+      ({ data, operation }) => {
+        if (operation === "create" && data) {
+          const registeredAt = data.registeredAt || new Date().toISOString();
+          data.registeredAt = registeredAt;
+          if (!data.lastActiveAt) data.lastActiveAt = registeredAt;
+          if (!data.lastActiveSource) {
+            data.lastActiveSource = data.woocommerceId
+              ? "woocommerce"
+              : "payload";
+          }
+        }
+        return data;
+      },
+    ],
+  },
   access: {
     // Public signup; reads/edits are self-scoped (or admin). Deletes are staff.
     create: () => true,
@@ -746,6 +763,12 @@ const Customers: CollectionConfig = {
           Cell: "/src/components/admin/OrderDateCell#default",
         },
       },
+    },
+    {
+      name: "lastActiveSource",
+      type: "select",
+      options: ["woocommerce", "payload"],
+      admin: { hidden: true },
     },
     {
       name: "orderCount",
@@ -837,12 +860,53 @@ const Orders: CollectionConfig = {
     beforeChange: [
       ({ data, operation }) => {
         // Human-friendly id generated once on create; the DB id stays the PK.
-        if (operation === "create" && data && !data.orderNumber) {
-          const stamp = Date.now().toString(36).toUpperCase();
-          const rand = Math.random().toString(36).slice(2, 6).toUpperCase();
-          data.orderNumber = `TH-${stamp}-${rand}`;
+        if (operation === "create" && data) {
+          if (!data.orderNumber) {
+            const stamp = Date.now().toString(36).toUpperCase();
+            const rand = Math.random().toString(36).slice(2, 6).toUpperCase();
+            data.orderNumber = `TH-${stamp}-${rand}`;
+          }
+          if (!data.originalCreatedAt) {
+            data.originalCreatedAt = new Date().toISOString();
+          }
         }
         return data;
+      },
+    ],
+    afterChange: [
+      async ({ doc, req }) => {
+        const customerId =
+          typeof doc.customer === "object" && doc.customer
+            ? doc.customer.id
+            : doc.customer;
+        if (!customerId || !doc.originalCreatedAt) return doc;
+
+        const customer = await req.payload.findByID({
+          collection: "customers",
+          id: customerId,
+          depth: 0,
+          overrideAccess: true,
+        });
+        const current = customer.lastActiveAt
+          ? new Date(customer.lastActiveAt).getTime()
+          : 0;
+        const orderDate = new Date(doc.originalCreatedAt).getTime();
+
+        if (!Number.isNaN(orderDate) && orderDate >= current) {
+          await req.payload.update({
+            collection: "customers",
+            id: customerId,
+            data: {
+              lastActiveAt: doc.originalCreatedAt,
+              lastActiveSource: doc.woocommerceId
+                ? "woocommerce"
+                : "payload",
+            },
+            depth: 0,
+            overrideAccess: true,
+          });
+        }
+        return doc;
       },
     ],
   },
