@@ -123,7 +123,7 @@ export default function CheckoutAddressPage() {
       <div className="px-4 pt-5" />
       <div className="flex items-start justify-between px-6">
         <div className="flex flex-1 items-center gap-2">
-          <button onClick={handleBack} aria-label="Back to login">
+          <button onClick={handleBack} aria-label="Back to login" className="cursor-pointer">
             <IconChevronLeft size={28} />
           </button>
 
@@ -158,7 +158,7 @@ export default function CheckoutAddressPage() {
           type="button"
           onClick={handleClose}
           aria-label="Close and return to store"
-          className="flex flex-0 self-right ml-4 text-xl leading-none"
+          className="flex flex-0 self-right ml-4 text-xl leading-none cursor-pointer"
         >
           ✕
         </button>

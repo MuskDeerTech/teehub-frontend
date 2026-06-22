@@ -108,12 +108,12 @@ export default function CheckoutPaymentPage() {
   };
 
   return (
-    <div className="mx-auto min-h-screen w-full max-w-2xl bg-white">
+    <div className="mx-auto min-h-screen w-full max-w-6xl bg-white">
        {/* HEADER */}
       <div className="px-4 pt-5" />
       <div className="flex items-start justify-between px-6">
         <div className="flex flex-1 items-center gap-2">
-          <button onClick={handleBack} aria-label="Back to login">
+          <button onClick={handleBack} aria-label="Back to login" className="cursor-pointer">
             <IconChevronLeft size={28} />
           </button>
 
@@ -148,7 +148,7 @@ export default function CheckoutPaymentPage() {
           type="button"
           onClick={handleClose}
           aria-label="Close and return to store"
-          className="flex flex-0 self-right ml-4 text-xl leading-none"
+          className="flex flex-0 self-right ml-4 text-xl leading-none cursor-pointer"
         >
           ✕
         </button>
@@ -159,16 +159,16 @@ export default function CheckoutPaymentPage() {
         9000+ Orders Delivered Last Month
       </div>
 
-      {/* COUPONS */}
+       {/* COUPONS */}
       <div className="mt-4 px-6">
-        <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
+        <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
           {[1, 2, 3].map((item) => (
             <button
               type="button"
               key={item}
               onClick={() => setSelectedCoupon(item)}
               aria-pressed={selectedCoupon === item}
-              className={`min-w-[150px] flex-shrink-0 rounded-lg border p-3 text-left transition ${
+              className={`min-w-[357px] flex-shrink-0 rounded-lg border p-3 text-left transition ${
                 selectedCoupon === item
                   ? "border-[#F26522]"
                   : "border-gray-200 bg-white"
