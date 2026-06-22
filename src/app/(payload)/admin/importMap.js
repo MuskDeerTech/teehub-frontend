@@ -2,6 +2,7 @@ import { default as default_b72609fdfe494fa7fc30ad69d13527bf } from '../../../..
 import { default as default_f59e992a24c39eff7977373cbcc65cc4 } from '../../../../src/components/admin/CurrencyCell'
 import { default as default_b3bdbaeac36b397934490ab857666025 } from '../../../../src/components/admin/ColorPickerField'
 import { default as default_b7163f7bd6d89a288532e44ab4b202d9 } from '../../../../src/components/admin/ThumbFitField'
+import { default as default_953f92639e3e859f4222a54885ace342 } from '../../../../src/components/admin/ProductDateCell'
 import { default as default_0c1e45c3caa97fafdf84d171bb383668 } from '../../../../src/components/admin/CardFitField'
 import { default as default_c78439ad744d9df7f83f6ecdaf913032 } from '../../../../src/components/admin/ImageFitsField'
 import { default as default_7d8ff6904cf32900a5ac76add5d9bb42 } from '../../../../src/components/admin/DetailSizesField'
@@ -40,6 +41,7 @@ export const importMap = {
   "/src/components/admin/CurrencyCell#default": default_f59e992a24c39eff7977373cbcc65cc4,
   "/src/components/admin/ColorPickerField#default": default_b3bdbaeac36b397934490ab857666025,
   "/src/components/admin/ThumbFitField#default": default_b7163f7bd6d89a288532e44ab4b202d9,
+  "/src/components/admin/ProductDateCell#default": default_953f92639e3e859f4222a54885ace342,
   "/src/components/admin/CardFitField#default": default_0c1e45c3caa97fafdf84d171bb383668,
   "/src/components/admin/ImageFitsField#default": default_c78439ad744d9df7f83f6ecdaf913032,
   "/src/components/admin/DetailSizesField#default": default_7d8ff6904cf32900a5ac76add5d9bb42,

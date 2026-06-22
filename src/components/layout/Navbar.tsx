@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
   IconUser,
@@ -12,6 +13,8 @@ import {
 } from "@tabler/icons-react";
 import { navLinks, type Category } from "@/lib/products";
 import MegaMenu from "@/components/layout/MegaMenu";
+import AuthForm from "@/components/auth/AuthForm";
+import { useAuth } from "@/components/auth/AuthContext";
 import { useCart } from "@/components/cart/CartContext";
 
 type PayloadMedia = { url?: string | null; alt?: string | null };
@@ -50,9 +53,12 @@ function mapCategory(doc: PayloadCategory): Category {
 }
 
 export default function Navbar() {
+  const router = useRouter();
   const { openCart, cartOpen, totalCount } = useCart();
+  const { user } = useAuth();
 
   const [menuOpen, setMenuOpen] = useState(false);
+  const [authOpen, setAuthOpen] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
   const [categoriesLoaded, setCategoriesLoaded] = useState(false);
   const [categoriesLoading, setCategoriesLoading] = useState(false);
@@ -131,9 +137,18 @@ export default function Navbar() {
         </span>
 
         {/* PROFILE */}
-        <span className="flex h-7 w-7 cursor-pointer items-center justify-center">
-          <IconUser size={26} stroke={1.5} className="text-black" />
-        </span>
+        <button
+          type="button"
+          aria-label={user ? "Account" : "Sign in"}
+          onClick={() => (user ? router.push("/account") : setAuthOpen(true))}
+          className="relative flex h-7 w-7 cursor-pointer items-center justify-center"
+        >
+          <IconUser
+            size={26}
+            stroke={1.5}
+            className={user ? "text-[#f36d43]" : "text-black"}
+          />
+        </button>
 
         {/* INSTAGRAM */}
         <span className="flex h-7 w-7 cursor-pointer items-center justify-center">
@@ -182,6 +197,8 @@ export default function Navbar() {
         categories={categories}
         loading={categoriesLoading && !categoriesLoaded}
       />
+
+      <AuthForm open={authOpen} onClose={() => setAuthOpen(false)} />
     </nav>
   );
 }

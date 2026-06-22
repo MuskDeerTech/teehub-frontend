@@ -6,6 +6,7 @@ import Footer from "@/components/layout/Footer";
 import BottomBanner from "@/components/layout/BottomBanner";
 import { BookmarksProvider } from "@/components/providers/BookmarksProvider";
 import { CartProvider } from "@/components/cart/CartContext";
+import { AuthProvider } from "@/components/auth/AuthContext";
 import CartRoot from "@/components/cart/CartRoot";
 
 const inter = Inter({ variable: "--font-inter", subsets: ["latin"] });
@@ -20,17 +21,19 @@ export default function StorefrontLayout({ children }: Readonly<{ children: Reac
   return (
     <html lang="en" className={`${inter.variable} ${anton.variable} h-full antialiased`}>
       <body className="min-h-full font-sans" suppressHydrationWarning>
-        <BookmarksProvider>
-          <CartProvider>
-            <div className="w-full min-h-screen overflow-x-clip">
-              <Navbar />
-              {children}
-              <Footer />
-              <BottomBanner />
-              <CartRoot />
-            </div>
-          </CartProvider>
-        </BookmarksProvider>
+        <AuthProvider>
+          <BookmarksProvider>
+            <CartProvider>
+              <div className="w-full min-h-screen overflow-x-clip">
+                <Navbar />
+                {children}
+                <Footer />
+                <BottomBanner />
+                <CartRoot />
+              </div>
+            </CartProvider>
+          </BookmarksProvider>
+        </AuthProvider>
       </body>
     </html>
   );
