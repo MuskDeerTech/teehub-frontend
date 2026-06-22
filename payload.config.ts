@@ -886,6 +886,13 @@ const Orders: CollectionConfig = {
           id: customerId,
           depth: 0,
           overrideAccess: true,
+          // Keep hook-local operations on the order write's transaction.
+          // Without this, concurrent webhook requests can each hold one DB
+          // connection while waiting for another, exhausting a small pool.
+          req,
+          select: {
+            lastActiveAt: true,
+          },
         });
         const current = customer.lastActiveAt
           ? new Date(customer.lastActiveAt).getTime()
@@ -904,6 +911,8 @@ const Orders: CollectionConfig = {
             },
             depth: 0,
             overrideAccess: true,
+            // Reuse the transaction already attached to this hook request.
+            req,
           });
         }
         return doc;

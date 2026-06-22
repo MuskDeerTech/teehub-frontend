@@ -19,6 +19,23 @@ type EventPayload = {
 
 const events = (payload: Payload) => payload as unknown as EventPayload;
 
+function errorMessage(error: unknown) {
+  if (!(error instanceof Error)) return String(error);
+
+  const messages = [error.message];
+  let cause = error.cause;
+  while (cause) {
+    if (cause instanceof Error) {
+      messages.push(cause.message);
+      cause = cause.cause;
+    } else {
+      messages.push(String(cause));
+      break;
+    }
+  }
+  return [...new Set(messages)].join("\nCaused by: ");
+}
+
 async function findEvent(payload: Payload, deliveryId: string) {
   const result = await events(payload).find({
     collection: "webhook-events",
@@ -127,7 +144,7 @@ export async function POST(request: Request) {
     });
     return Response.json({ ok: true });
   } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
+    const message = errorMessage(error);
     await events(payload).update({
       collection: "webhook-events",
       id: event.id,
