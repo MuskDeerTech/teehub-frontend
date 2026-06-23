@@ -45,7 +45,7 @@ export default function LatestDrops({
       <div className="mb-8 flex items-center justify-between gap-5">
         <h2
           className={`font-extrabold text-[#111] ${
-            productPage ? "text-[30px]" : "text-[clamp(24px,3vw,40px)]"
+            productPage ? "text-[22px] sm:text-[30px]" : "text-[clamp(22px,3vw,40px)]"
           }`}
         >
           {productPage ? "You May Also Like" : "Latest Drops"}
@@ -54,14 +54,27 @@ export default function LatestDrops({
         {!productPage && (
           <Link
             href="/category/ipl-jersey"
-            className="flex h-11 items-center rounded-full bg-[#ff5b1f] px-7 text-[13px] font-bold text-white"
+            className="flex h-10 items-center whitespace-nowrap rounded-full bg-[#ff5b1f] px-5 text-[12px] font-bold text-white sm:h-11 sm:px-7 sm:text-[13px]"
           >
             DISCOVER MORE
           </Link>
         )}
       </div>
 
-      <div className="scrollbar-hide grid grid-cols-4 gap-[18px] max-[1024px]:flex max-[1024px]:snap-x max-[1024px]:snap-mandatory max-[1024px]:overflow-x-auto max-[1024px]:pb-2.5 max-[768px]:grid max-[768px]:grid-cols-2 max-[768px]:gap-4">
+     <div
+  className="
+    scrollbar-hide
+    flex gap-4
+    snap-x snap-mandatory overflow-x-auto pb-2.5
+    [&>*]:shrink-0 [&>*]:snap-center
+    [&>*]:w-[85%]
+
+    sm:[&>*]:w-[calc(50%-10px)]
+
+    lg:grid lg:grid-cols-4 lg:gap-[18px] lg:overflow-visible lg:snap-none lg:pb-0
+    lg:[&>*]:w-auto lg:[&>*]:shrink
+  "
+>
         {drops.map((drop) => (
           <JerseyCard
             key={drop.slug ?? drop.title}
