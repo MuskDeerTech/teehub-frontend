@@ -7,7 +7,14 @@ import { productBookmarkId } from "@/lib/bookmarks";
 import { useCart } from "@/components/cart/CartContext";
 import type { ImageFit, Product } from "@/lib/products";
 import { fitTransform, formatPriceRange } from "@/lib/products";
-import { useMemo, useState, useRef, useEffect } from "react";
+import {
+  useMemo,
+  useState,
+  useRef,
+  useEffect,
+  useSyncExternalStore,
+} from "react";
+import { createPortal } from "react-dom";
 import {
   IconShare3,
   IconBrandWhatsapp,
@@ -15,7 +22,6 @@ import {
   IconBrandFacebook,
   IconLink,
 } from "@tabler/icons-react";
-
 
 const fallbackSizes = ["XS", "S", "M", "L", "XL", "XXL", "XXXL"];
 const tabs = ["details & description", "washcare", "shipping"] as const;
@@ -66,25 +72,44 @@ const inr = (n: number) => `₹${n}`;
 // Shared viewport height for frozen left/right panels on desktop.
 const panelHeightClass = "lg:h-[calc(100dvh-95px)]";
 const stickyPanelClass = `lg:sticky lg:top-[84px] lg:self-start relative z-0 ${panelHeightClass}`;
+const subscribeNoop = () => () => {};
+const getClientSnapshot = () => true;
+const getServerSnapshot = () => false;
 
 function GalleryImage({
   image,
   product,
   priority = false,
   fill = false,
+  onPreview,
 }: {
   image: { src: string; alt: string; fit?: ImageFit };
   product: Product;
   priority?: boolean;
   /** Full viewport-height card on desktop (frozen side panels + middle scroll steps). */
   fill?: boolean;
+  onPreview?: () => void;
 }) {
   return (
     <div
+      role={onPreview ? "button" : undefined}
+      tabIndex={onPreview ? 0 : undefined}
+      aria-label={onPreview ? `View larger image: ${image.alt}` : undefined}
+      onClick={onPreview}
+      onKeyDown={
+        onPreview
+          ? (event) => {
+              if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                onPreview();
+              }
+            }
+          : undefined
+      }
       className={
         fill
-          ? `aspect-[3/4] max-h-[650px] overflow-hidden rounded-lg lg:aspect-auto lg:max-h-none lg:w-full ${panelHeightClass}`
-          : "aspect-[3/4] max-h-[650px] overflow-hidden rounded-lg"
+          ? `aspect-[3/4] max-h-[650px] overflow-hidden rounded-lg lg:aspect-auto lg:max-h-none lg:w-full ${panelHeightClass}${onPreview ? " cursor-pointer transition-opacity hover:opacity-95" : ""}`
+          : `aspect-[3/4] max-h-[650px] overflow-hidden rounded-lg${onPreview ? " cursor-pointer transition-opacity hover:opacity-95" : ""}`
       }
       style={{ backgroundColor: product.bg }}
     >
@@ -94,13 +119,128 @@ function GalleryImage({
         width={700}
         height={900}
         priority={priority}
-        // Bottom-anchored so the image always sits on the bottom edge no matter
-        // how tall the box gets (full-height on desktop). The admin's Image Fit
-        // crop nudges/zooms from that bottom baseline.
-        className="h-full w-full origin-bottom object-contain object-[50%_90%]"
+        className="pointer-events-none h-full w-full origin-bottom object-contain object-[50%_90%]"
         style={fitTransform(image.fit)}
       />
     </div>
+  );
+}
+
+function ImageLightbox({
+  images,
+  index,
+  product,
+  onClose,
+  onChangeIndex,
+}: {
+  images: { src: string; alt: string; fit?: ImageFit }[];
+  index: number;
+  product: Product;
+  onClose: () => void;
+  onChangeIndex: (index: number) => void;
+}) {
+  const image = images[index];
+  const hasMultiple = images.length > 1;
+  const mounted = useSyncExternalStore(
+    subscribeNoop,
+    getClientSnapshot,
+    getServerSnapshot,
+  );
+
+  useEffect(() => {
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    document.documentElement.classList.add("image-preview-open");
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        onClose();
+        return;
+      }
+
+      if (!hasMultiple) return;
+
+      if (event.key === "ArrowLeft") {
+        onChangeIndex((index - 1 + images.length) % images.length);
+      } else if (event.key === "ArrowRight") {
+        onChangeIndex((index + 1) % images.length);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.documentElement.classList.remove("image-preview-open");
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [hasMultiple, images.length, index, onChangeIndex, onClose]);
+
+  if (!image || !mounted) return null;
+
+  return createPortal(
+    <div
+      className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/90 p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Product image preview"
+    >
+      <button
+        type="button"
+        aria-label="Close image preview"
+        onClick={onClose}
+        className="absolute right-4 top-4 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-2xl leading-none text-white transition-colors hover:bg-white/20"
+      >
+        ×
+      </button>
+
+      {hasMultiple && (
+        <>
+          <button
+            type="button"
+            aria-label="Previous image"
+            onClick={() =>
+              onChangeIndex((index - 1 + images.length) % images.length)
+            }
+            className="absolute left-3 top-1/2 z-10 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/10 text-2xl text-white transition-colors hover:bg-white/20 sm:left-6"
+          >
+            ‹
+          </button>
+
+          <button
+            type="button"
+            aria-label="Next image"
+            onClick={() => onChangeIndex((index + 1) % images.length)}
+            className="absolute right-3 top-1/2 z-10 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/10 text-2xl text-white transition-colors hover:bg-white/20 sm:right-6"
+          >
+            ›
+          </button>
+        </>
+      )}
+
+      <div className="relative z-10 flex max-h-[90vh] max-w-[min(1200px,92vw)] flex-col items-center">
+        <div
+          className="relative flex max-h-[85vh] w-full items-center justify-center overflow-hidden rounded-lg"
+          style={{ backgroundColor: product.bg }}
+        >
+          <Image
+            src={image.src}
+            alt={image.alt}
+            width={1400}
+            height={1800}
+            className="max-h-[85vh] w-auto max-w-full origin-bottom object-contain object-[50%_90%]"
+            style={fitTransform(image.fit)}
+          />
+        </div>
+
+        {hasMultiple && (
+          <p className="mt-3 text-sm text-white/70">
+            {index + 1} / {images.length}
+          </p>
+        )}
+      </div>
+    </div>,
+    document.body,
   );
 }
 
@@ -137,8 +277,10 @@ export default function ProductDetails({ product }: { product: Product }) {
   const [activeTab, setActiveTab] = useState<ProductTab>(
     "details & description",
   );
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
 
   const gallery = useMemo(() => getGallery(product), [product]);
+  const openPreview = (index: number) => setLightboxIndex(index);
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
@@ -154,9 +296,7 @@ export default function ProductDetails({ product }: { product: Product }) {
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
-    
-  },
-   []);
+  }, []);
 
   // The detail page shows a single sale price with the struck-through MRP +
   // discount when `price` is set; otherwise it falls back to the catalog range.
@@ -174,12 +314,6 @@ export default function ProductDetails({ product }: { product: Product }) {
         zIndex: cartOpen ? -1 : "auto",
       }}
     >
-      {/*
-          Bluorng-style scroll: left + right are sticky (frozen) on desktop.
-          The middle column stacks all remaining gallery cards and sets the
-          section height — page scroll walks through those cards until the last
-          one, then the section ends and the footer scrolls in normally.
-        */}
       <div className="mx-auto grid w-full max-w-[1475px] grid-cols-1 gap-3 px-3 py-4 lg:items-start lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(580px,580px)] lg:py-3 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(650px,650px)] lg:px-4">
         {/* Frozen left — first gallery image */}
         <div className={stickyPanelClass}>
@@ -189,6 +323,7 @@ export default function ProductDetails({ product }: { product: Product }) {
               product={product}
               priority
               fill
+              onPreview={() => openPreview(0)}
             />
           )}
         </div>
@@ -202,6 +337,7 @@ export default function ProductDetails({ product }: { product: Product }) {
               product={product}
               priority={index === 0}
               fill
+              onPreview={() => openPreview(index + 1)}
             />
           ))}
         </div>
@@ -306,9 +442,7 @@ export default function ProductDetails({ product }: { product: Product }) {
                 <div className="flex h-[26px] items-center justify-between rounded bg-white px-2 ring-1 ring-[#e5e5e5]">
                   <button
                     type="button"
-                    onClick={() =>
-                      setQuantity((prev) => Math.max(1, prev - 1))
-                    }
+                    onClick={() => setQuantity((prev) => Math.max(1, prev - 1))}
                     aria-label="Decrease quantity"
                     className="flex h-4 w-4 items-center justify-center rounded-full bg-[#5a5555] text-[14px] leading-none text-white"
                   >
@@ -577,6 +711,16 @@ export default function ProductDetails({ product }: { product: Product }) {
           </div>
         </div>
       </div>
+
+      {lightboxIndex !== null && (
+        <ImageLightbox
+          images={gallery}
+          index={lightboxIndex}
+          product={product}
+          onClose={() => setLightboxIndex(null)}
+          onChangeIndex={setLightboxIndex}
+        />
+      )}
 
       {showGuide && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">

@@ -36,6 +36,11 @@ body {
   background: #fff;
 }
 
+html.image-preview-open nav {
+  visibility: hidden;
+  pointer-events: none;
+}
+
 /* Typographic styling for CMS rich-text on /policies/<slug>. Tailwind's
    preflight strips heading/list styles, and no typography plugin is installed,
    so the policy body sets its own readable defaults. */
