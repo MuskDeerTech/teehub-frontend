@@ -166,3 +166,16 @@ export async function getProductBySlug(
 export async function getAllProducts(): Promise<Product[]> {
   return getProductsByCategory("all");
 }
+
+/** Newest published products across every category. */
+export async function getLatestProducts(limit = 4): Promise<Product[]> {
+  const payload = await getPayload({ config });
+  const res = await payload.find({
+    collection: "products",
+    where: { isPublished: { equals: true } },
+    sort: "-originalCreatedAt",
+    depth: 1,
+    limit,
+  });
+  return res.docs.map(toProduct);
+}

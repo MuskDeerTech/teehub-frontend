@@ -8,10 +8,8 @@ import type { Product } from "@/lib/products";
 
 type Variant = "hoodie" | "polo";
 
-// The card's "+" button has no size selector (sizes are chosen on the detail
-// page), so a placeholder size is used until/unless a size picker is added
-// here. Swap this out if/when the card grows real size selection.
-const PLACEHOLDER_SIZE = "One Size";
+// Quick-add starts at L; customers can adjust it with the cart size controls.
+const DEFAULT_SIZE = "L";
 
 /**
  * ─────────────────────────────────────────────────────────────────────────
@@ -22,10 +20,10 @@ const PLACEHOLDER_SIZE = "One Size";
 const config = {
   hoodie: {
     image: {
-      aspect: "aspect-[330/420]",
-      aspectSm: "sm:aspect-[330/420]",
-      aspectLg: "lg:aspect-[330/440]",
-      position: "object-top",
+      aspect: "aspect-[330/430]",
+      aspectSm: "sm:aspect-[330/470]",
+      aspectLg: "lg:aspect-[330/480]",
+      position: "object-bottom",
       objectPositionCustom: "",
       zoom: "scale-100",
       rounded: "rounded-[10px]",
@@ -110,7 +108,7 @@ export default function ProductCard({
       id: product.slug,
       name: product.title,
       image: product.image ?? "",
-      size: PLACEHOLDER_SIZE,
+      size: DEFAULT_SIZE,
       quantity: 1,
       price: unitPrice,
       mrp: unitMrp,

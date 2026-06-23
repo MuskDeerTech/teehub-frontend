@@ -8,7 +8,7 @@ import CartLogin from "./CartLogin";
 export default function CartRoot() {
   const router = useRouter();
   const {
-    activeItem,
+    items,
     cartOpen,
     step,
     phone,
@@ -18,6 +18,7 @@ export default function CartRoot() {
     closeCart,
     goToStep,
     updateItem,
+    removeItem,
     setPhone,
   } = useCart();
 
@@ -45,11 +46,12 @@ export default function CartRoot() {
   return (
     <CartDetails
       open={cartOpen}
-      item={activeItem}
+      items={items}
       totalCount={totalCount}
       totalMrp={totalMrp}
       totalPrice={totalPrice}
       onUpdate={updateItem}
+      onRemove={removeItem}
       onClose={closeCart}
       onProceed={() => goToStep("login")}
     />

@@ -8,9 +8,8 @@ import { useCart } from "@/components/cart/CartContext";
 import { formatPriceRange } from "@/lib/products";
 import type { Product } from "@/lib/products";
 
-// The card's "+" button has no size selector (sizes are chosen on the detail
-// page), so a placeholder size is used — same approach as ProductCard.tsx.
-const PLACEHOLDER_SIZE = "One Size";
+// Quick-add starts at L; customers can adjust it with the cart size controls.
+const DEFAULT_SIZE = "L";
 
 /**
  * ─────────────────────────────────────────────────────────────────────────
@@ -21,10 +20,10 @@ const PLACEHOLDER_SIZE = "One Size";
 const config = {
   normal: {
     image: {
-      aspect: "aspect-[330/500]",
-      aspectSm: "sm:aspect-[330/480]",
-      aspectLg: "lg:aspect-[330/500]",
-      position: "object-top",
+      aspect: "aspect-[330/430]",
+      aspectSm: "sm:aspect-[330/470]",
+      aspectLg: "lg:aspect-[330/480]",
+      position: "object-bottom",
       zoom: "scale-100",
       rounded: "rounded-[10px]",
     },
@@ -98,7 +97,7 @@ export default function JerseyCard({
       id: product.slug,
       name: product.title,
       image: product.image ?? "",
-      size: PLACEHOLDER_SIZE,
+      size: DEFAULT_SIZE,
       quantity: 1,
       price: unitPrice,
       mrp: unitMrp,
