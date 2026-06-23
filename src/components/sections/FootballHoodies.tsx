@@ -1,11 +1,39 @@
 import Link from "next/link";
 import ProductCard from "@/components/ui/ProductCard";
-import { footballHoodies } from "@/lib/products";
+import { getProductsByCategory } from "@/lib/catalog";
 
-export default function FootballHoodies() {
+/**
+ * ─────────────────────────────────────────────────────────────────────────
+ * EDIT THIS CONFIG to control section-level spacing.
+ * ─────────────────────────────────────────────────────────────────────────
+ */
+const config = {
+  section: {
+    paddingX: "px-[30px]",
+    paddingXLg: "min-[1440px]:px-20",
+    paddingY: "py-[40px]",
+    paddingYLg: "min-[1440px]:py-[60px]",
+  },
+  header: {
+    gapHeaderToSlider: "mb-[30px]",
+  },
+  slider: {
+    gap: "gap-7",
+    gapLg: "lg:gap-7",
+    gap1440: "min-[1440px]:gap-8",
+  },
+} as const;
+
+export default async function FootballHoodies() {
+  const products = (await getProductsByCategory("hoodies")).slice(0, 4);
+
+  if (products.length === 0) return null;
+
   return (
-    <section className="mx-auto box-border w-full max-w-[1440px] px-[30px] py-[40px] min-[1440px]:px-20 min-[1440px]:py-[60px] max-[480px]:px-4 max-[480px]:py-6">
-      <div className="mb-[30px] flex items-center justify-between">
+    <section
+      className={`mx-auto box-border w-full max-w-[1440px] ${config.section.paddingX} ${config.section.paddingY} ${config.section.paddingXLg} ${config.section.paddingYLg} max-[480px]:px-4 max-[480px]:py-6`}
+    >
+      <div className={`flex items-center justify-between ${config.header.gapHeaderToSlider}`}>
         <h2 className="m-0 text-[clamp(18px,2.2vw,32px)] font-normal tracking-[1px] text-[#111] max-[480px]:flex-1 max-[480px]:text-left max-[480px]:text-[16px] max-[480px]:leading-[1.3]">
           Football Hoodies
         </h2>
@@ -17,16 +45,25 @@ export default function FootballHoodies() {
         </Link>
       </div>
 
-      <div>
-        <button className="left">‹</button>
+      <div
+        className={`
+          scrollbar-hide
+          flex ${config.slider.gap}
+          snap-x snap-mandatory overflow-x-auto pb-2.5
+          [&>*]:shrink-0 [&>*]:snap-center
+          [&>*]:w-[85%]
 
-        <div className="scrollbar-hide grid grid-cols-4 gap-7 min-[1440px]:grid min-[1440px]:grid-cols-4 min-[1440px]:items-start min-[1440px]:gap-8 max-[1024px]:flex max-[1024px]:snap-x max-[1024px]:snap-mandatory max-[1024px]:gap-[18px] max-[1024px]:overflow-x-auto max-[768px]:flex max-[768px]:snap-x max-[768px]:snap-mandatory max-[768px]:gap-4 max-[768px]:overflow-x-auto">
-          {footballHoodies.map((item) => (
-            <ProductCard key={item.title} variant="hoodie" product={item} />
-          ))}
-        </div>
+          sm:[&>*]:w-[calc(50%-10px)]
 
-        <button className="right">›</button>
+          lg:grid lg:grid-cols-4 ${config.slider.gapLg} lg:overflow-visible lg:snap-none lg:pb-0
+          lg:[&>*]:w-auto lg:[&>*]:shrink
+
+          ${config.slider.gap1440}
+        `}
+      >
+        {products.map((product) => (
+          <ProductCard key={product.slug} variant="hoodie" product={product} />
+        ))}
       </div>
     </section>
   );

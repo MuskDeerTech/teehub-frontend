@@ -1,96 +1,200 @@
+"use client";
+
 import Image from "next/image";
-import type { ApparelProduct } from "@/lib/products";
+import Link from "next/link";
+import { useCart } from "@/components/cart/CartContext";
+import { formatPriceRange } from "@/lib/products";
+import type { Product } from "@/lib/products";
 
 type Variant = "hoodie" | "polo";
 
-type CardStyles = {
-  card: string;
-  imageWrap: string;
-  image: string;
-  imageWidth: number;
-  imageHeight: number;
-  info: string;
-  title: string;
-  priceRow: string;
-  oldPrice: string;
-  newPrice: string;
-  addBtn: string;
-};
+// The card's "+" button has no size selector (sizes are chosen on the detail
+// page), so a placeholder size is used until/unless a size picker is added
+// here. Swap this out if/when the card grows real size selection.
+const PLACEHOLDER_SIZE = "One Size";
 
 /**
- * Reusable apparel product card. The per-section responsive styling lives in
- * this `styles` map (keyed by variant) so the call sites stay clean while the
- * markup/look stays identical to the original design for each section.
+ * ─────────────────────────────────────────────────────────────────────────
+ * EDIT THIS CONFIG to change layout per variant. See bottom of file for the
+ * image-position / scale / spacing cheat sheet.
+ * ─────────────────────────────────────────────────────────────────────────
  */
-const styles: Record<Variant, CardStyles> = {
+const config = {
   hoodie: {
-    card: "group flex flex-col min-[1440px]:w-full max-[1024px]:w-[calc(50%_-_10px)] max-[1024px]:shrink-0 max-[1024px]:snap-start max-[1024px]:overflow-hidden max-[768px]:w-[calc(50%_-_8px)] max-[768px]:shrink-0 max-[768px]:snap-start max-[480px]:w-[98%] max-[360px]:w-full max-[360px]:snap-start",
-    imageWrap:
-      "flex h-[380px] w-full items-end justify-start overflow-hidden min-[1440px]:h-[400px] min-[1440px]:justify-center max-[1024px]:relative max-[1024px]:top-[-200px] max-[1024px]:h-[660px] max-[1024px]:w-[400px] max-[1024px]:items-center max-[1024px]:justify-center max-[768px]:mt-[170px] max-[768px]:h-[420px] max-[768px]:w-full max-[768px]:items-center max-[768px]:justify-center max-[480px]:relative max-[480px]:h-[100px] max-[480px]:items-end max-[480px]:justify-center max-[480px]:p-0 max-[360px]:h-[300px] max-[360px]:items-center max-[360px]:justify-center max-[360px]:overflow-visible",
-    image:
-      "h-full w-full object-contain object-left transition-transform duration-300 group-hover:scale-[1.04] min-[1440px]:object-cover min-[1440px]:object-right-bottom max-[1024px]:absolute max-[1024px]:left-[-50px] max-[1024px]:top-[45px] max-[1024px]:h-[660px] max-[1024px]:w-[500%] max-[1024px]:object-bottom max-[768px]:h-[80%] max-[768px]:object-bottom max-[480px]:absolute max-[480px]:left-0 max-[480px]:top-0 max-[480px]:h-[50%] max-[480px]:object-bottom max-[360px]:relative max-[360px]:left-[-15px] max-[360px]:mt-[100px] max-[360px]:h-full max-[360px]:object-left",
-    imageWidth: 400,
-    imageHeight: 460,
-    info: "flex w-full flex-col items-start min-[1440px]:mt-[-100px] min-[1440px]:text-left max-[1024px]:mt-[-150px] max-[768px]:mt-2 max-[360px]:mt-[-55%] max-[360px]:overflow-visible max-[360px]:p-2.5",
-    title:
-      "mb-2 line-clamp-4 min-h-[calc(1.3em*4)] max-w-[45ch] overflow-visible text-[12.5px] font-bold uppercase leading-[1.3] text-[#111] min-[1440px]:mt-[100px] min-[1440px]:max-w-[30ch] min-[1440px]:text-[17px] min-[1440px]:font-normal max-[1024px]:line-clamp-3 max-[1024px]:text-[18px] max-[1024px]:font-bold max-[1024px]:leading-[1.4] max-[768px]:mt-[-230px] max-[768px]:max-w-[35ch] max-[768px]:text-[15px] max-[768px]:leading-[1.2] max-[480px]:line-clamp-3 max-[480px]:px-3.5 max-[480px]:text-[10px] max-[360px]:mb-px max-[360px]:mt-px max-[360px]:max-w-[33ch] max-[360px]:text-[14px] max-[360px]:leading-[1.3]",
-    priceRow:
-      "mt-1.5 flex w-[80%] items-center justify-between min-[1440px]:justify-start min-[1440px]:gap-[25px] max-[1024px]:justify-start max-[1024px]:gap-[25px] max-[768px]:justify-start max-[768px]:gap-[25px]",
-    oldPrice:
-      "text-[10px] text-[#999] line-through min-[1440px]:text-[20px] max-[1024px]:text-[20px] max-[768px]:text-[20px] max-[768px]:text-[#aaa] max-[360px]:text-[15px]",
-    newPrice:
-      "text-[10px] font-bold text-[#111] min-[1440px]:text-[20px] max-[1024px]:text-[20px] max-[768px]:ml-2.5 max-[768px]:text-[18px] max-[768px]:font-normal max-[768px]:text-black max-[360px]:text-[15px]",
-    addBtn:
-      "ml-auto shrink-0 cursor-pointer text-[20px] text-black min-[1440px]:w-[60%] min-[1440px]:whitespace-nowrap min-[1440px]:text-[30px] max-[1024px]:w-[75%] max-[1024px]:text-[35px] max-[768px]:w-1/2 max-[768px]:text-[30px] max-[360px]:w-[30%] max-[360px]:whitespace-nowrap",
+    image: {
+      aspect: "aspect-[330/420]",
+      aspectSm: "sm:aspect-[330/420]",
+      aspectLg: "lg:aspect-[330/440]",
+      position: "object-top",
+      objectPositionCustom: "",
+      zoom: "scale-100",
+      rounded: "rounded-[10px]",
+    },
+    gapImageToText: "pt-2.5",
+    gapTitleToPrice: "mt-1.5",
+    title: {
+      size: "text-[13px]",
+      sizeSm: "sm:text-[15px]",
+      size1440: "min-[1440px]:text-[17px]",
+      weight: "font-bold",
+      weight1440: "min-[1440px]:font-normal",
+      case: "uppercase",
+      lines: "line-clamp-2",
+    },
+    price: {
+      size: "text-[13px]",
+      sizeSm: "sm:text-[15px]",
+      size1440: "min-[1440px]:text-[16px]",
+      gapBetweenOldAndNew: "gap-2.5",
+      gapToButton: "ml-2.5",
+    },
+    button: {
+      size: "text-[20px]",
+      position: "ml-auto",
+    },
   },
   polo: {
-    card: "group flex flex-[0_0_calc(25%_-_18px)] snap-start flex-col min-[1440px]:w-full max-[1024px]:flex-[0_0_calc(50%_-_10px)] max-[1024px]:min-w-0 max-[1024px]:snap-start max-[1024px]:overflow-hidden max-[768px]:flex-[0_0_calc(50%_-_8px)] max-[768px]:snap-start max-[480px]:flex-[0_0_100%] max-[360px]:flex-[0_0_100%] max-[360px]:snap-start",
-    imageWrap:
-      "flex h-[500px] w-full items-end justify-center overflow-hidden min-[1440px]:h-[400px] max-[1024px]:relative max-[1024px]:top-[-150px] max-[1024px]:h-[550px] max-[1024px]:w-[400px] max-[1024px]:items-center max-[768px]:h-[500px] max-[768px]:w-full max-[768px]:items-end max-[360px]:h-[300px] max-[360px]:items-center max-[360px]:overflow-visible",
-    image:
-      "mt-[30px] h-full w-full object-cover object-left-bottom transition-transform duration-300 group-hover:scale-[1.04] min-[1440px]:object-right-bottom max-[1024px]:absolute max-[1024px]:left-[-50px] max-[1024px]:top-2.5 max-[1024px]:h-[600px] max-[1024px]:w-[500%] max-[1024px]:object-contain max-[1024px]:object-bottom max-[768px]:left-[-40px] max-[768px]:mt-[50px] max-[768px]:h-[500px] max-[768px]:object-contain max-[768px]:object-bottom max-[360px]:relative max-[360px]:mt-[350px] max-[360px]:h-full max-[360px]:object-contain max-[360px]:object-bottom",
-    imageWidth: 394,
-    imageHeight: 426,
-    info: "mt-2.5 w-full text-left min-[1440px]:mt-4 max-[1024px]:mt-[30px] max-[768px]:mt-10 max-[360px]:mt-[15px] max-[360px]:max-w-[20ch] max-[360px]:overflow-visible max-[360px]:px-[15px] max-[360px]:py-2.5 max-[360px]:text-center",
-    title:
-      "line-clamp-4 min-h-[calc(1.3em*4)] max-w-[40ch] overflow-hidden text-[12.5px] font-normal uppercase leading-[1.3] text-[#111] min-[1440px]:mb-2 min-[1440px]:max-w-[20ch] min-[1440px]:text-[20px] min-[1440px]:leading-[1.4] max-[1024px]:mb-2.5 max-[1024px]:mt-[-150px] max-[1024px]:line-clamp-3 max-[1024px]:text-[18px] max-[1024px]:font-bold max-[1024px]:leading-[1.4] max-[768px]:mb-[-40px] max-[768px]:line-clamp-2 max-[768px]:max-w-[30ch] max-[768px]:overflow-visible max-[768px]:text-[15px] max-[768px]:leading-none max-[480px]:m-0 max-[480px]:text-[16px] max-[480px]:leading-none max-[360px]:mb-px max-[360px]:overflow-visible max-[360px]:text-left max-[360px]:text-[13px] max-[360px]:leading-[1.3]",
-    priceRow:
-      "mt-1.5 flex w-[9%] items-center justify-between min-[1440px]:w-full min-[1440px]:gap-5 max-[768px]:justify-start max-[768px]:gap-5 max-[480px]:flex-wrap max-[480px]:gap-2 max-[360px]:w-[75%] max-[360px]:flex-nowrap max-[360px]:justify-between max-[360px]:gap-2 max-[360px]:text-left",
-    oldPrice:
-      "text-[10px] text-[#999] line-through max-[768px]:text-[15px] max-[360px]:text-[15px]",
-    newPrice:
-      "text-[10px] font-bold text-[#111] max-[768px]:text-[15px] max-[768px]:font-normal max-[360px]:text-[15px] max-[360px]:font-normal",
-    addBtn:
-      "ml-[15%] cursor-pointer text-[20px] text-[#111] min-[1440px]:ml-auto min-[1440px]:flex min-[1440px]:h-[34px] min-[1440px]:w-[34px] min-[1440px]:items-center min-[1440px]:justify-center min-[1440px]:text-[30px] max-[1024px]:flex max-[1024px]:h-[34px] max-[1024px]:w-[4%] max-[1024px]:items-center max-[1024px]:justify-center max-[1024px]:rounded-full max-[1024px]:text-[35px] max-[768px]:ml-[90px] max-[768px]:flex max-[768px]:h-[34px] max-[768px]:w-[34px] max-[768px]:items-center max-[768px]:justify-center max-[768px]:rounded-full max-[360px]:w-[1%] max-[360px]:shrink-0 max-[360px]:whitespace-nowrap max-[360px]:text-[30px] max-[360px]:text-black",
+    image: {
+      aspect: "aspect-[330/430]",
+      aspectSm: "sm:aspect-[330/470]",
+      aspectLg: "lg:aspect-[330/480]",
+      position: "object-bottom",
+      objectPositionCustom: "",
+      zoom: "scale-100",
+      rounded: "rounded-[10px]",
+    },
+    gapImageToText: "pt-2.5",
+    gapTitleToPrice: "mt-1.5",
+    title: {
+      size: "text-[13px]",
+      sizeSm: "sm:text-[15px]",
+      size1440: "min-[1440px]:text-[20px]",
+      weight: "font-normal",
+      weight1440: "",
+      case: "uppercase",
+      lines: "line-clamp-3",
+    },
+    price: {
+      size: "text-[13px]",
+      sizeSm: "sm:text-[15px]",
+      size1440: "min-[1440px]:text-[16px]",
+      gapBetweenOldAndNew: "gap-2.5",
+      gapToButton: "ml-2.5",
+    },
+    button: {
+      size: "text-[20px]",
+      position: "ml-auto",
+    },
   },
-};
+} as const satisfies Record<Variant, unknown>;
 
 export default function ProductCard({
   variant,
   product,
 }: {
   variant: Variant;
-  product: ApparelProduct;
+  product: Product;
 }) {
-  const s = styles[variant];
-  return (
-    <div className={s.card}>
-      <div className={s.imageWrap}>
-        <Image
-          src={product.image}
-          alt={product.alt}
-          width={s.imageWidth}
-          height={s.imageHeight}
-          className={s.image}
-        />
-      </div>
+  const c = config[variant];
+  const { addItem } = useCart();
 
-      <div className={s.info}>
-        <h3 className={s.title}>{product.title}</h3>
-        <div className={s.priceRow}>
-          <span className={s.oldPrice}>{product.oldPrice}</span>
-          <span className={s.newPrice}>{product.newPrice}</span>
-          <button className={s.addBtn}>+</button>
+  // Detail-page sale price (`price`/`originalPrice`) when the admin has set
+  // it; otherwise fall back to the card's min–max range so the card never
+  // renders blank while a product is still being merchandised.
+  const hasSalePrice = product.price != null;
+  const unitPrice = product.price ?? product.priceMin;
+  const unitMrp = product.originalPrice ?? unitPrice;
+
+  function handleAddToCart() {
+    addItem({
+      id: product.slug,
+      name: product.title,
+      image: product.image ?? "",
+      size: PLACEHOLDER_SIZE,
+      quantity: 1,
+      price: unitPrice,
+      mrp: unitMrp,
+    });
+  }
+
+  return (
+    <div className="group flex w-full flex-col">
+      {/* IMAGE */}
+      <Link
+        href={`/product/${product.slug}`}
+        className={[
+          "relative block w-full overflow-hidden",
+          c.image.rounded,
+          c.image.aspect,
+          c.image.aspectSm,
+          c.image.aspectLg,
+        ].join(" ")}
+      >
+        {product.image ? (
+          <Image
+            src={product.image}
+            alt={product.title}
+            fill
+            sizes="(max-width: 640px) 85vw, (max-width: 1024px) 50vw, 25vw"
+            className={[
+              "object-cover transition-transform duration-300",
+              c.image.objectPositionCustom ? "" : c.image.position,
+              c.image.zoom,
+              "group-hover:scale-[1.04]",
+            ].join(" ")}
+            style={
+              c.image.objectPositionCustom
+                ? { objectPosition: c.image.objectPositionCustom }
+                : undefined
+            }
+          />
+        ) : (
+          <div className="h-full w-full bg-[#f0f0f0]" />
+        )}
+      </Link>
+
+      {/* TEXT BLOCK */}
+      <div className={`flex flex-1 flex-col ${c.gapImageToText}`}>
+        <Link href={`/product/${product.slug}`}>
+          <h3
+            className={[
+              "min-h-[calc(1.3em*3)] leading-[1.3] text-[#111] transition-colors hover:text-[#f36d43]",
+              c.title.lines,
+              c.title.case,
+              c.title.size,
+              c.title.sizeSm,
+              c.title.size1440,
+              c.title.weight,
+              c.title.weight1440,
+            ].join(" ")}
+          >
+            {product.title}
+          </h3>
+        </Link>
+
+        <div className={`flex items-center ${c.price.gapBetweenOldAndNew} ${c.gapTitleToPrice}`}>
+          {hasSalePrice && product.originalPrice != null && (
+            <span
+              className={`text-[#999] line-through ${c.price.size} ${c.price.sizeSm} ${c.price.size1440}`}
+            >
+              ₹{product.originalPrice.toLocaleString("en-IN")}
+            </span>
+          )}
+          <span
+            className={`font-bold text-[#111] ${c.price.size} ${c.price.sizeSm} ${c.price.size1440}`}
+          >
+            {hasSalePrice
+              ? `₹${unitPrice.toLocaleString("en-IN")}`
+              : formatPriceRange(product)}
+          </span>
+          <button
+            type="button"
+            onClick={handleAddToCart}
+            aria-label={`Add ${product.title} to cart`}
+            className={`cursor-pointer text-black ${c.button.size} ${c.button.position} ${c.price.gapToButton}`}
+          >
+            +
+          </button>
         </div>
       </div>
     </div>
