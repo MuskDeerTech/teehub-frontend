@@ -1,29 +1,41 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
 import BookmarkButton from "@/components/ui/BookmarkButton";
 import { jerseyBookmarkId } from "@/lib/bookmarks";
-import type { JerseyDrop } from "@/lib/products";
+import { useCart } from "@/components/cart/CartContext";
+import { formatPriceRange } from "@/lib/products";
+import type { Product } from "@/lib/products";
 
+// The card's "+" button has no size selector (sizes are chosen on the detail
+// page), so a placeholder size is used — same approach as ProductCard.tsx.
+const PLACEHOLDER_SIZE = "One Size";
+
+/**
+ * ─────────────────────────────────────────────────────────────────────────
+ * EDIT THIS CONFIG to change layout. "normal" = full jersey card,
+ * "compact" = smaller card used on product pages ("You May Also Like").
+ * ─────────────────────────────────────────────────────────────────────────
+ */
 const config = {
   normal: {
     image: {
       aspect: "aspect-[330/500]",
       aspectSm: "sm:aspect-[330/480]",
       aspectLg: "lg:aspect-[330/500]",
-      position: "object-top",     
+      position: "object-top",
       zoom: "scale-100",
       rounded: "rounded-[10px]",
     },
-    bookmark: {
-      position: "right-3 top-3", 
-    },
+    bookmark: { position: "right-3 top-3" },
     gapImageToText: "pt-2.5",
     gapTitleToPrice: "mt-1.5",
     title: {
       size: "text-[16px]",
       sizeSm: "sm:text-[18px]",
       size1440: "min-[1440px]:text-[18px]",
-      weight: "font-bold",
+      weight: "font-normal",
       weight1440: "min-[1440px]:font-bold",
       lines: "line-clamp-2",
     },
@@ -31,7 +43,9 @@ const config = {
       size: "text-[15px]",
       sizeSm: "sm:text-[18px]",
       size1440: "min-[1440px]:text-[15px]",
+      gapToButton: "ml-2.5",
     },
+    button: { size: "text-[20px]", position: "ml-auto" },
   },
   compact: {
     image: {
@@ -42,9 +56,7 @@ const config = {
       zoom: "scale-100",
       rounded: "rounded-[10px]",
     },
-    bookmark: {
-      position: "right-3 top-3",
-    },
+    bookmark: { position: "right-3 top-3" },
     gapImageToText: "pt-2.5",
     gapTitleToPrice: "mt-1",
     title: {
@@ -59,22 +71,39 @@ const config = {
       size: "text-[14px]",
       sizeSm: "sm:text-[14px]",
       size1440: "min-[1440px]:text-[14px]",
+      gapToButton: "ml-2",
     },
+    button: { size: "text-[18px]", position: "ml-auto" },
   },
 } as const;
 
 export default function JerseyCard({
-  drop,
+  product,
   compact = false,
-  bgColor,
   href,
 }: {
-  drop: JerseyDrop;
+  product: Product;
   compact?: boolean;
-  bgColor?: string;
   href?: string;
 }) {
   const c = compact ? config.compact : config.normal;
+  const { addItem } = useCart();
+
+  const hasSalePrice = product.price != null;
+  const unitPrice = product.price ?? product.priceMin;
+  const unitMrp = product.originalPrice ?? unitPrice;
+
+  function handleAddToCart() {
+    addItem({
+      id: product.slug,
+      name: product.title,
+      image: product.image ?? "",
+      size: PLACEHOLDER_SIZE,
+      quantity: 1,
+      price: unitPrice,
+      mrp: unitMrp,
+    });
+  }
 
   return (
     <div className="group flex w-full flex-col">
@@ -86,27 +115,28 @@ export default function JerseyCard({
           c.image.aspect,
           c.image.aspectSm,
           c.image.aspectLg,
-          bgColor ? "" : drop.bg,
         ].join(" ")}
-        style={bgColor ? { backgroundColor: bgColor } : undefined}
+        style={{ backgroundColor: product.bg }}
       >
         <BookmarkButton
-          id={jerseyBookmarkId(drop.title)}
+          id={jerseyBookmarkId(product.title)}
           className={`absolute z-10 text-white/95 drop-shadow transition-transform duration-200 hover:scale-110 ${c.bookmark.position}`}
         />
 
-        <Image
-          src={drop.image}
-          alt={drop.alt}
-          fill
-          sizes="(max-width: 640px) 85vw, (max-width: 1024px) 50vw, 25vw"
-          className={[
-            "object-cover transition-transform duration-300",
-            c.image.position,
-            c.image.zoom,
-            "group-hover:scale-105",
-          ].join(" ")}
-        />
+        {product.image && (
+          <Image
+            src={product.image}
+            alt={product.title}
+            fill
+            sizes="(max-width: 640px) 85vw, (max-width: 1024px) 50vw, 25vw"
+            className={[
+              "object-cover transition-transform duration-300",
+              c.image.position,
+              c.image.zoom,
+              "group-hover:scale-105",
+            ].join(" ")}
+          />
+        )}
       </div>
 
       {/* TEXT BLOCK */}
@@ -124,17 +154,26 @@ export default function JerseyCard({
         >
           {href ? (
             <Link href={href} className="transition-colors hover:text-[#f36d43]">
-              {drop.title}
+              {product.title}
             </Link>
           ) : (
-            drop.title
+            product.title
           )}
         </h3>
 
         <div className={`flex items-center justify-between ${c.gapTitleToPrice}`}>
           <span className={`text-[#444] ${c.price.size} ${c.price.sizeSm} ${c.price.size1440}`}>
-            {drop.price}
+            {hasSalePrice ? `₹${unitPrice.toLocaleString("en-IN")}` : formatPriceRange(product)}
           </span>
+
+          <button
+            type="button"
+            onClick={handleAddToCart}
+            aria-label={`Add ${product.title} to cart`}
+            className={`cursor-pointer text-black ${c.button.size} ${c.button.position} ${c.price.gapToButton}`}
+          >
+            +
+          </button>
         </div>
       </div>
     </div>

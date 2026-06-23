@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import ProductDetails from "@/components/ui/ProductDetails";
+import LatestDrops from "@/components/sections/LatestDrops";
 import { getProductBySlug } from "@/lib/catalog";
 
 type Params = { slug: string };
@@ -36,7 +37,7 @@ export default async function ProductPage({
     <>
       <ProductDetails product={product} />
     
-      {/*<LatestDrops />*/}
+      <LatestDrops productPage excludeSlug={product.slug} />
     </>
   );
 }
