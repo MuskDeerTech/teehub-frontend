@@ -6,8 +6,14 @@ import { getPayload } from "payload";
  *
  * Email goes straight through. A phone number is resolved to its account's
  * email server-side (with overrideAccess, since unauthenticated users can't
- * read customers), then we proxy to Payload's own `/login` so the secure
- * HTTP-only cookie is minted by Payload itself — we never forge it.
+ * read customers), then we call Payload's Local API `login` directly.
+ *
+ * We deliberately do NOT proxy to Payload's REST `/api/customers/login` via
+ * `fetch`. A same-origin self-fetch works in local dev but fails in production
+ * behind a reverse proxy (the server can't reliably reach its own public host),
+ * which surfaces as a 500. The Local API runs in-process, so it has no such
+ * dependency. The JWT it returns is the same one Payload's REST login mints —
+ * we set it as the standard HTTP-only `payload-token` cookie.
  */
 export async function POST(request: Request) {
   const { identifier, password } = (await request.json()) as {
@@ -22,12 +28,12 @@ export async function POST(request: Request) {
     );
   }
 
+  const payload = await getPayload({ config });
   let email = value.toLowerCase();
 
   if (!value.includes("@")) {
     // Treat as a phone number; match on the raw value or its digits only.
     const digits = value.replace(/\D/g, "");
-    const payload = await getPayload({ config });
     const res = await payload.find({
       collection: "customers",
       where: {
@@ -47,19 +53,45 @@ export async function POST(request: Request) {
     email = String(account.email).toLowerCase();
   }
 
-  // Proxy to Payload's REST login and relay its Set-Cookie verbatim.
-  const loginRes = await fetch(new URL("/api/customers/login", request.url), {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email, password }),
-  });
+  let result: Awaited<ReturnType<typeof payload.login>>;
+  try {
+    result = await payload.login({
+      collection: "customers",
+      data: { email, password },
+    });
+  } catch {
+    return Response.json(
+      { errors: [{ message: "Invalid login or password." }] },
+      { status: 401 },
+    );
+  }
 
-  const body = await loginRes.text();
-  const response = new Response(body, {
-    status: loginRes.status,
-    headers: { "Content-Type": "application/json" },
-  });
-  const setCookie = loginRes.headers.get("set-cookie");
-  if (setCookie) response.headers.set("set-cookie", setCookie);
+  if (!result.token) {
+    return Response.json(
+      { errors: [{ message: "Invalid login or password." }] },
+      { status: 401 },
+    );
+  }
+
+  // Mirror the cookie Payload's REST login would set. `exp` is in seconds.
+  const forwardedProto = request.headers.get("x-forwarded-proto");
+  const isHttps =
+    forwardedProto === "https" || new URL(request.url).protocol === "https:";
+  const maxAge = result.exp
+    ? Math.max(0, result.exp - Math.floor(Date.now() / 1000))
+    : undefined;
+  const cookie = [
+    `payload-token=${result.token}`,
+    "Path=/",
+    "HttpOnly",
+    "SameSite=Lax",
+    maxAge !== undefined ? `Max-Age=${maxAge}` : "",
+    isHttps ? "Secure" : "",
+  ]
+    .filter(Boolean)
+    .join("; ");
+
+  const response = Response.json({ user: result.user });
+  response.headers.set("Set-Cookie", cookie);
   return response;
 }
