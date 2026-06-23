@@ -81,14 +81,12 @@ function CartLineItem({
   onRemove: (lineId: string) => void;
 }) {
   const discountPercent =
-    item.mrp > 0
-      ? Math.round(((item.mrp - item.price) / item.mrp) * 100)
-      : 0;
+    item.mrp > 0 ? Math.round(((item.mrp - item.price) / item.mrp) * 100) : 0;
   const sizeIndex = Math.max(0, SIZES.indexOf(item.size));
   const lineTotal = item.price * item.quantity;
 
   return (
-    <article className="overflow-hidden rounded-xl border border-gray-200 bg-white">
+    <article className="shrink-0 rounded-xl border border-gray-200 bg-white">
       <div className="flex gap-3 p-3">
         <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-lg bg-[#fafafa]">
           {item.image ? (
@@ -132,8 +130,8 @@ function CartLineItem({
         </div>
       </div>
 
-      <div className="flex items-center justify-between gap-2 border-t border-gray-100 px-3 py-2.5">
-        <div className="flex min-w-0 flex-wrap items-center gap-2">
+      <div className="flex shrink-0 items-center justify-between gap-2 border-t border-gray-100 px-3 py-2.5">
+        <div className="flex shrink-0 items-center gap-2">
           <div className="inline-flex items-center gap-1 rounded-lg border border-gray-200 px-1 py-0.5">
             <StepButton
               label="Decrease quantity"
@@ -241,7 +239,7 @@ export default function CartDetails({
           </div>
         ) : (
           <>
-            <div className="flex max-h-[min(52vh,440px)] flex-col gap-3 overflow-y-auto px-4 py-3">
+            <div className="flex min-h-0 max-h-[min(52vh,440px)] flex-col gap-3 overflow-y-auto px-4 py-3">
               {items.map((item) => (
                 <CartLineItem
                   key={item.lineId}
@@ -254,7 +252,9 @@ export default function CartDetails({
 
             <div className="bg-[#EFEFEF] py-1.5 text-center text-sm">
               Yay!{" "}
-              <span className="font-semibold text-green-600">Free Delivery</span>{" "}
+              <span className="font-semibold text-green-600">
+                Free Delivery
+              </span>{" "}
               On This Order!
             </div>
 
@@ -282,10 +282,7 @@ export default function CartDetails({
                   color: "text-green-600",
                 },
               ].map(({ label, value, color }) => (
-                <div
-                  key={label}
-                  className="flex justify-between py-1 text-sm"
-                >
+                <div key={label} className="flex justify-between py-1 text-sm">
                   <span className="text-gray-600">{label}</span>
                   <span className={color}>{value}</span>
                 </div>

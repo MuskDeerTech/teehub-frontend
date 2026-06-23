@@ -13,6 +13,7 @@ import {
 } from "@tabler/icons-react";
 import { navLinks, type Category } from "@/lib/products";
 import MegaMenu from "@/components/layout/MegaMenu";
+import CollectionsDropdown from "@/components/layout/CollectionsDropdown";
 import AuthForm from "@/components/auth/AuthForm";
 import { useAuth } from "@/components/auth/AuthContext";
 import { useCart } from "@/components/cart/CartContext";
@@ -58,13 +59,19 @@ export default function Navbar() {
   const { user } = useAuth();
 
   const [menuOpen, setMenuOpen] = useState(false);
+  const [collectionsOpen, setCollectionsOpen] = useState(false);
   const [authOpen, setAuthOpen] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
   const [categoriesLoaded, setCategoriesLoaded] = useState(false);
   const [categoriesLoading, setCategoriesLoading] = useState(false);
 
+  const ensureCategories = () => {
+    if (!categoriesLoaded && !categoriesLoading) setCategoriesLoading(true);
+  };
+
   useEffect(() => {
-    if (!menuOpen || categoriesLoaded || !categoriesLoading) return;
+    if ((!menuOpen && !collectionsOpen) || categoriesLoaded || !categoriesLoading)
+      return;
     const controller = new AbortController();
     const params = new URLSearchParams({
       "where[isActive][equals]": "true",
@@ -86,32 +93,71 @@ export default function Navbar() {
       })
       .finally(() => setCategoriesLoading(false));
     return () => controller.abort();
-  }, [categoriesLoaded, categoriesLoading, menuOpen]);
+  }, [categoriesLoaded, categoriesLoading, menuOpen, collectionsOpen]);
 
   const toggleMenu = () => {
     const next = !menuOpen;
     setMenuOpen(next);
-    if (next && !categoriesLoaded && !categoriesLoading)
-      setCategoriesLoading(true);
+    if (next) setCollectionsOpen(false);
+    if (next) ensureCategories();
+  };
+
+  const openCollections = () => {
+    setMenuOpen(false);
+    setCollectionsOpen(true);
+    ensureCategories();
   };
 
   return (
-    <nav className="sticky top-0 z-[100] flex h-[72px] w-full items-center justify-between border-b border-[#e7e7e7] bg-[#f8f8f8] px-[42px] max-[768px]:px-5 max-[360px]:h-[70px] max-[360px]:justify-center max-[360px]:px-0">
+    <div
+      className="sticky top-0 z-[100] relative"
+      onMouseLeave={() => setCollectionsOpen(false)}
+    >
+      <nav className="flex h-[72px] w-full items-center justify-between border-b border-[#e7e7e7] bg-[#f8f8f8] px-[42px] max-[768px]:px-5 max-[360px]:h-[70px] max-[360px]:justify-center max-[360px]:px-0">
       <div className="flex items-center gap-[34px] max-[768px]:flex-1 max-[768px]:justify-start max-[768px]:gap-[15px] max-[360px]:hidden">
-        {navLinks.map((link) => (
-          <span
-            key={link}
-            className="cursor-pointer text-[13px] font-bold tracking-[1px] text-black transition-colors duration-200 hover:text-[#ff5b1f]"
-          >
-            {link}
-          </span>
-        ))}
+        {navLinks.map((link) => {
+          if (link === "NEW IN") {
+            return (
+              <Link
+                key={link}
+                href="/new-in"
+                onMouseEnter={() => setCollectionsOpen(false)}
+                className="text-[13px] font-bold tracking-[1px] text-black transition-colors duration-200 hover:text-[#ff5b1f]"
+              >
+                {link}
+              </Link>
+            );
+          }
+
+          if (link === "COLLECTIONS") {
+            return (
+              <span
+                key={link}
+                onMouseEnter={openCollections}
+                className="cursor-pointer text-[13px] font-bold tracking-[1px] text-black transition-colors duration-200 hover:text-[#ff5b1f]"
+              >
+                {link}
+              </span>
+            );
+          }
+
+          return (
+            <span
+              key={link}
+              onMouseEnter={() => setCollectionsOpen(false)}
+              className="cursor-pointer text-[13px] font-bold tracking-[1px] text-black transition-colors duration-200 hover:text-[#ff5b1f]"
+            >
+              {link}
+            </span>
+          );
+        })}
       </div>
 
       {/* LOGO */}
       <Link
         href="/"
         aria-label="TeeHub home"
+        onMouseEnter={() => setCollectionsOpen(false)}
         className="absolute left-1/2 -translate-x-1/2 max-[768px]:left-[55%]"
       >
         <Image
@@ -127,12 +173,18 @@ export default function Navbar() {
       {/* ICONS */}
       <div className="flex items-center gap-7 max-[768px]:flex-1 max-[768px]:justify-end max-[768px]:gap-5 max-[360px]:hidden">
         {/* LOCATION */}
-        <span className="flex h-7 w-7 cursor-pointer items-center justify-center">
+        <span
+          onMouseEnter={() => setCollectionsOpen(false)}
+          className="flex h-7 w-7 cursor-pointer items-center justify-center"
+        >
           <IconMapPin size={26} stroke={1.5} className="text-black" />
         </span>
 
         {/* SEARCH */}
-        <span className="flex h-7 w-7 cursor-pointer items-center justify-center">
+        <span
+          onMouseEnter={() => setCollectionsOpen(false)}
+          className="flex h-7 w-7 cursor-pointer items-center justify-center"
+        >
           <IconSearch size={26} stroke={1.5} className="text-black" />
         </span>
 
@@ -141,6 +193,7 @@ export default function Navbar() {
           type="button"
           aria-label={user ? "Account" : "Sign in"}
           onClick={() => (user ? router.push("/account") : setAuthOpen(true))}
+          onMouseEnter={() => setCollectionsOpen(false)}
           className="relative flex h-7 w-7 cursor-pointer items-center justify-center"
         >
           <IconUser
@@ -151,7 +204,10 @@ export default function Navbar() {
         </button>
 
         {/* INSTAGRAM */}
-        <span className="flex h-7 w-7 cursor-pointer items-center justify-center">
+        <span
+          onMouseEnter={() => setCollectionsOpen(false)}
+          className="flex h-7 w-7 cursor-pointer items-center justify-center"
+        >
           <IconBrandInstagram size={26} stroke={1.5} className="text-black " />
         </span>
 
@@ -160,6 +216,7 @@ export default function Navbar() {
           type="button"
           aria-label={`Open cart (${totalCount} items)`}
           onClick={openCart}
+          onMouseEnter={() => setCollectionsOpen(false)}
           className="relative flex h-7 w-7 cursor-pointer items-center justify-center"
         >
           <IconShoppingBag
@@ -179,6 +236,7 @@ export default function Navbar() {
           aria-label="Menu"
           aria-expanded={menuOpen}
           onClick={toggleMenu}
+          onMouseEnter={() => setCollectionsOpen(false)}
           className="flex h-7 w-11 cursor-pointer items-center justify-center"
         >
           <Image
@@ -190,6 +248,14 @@ export default function Navbar() {
           />
         </button>
       </div>
+      </nav>
+
+      <CollectionsDropdown
+        open={collectionsOpen}
+        categories={categories}
+        loading={categoriesLoading && !categoriesLoaded}
+        onClose={() => setCollectionsOpen(false)}
+      />
 
       <MegaMenu
         open={menuOpen}
@@ -199,6 +265,6 @@ export default function Navbar() {
       />
 
       <AuthForm open={authOpen} onClose={() => setAuthOpen(false)} />
-    </nav>
+    </div>
   );
 }

@@ -168,7 +168,7 @@ export async function getAllProducts(): Promise<Product[]> {
 }
 
 /** Newest published products across every category. */
-export async function getLatestProducts(limit = 4): Promise<Product[]> {
+export async function getLatestProducts(limit = PAGE_LIMIT): Promise<Product[]> {
   const payload = await getPayload({ config });
   const res = await payload.find({
     collection: "products",

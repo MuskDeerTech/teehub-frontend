@@ -32,14 +32,25 @@ export default function MegaMenu({
         <div className="flex items-start gap-20 max-[1024px]:flex-col">
           {/* LEFT — collection links */}
           <div className="flex w-[260px] shrink-0 flex-col gap-4 max-[1024px]:w-full">
-            {menuCollections.map((item) => (
-              <span
-                key={item}
-                className="cursor-pointer text-[14px] font-bold uppercase tracking-[1px] text-black transition-colors duration-200 hover:text-[#ff5b1f]"
-              >
-                {item}
-              </span>
-            ))}
+            {menuCollections.map((item) =>
+              item === "NEW ARRIVALS" ? (
+                <Link
+                  key={item}
+                  href="/new-in"
+                  onClick={onClose}
+                  className="text-[14px] font-bold uppercase tracking-[1px] text-black transition-colors duration-200 hover:text-[#ff5b1f]"
+                >
+                  {item}
+                </Link>
+              ) : (
+                <span
+                  key={item}
+                  className="cursor-pointer text-[14px] font-bold uppercase tracking-[1px] text-black transition-colors duration-200 hover:text-[#ff5b1f]"
+                >
+                  {item}
+                </span>
+              ),
+            )}
           </div>
 
           {/* RIGHT — category tiles */}
@@ -69,15 +80,15 @@ export default function MegaMenu({
                         Falls back to the label when no image is set. */}
                     <span
                       style={{ backgroundColor: cat.bg ?? "#f1f1f1" }}
-                      className="flex h-[120px] w-[120px] items-center justify-center overflow-hidden rounded-[10px] transition-transform duration-300 hover:scale-105"
+                      className="flex h-[104px] w-[104px] items-center justify-center overflow-hidden rounded-[10px] transition-transform duration-300 hover:scale-105"
                     >
                       {cat.thumbnailImage ? (
                         <Image
                           src={cat.thumbnailImage.src}
                           alt={cat.thumbnailImage.alt}
-                          width={120}
+                          width={104}
                           height={104}
-                          className="h-[104px] w-[120px] object-contain"
+                          className="h-[104px] w-[104px] object-contain"
                           // Replays the drag/zoom fit set in the admin editor;
                           // overflow is clipped by the rounded tile above.
                           style={fitTransform(cat.thumbFit)}

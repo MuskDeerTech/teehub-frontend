@@ -31,7 +31,7 @@ export default async function LatestDrops({
 
         {!productPage && (
           <Link
-            href="/category/all"
+            href="/new-in"
             className="flex h-10 items-center whitespace-nowrap rounded-full bg-[#ff5b1f] px-5 text-[12px] font-bold text-white sm:h-11 sm:px-7 sm:text-[13px]"
           >
             DISCOVER MORE
