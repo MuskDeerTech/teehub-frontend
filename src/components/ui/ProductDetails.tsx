@@ -2,7 +2,6 @@
 
 import Image from "next/image";
 import BookmarkButton from "@/components/ui/BookmarkButton";
-import LatestDrops from "@/components/sections/LatestDrops";
 import { productBookmarkId } from "@/lib/bookmarks";
 import { useCart } from "@/components/cart/CartContext";
 import type { ImageFit, Product } from "@/lib/products";
@@ -750,8 +749,8 @@ export default function ProductDetails({ product }: { product: Product }) {
         </div>
       )}
 
-      <LatestDrops productPage excludeSlug={product.slug} />
-      {copied && (
+      
+        {copied && (
         <div className="fixed bottom-6 left-1/2 z-[100] -translate-x-1/2 rounded-full bg-black px-4 py-2 text-sm font-medium text-white shadow-lg">
           Link copied successfully ✓
         </div>

@@ -1,44 +1,21 @@
 import Link from "next/link";
 import JerseyCard from "@/components/ui/JerseyCard";
-import { formatPriceRange, latestDrops, iplJerseys } from "@/lib/products";
-import type { JerseyDrop } from "@/lib/products";
+import { getProductsByCategory } from "@/lib/catalog";
 
-type DropWithMeta = JerseyDrop & { slug?: string; bgColor?: string };
-
-function findSlug(title: string): string | undefined {
-  return iplJerseys.find(
-    (product) => product.title.toLowerCase() === title.toLowerCase(),
-  )?.slug;
-}
-
-export default function LatestDrops({
+export default async function LatestDrops({
   productPage = false,
   excludeSlug,
 }: {
   productPage?: boolean;
   excludeSlug?: string;
 }) {
-  const drops: DropWithMeta[] = productPage
-    ? iplJerseys
-        .filter((product) => product.slug !== excludeSlug)
-        .filter(
-          (product, index, products) =>
-            products.findIndex((item) => item.title === product.title) === index,
-        )
-        .slice(0, 4)
-        .map((product) => ({
-          slug: product.slug,
-          title: product.title,
-          image: product.image ?? "",
-          alt: product.title,
-          bg: "",
-          bgColor: product.bg,
-          price: formatPriceRange(product),
-        }))
-    : latestDrops.map((drop) => ({
-        ...drop,
-        slug: findSlug(drop.title),
-      }));
+  const allJerseys = await getProductsByCategory("ipl-jersey");
+
+  const products = productPage
+    ? allJerseys.filter((p) => p.slug !== excludeSlug).slice(0, 4)
+    : allJerseys.slice(0, 4);
+
+  if (products.length === 0) return null;
 
   return (
     <section className="w-full bg-[#f5f5f5] px-[clamp(16px,4vw,80px)] py-[60px]">
@@ -61,27 +38,26 @@ export default function LatestDrops({
         )}
       </div>
 
-     <div
-  className="
-    scrollbar-hide
-    flex gap-4
-    snap-x snap-mandatory overflow-x-auto pb-2.5
-    [&>*]:shrink-0 [&>*]:snap-center
-    [&>*]:w-[85%]
+      <div
+        className="
+          scrollbar-hide
+          flex gap-4
+          snap-x snap-mandatory overflow-x-auto pb-2.5
+          [&>*]:shrink-0 [&>*]:snap-center
+          [&>*]:w-[85%]
 
-    sm:[&>*]:w-[calc(50%-10px)]
+          sm:[&>*]:w-[calc(50%-10px)]
 
-    lg:grid lg:grid-cols-4 lg:gap-[18px] lg:overflow-visible lg:snap-none lg:pb-0
-    lg:[&>*]:w-auto lg:[&>*]:shrink
-  "
->
-        {drops.map((drop) => (
+          lg:grid lg:grid-cols-4 lg:gap-[18px] lg:overflow-visible lg:snap-none lg:pb-0
+          lg:[&>*]:w-auto lg:[&>*]:shrink
+        "
+      >
+        {products.map((product) => (
           <JerseyCard
-            key={drop.slug ?? drop.title}
-            drop={drop}
+            key={product.slug}
+            product={product}
             compact={productPage}
-            bgColor={drop.bgColor}
-            href={drop.slug ? `/product/${drop.slug}` : undefined}
+            href={`/product/${product.slug}`}
           />
         ))}
       </div>
