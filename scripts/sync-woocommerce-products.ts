@@ -75,7 +75,6 @@ async function run() {
       const result = await syncProduct(payload, product, {
         categoryId,
         imageIds: [...new Set(imageIds)],
-        variations,
         cache,
       });
       report[result.action] += 1;

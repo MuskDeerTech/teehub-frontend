@@ -100,6 +100,7 @@ function toProduct(doc: ProductDoc): Product {
     details: doc.details?.map((d) => d.text),
     description: doc.description ?? undefined,
     prepaidPromo: doc.prepaidPromo ?? undefined,
+    allowCustomName: doc.allowCustomName ?? undefined,
   };
 }
 

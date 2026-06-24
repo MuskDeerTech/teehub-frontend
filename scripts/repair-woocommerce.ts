@@ -14,7 +14,6 @@ import type {
   SyncAction,
   SyncReport,
   WooImage,
-  WooProduct,
   WooVariation,
 } from "../src/lib/woocommerce/types";
 
@@ -178,7 +177,6 @@ async function repairProducts(
       syncProduct(payload, product, {
         categoryId,
         imageIds,
-        variations,
         cache,
         slugOverride,
         matchExistingBySkuOrSlug: false,

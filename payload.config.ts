@@ -307,42 +307,6 @@ const Products: CollectionConfig = {
       name: "shortDescription",
       type: "textarea",
     },
-    {
-      name: "woocommerceCategoryIds",
-      type: "json",
-      admin: {
-        description:
-          "All WooCommerce category IDs. The primary category remains in the category relationship.",
-      },
-    },
-    {
-      name: "variations",
-      type: "array",
-      fields: [
-        { name: "woocommerceId", type: "number", required: true },
-        { name: "sku", type: "text" },
-        { name: "price", type: "number", min: 0 },
-        { name: "regularPrice", type: "number", min: 0 },
-        { name: "salePrice", type: "number", min: 0 },
-        { name: "stockQuantity", type: "number", min: 0 },
-        {
-          name: "stockStatus",
-          type: "select",
-          options: ["instock", "outofstock", "onbackorder"],
-        },
-        { name: "attributes", type: "json" },
-        { name: "imageUrl", type: "text" },
-      ],
-    },
-    {
-      name: "woocommerceData",
-      label: "WooCommerce legacy snapshot",
-      type: "json",
-      admin: {
-        description:
-          "Original WooCommerce fields retained for auditing and plugin-specific metadata.",
-      },
-    },
     // Publishing controls live in the sidebar so they're reachable from any tab.
     {
       name: "isPublished",
@@ -355,6 +319,20 @@ const Products: CollectionConfig = {
       type: "checkbox",
       defaultValue: false,
       admin: { position: "sidebar" },
+    },
+    // When on, the product page shows the "Name and T-shirt Number" input
+    // (jerseys). Auto-set from the WooCommerce snapshot on import; togglable
+    // per product for anything added in the admin.
+    {
+      name: "allowCustomName",
+      label: "Allow Name & Number",
+      type: "checkbox",
+      defaultValue: false,
+      admin: {
+        position: "sidebar",
+        description:
+          "Show the Name & Number input on the product page (mainly jerseys).",
+      },
     },
     {
       name: "sortOrder",

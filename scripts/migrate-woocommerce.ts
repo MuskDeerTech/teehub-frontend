@@ -274,7 +274,6 @@ async function run() {
             syncProduct(payload, product, {
               categoryId,
               imageIds,
-              variations: variationsByProduct.get(product.id) ?? [],
               cache,
             }),
           );

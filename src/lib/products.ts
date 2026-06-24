@@ -218,16 +218,6 @@ export const poloShirts: ApparelProduct[] = [
 
 /**
  * Catalog product shown on a category listing page (the grid of cards).
- *
- * Design notes for the eventual CMS swap:
- *  - `image` is an optional string: a local `/images/...` path now, a CMS URL
- *    later. Both are just strings, so components never change. It's optional so
- *    we can build the cards as coloured boxes before the Figma exports land.
- *  - Prices are NUMBERS, not pre-formatted strings, so we can sort/filter later
- *    and format the ₹ once in `formatPriceRange`.
- *  - `bg` is the card's background colour; the jersey image sits on top of it
- *    (`object-contain`), which keeps every card uniform regardless of how
- *    differently sized the source images are.
  */
 export type Product = {
   slug: string;
@@ -268,6 +258,7 @@ export type Product = {
   details?: string[]; // bullet lines under the "Details" heading
   description?: string; // long marketing paragraph under "Description"
   prepaidPromo?: string; // green prepaid-incentive line under the fit copy
+  allowCustomName?: boolean; // show the Name & Number input (mainly jerseys)
 };
 
 // Every jersey is a short-sleeve cricket/IPL "Jersey"; colours and available

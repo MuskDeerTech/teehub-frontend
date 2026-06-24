@@ -314,54 +314,12 @@ export interface Product {
   stockStatus?: ('instock' | 'outofstock' | 'onbackorder') | null;
   stockQuantity?: number | null;
   shortDescription?: string | null;
-  /**
-   * All WooCommerce category IDs. The primary category remains in the category relationship.
-   */
-  woocommerceCategoryIds?:
-    | {
-        [k: string]: unknown;
-      }
-    | unknown[]
-    | string
-    | number
-    | boolean
-    | null;
-  variations?:
-    | {
-        woocommerceId: number;
-        sku?: string | null;
-        price?: number | null;
-        regularPrice?: number | null;
-        salePrice?: number | null;
-        stockQuantity?: number | null;
-        stockStatus?: ('instock' | 'outofstock' | 'onbackorder') | null;
-        attributes?:
-          | {
-              [k: string]: unknown;
-            }
-          | unknown[]
-          | string
-          | number
-          | boolean
-          | null;
-        imageUrl?: string | null;
-        id?: string | null;
-      }[]
-    | null;
-  /**
-   * Original WooCommerce fields retained for auditing and plugin-specific metadata.
-   */
-  woocommerceData?:
-    | {
-        [k: string]: unknown;
-      }
-    | unknown[]
-    | string
-    | number
-    | boolean
-    | null;
   isPublished?: boolean | null;
   isFeatured?: boolean | null;
+  /**
+   * Show the Name & Number input on the product page (mainly jerseys).
+   */
+  allowCustomName?: boolean | null;
   sortOrder?: number | null;
   cardImage?: (number | null) | Media;
   /**
@@ -818,24 +776,9 @@ export interface ProductsSelect<T extends boolean = true> {
   stockStatus?: T;
   stockQuantity?: T;
   shortDescription?: T;
-  woocommerceCategoryIds?: T;
-  variations?:
-    | T
-    | {
-        woocommerceId?: T;
-        sku?: T;
-        price?: T;
-        regularPrice?: T;
-        salePrice?: T;
-        stockQuantity?: T;
-        stockStatus?: T;
-        attributes?: T;
-        imageUrl?: T;
-        id?: T;
-      };
-  woocommerceData?: T;
   isPublished?: T;
   isFeatured?: T;
+  allowCustomName?: T;
   sortOrder?: T;
   cardImage?: T;
   cardFit?:

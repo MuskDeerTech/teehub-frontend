@@ -8,7 +8,6 @@ import type {
   WooLineItem,
   WooOrder,
   WooProduct,
-  WooVariation,
 } from "./types";
 
 type Doc = Record<string, unknown> & { id: string | number };
@@ -150,18 +149,32 @@ export async function syncMedia(
   return { action: "created" as const, doc };
 }
 
-function mapVariation(variation: WooVariation) {
-  return {
-    woocommerceId: variation.id,
-    sku: variation.sku || undefined,
-    price: numberOrZero(variation.price),
-    regularPrice: numberOrZero(variation.regular_price),
-    salePrice: numberOrZero(variation.sale_price),
-    stockQuantity: variation.stock_quantity ?? undefined,
-    stockStatus: variation.stock_status,
-    attributes: variation.attributes ?? [],
-    imageUrl: variation.image?.src,
-  };
+/**
+ * Whether a WooCommerce product offered a "name & number" customization. The
+ * old store used the RedNao Advanced Product Fields plugin, which stores its
+ * field config in the `_rednao_advanced_product_options` meta entry. A product
+ * is customizable when that config holds at least one field — the labels are
+ * jersey-name variants ("Jersey Name & Number", "Free Jersey Name & Number"…).
+ */
+function detectCustomName(product: WooProduct): boolean {
+  const entry = product.meta_data?.find(
+    (meta) => meta.key === "_rednao_advanced_product_options",
+  );
+  if (!entry) return false;
+  let value: unknown = entry.value;
+  if (typeof value === "string") {
+    try {
+      value = JSON.parse(value);
+    } catch {
+      return false;
+    }
+  }
+  const rows = (value as { Rows?: Array<{ Columns?: Array<{ Field?: unknown }> }> })
+    ?.Rows;
+  if (!Array.isArray(rows)) return false;
+  return rows.some((row) =>
+    (row.Columns ?? []).some((col) => Boolean(col?.Field)),
+  );
 }
 
 export async function syncProduct(
@@ -170,14 +183,12 @@ export async function syncProduct(
   {
     categoryId,
     imageIds,
-    variations,
     cache,
     slugOverride,
     matchExistingBySkuOrSlug = true,
   }: {
     categoryId: string | number;
     imageIds: Array<string | number>;
-    variations: WooVariation[];
     cache?: WooSyncCache;
     slugOverride?: string;
     matchExistingBySkuOrSlug?: boolean;
@@ -219,8 +230,6 @@ export async function syncProduct(
       stockQuantity: product.stock_quantity ?? undefined,
       shortDescription: cleanHtml(product.short_description),
       description: cleanHtml(product.description),
-      woocommerceCategoryIds: (product.categories ?? []).map((item) => item.id),
-      variations: variations.map(mapVariation),
       cardImage: imageIds[0],
       images: imageIds,
       bg: "#f1f1f1",
@@ -233,8 +242,8 @@ export async function syncProduct(
           ? Math.round(((regularPrice - price) / regularPrice) * 100)
           : undefined,
       isPublished: product.status === "publish",
+      allowCustomName: detectCustomName(product),
       sortOrder: product.menu_order ?? 0,
-      woocommerceData: product,
     },
     existing,
   );

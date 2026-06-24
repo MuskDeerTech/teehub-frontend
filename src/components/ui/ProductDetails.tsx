@@ -179,7 +179,7 @@ function ImageLightbox({
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/90 p-4"
+      className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 p-4"
       role="dialog"
       aria-modal="true"
       aria-label="Product image preview"
@@ -432,7 +432,11 @@ export default function ProductDetails({ product }: { product: Product }) {
               </div>
             </div>
 
-            <div className="mt-3 grid grid-cols-2 gap-5 max-[480px]:gap-2.5">
+            <div
+              className={`mt-3 grid gap-5 max-[480px]:gap-2.5 ${
+                product.allowCustomName ? "grid-cols-2" : "grid-cols-1"
+              }`}
+            >
               <div>
                 <div className="mb-2 flex h-[22px] items-center justify-center rounded bg-[#d9d9d9] px-2 text-center text-[10px] leading-none text-black max-[480px]:text-[9px]">
                   Quantity
@@ -463,30 +467,32 @@ export default function ProductDetails({ product }: { product: Product }) {
                 </div>
               </div>
 
-              <div>
-                <div className="mb-2 flex h-[22px] items-center justify-center whitespace-nowrap rounded bg-[#d9d9d9] px-2 text-center text-[10px] leading-none text-black max-[480px]:text-[9px]">
-                  Name and T-shirt Number
-                </div>
+              {product.allowCustomName && (
+                <div>
+                  <div className="mb-2 flex h-[22px] items-center justify-center whitespace-nowrap rounded bg-[#d9d9d9] px-2 text-center text-[10px] leading-none text-black max-[480px]:text-[9px]">
+                    Name and T-shirt Number
+                  </div>
 
-                <div className="flex h-[26px] gap-2 max-[480px]:gap-1.5">
-                  <input
-                    type="text"
-                    placeholder="NAME"
-                    value={nameValue}
-                    onChange={(e) => setNameValue(e.target.value)}
-                    className="h-full min-w-0 flex-1 rounded bg-white px-2 text-center text-[12px] uppercase leading-none text-black outline-none ring-1 ring-[#e5e5e5] focus:ring-black max-[480px]:px-1.5 max-[480px]:text-[11px]"
-                  />
+                  <div className="flex h-[26px] gap-2 max-[480px]:gap-1.5">
+                    <input
+                      type="text"
+                      placeholder="NAME"
+                      value={nameValue}
+                      onChange={(e) => setNameValue(e.target.value)}
+                      className="h-full min-w-0 flex-1 rounded bg-white px-2 text-center text-[12px] uppercase leading-none text-black outline-none ring-1 ring-[#e5e5e5] focus:ring-black max-[480px]:px-1.5 max-[480px]:text-[11px]"
+                    />
 
-                  <input
-                    type="text"
-                    inputMode="numeric"
-                    placeholder="07"
-                    value={numberValue}
-                    onChange={(e) => setNumberValue(e.target.value)}
-                    className="h-full w-[46px] shrink-0 rounded bg-white text-center text-[12px] leading-none text-black outline-none ring-1 ring-[#e5e5e5] focus:ring-black max-[480px]:w-[38px] max-[480px]:text-[11px]"
-                  />
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      placeholder="07"
+                      value={numberValue}
+                      onChange={(e) => setNumberValue(e.target.value)}
+                      className="h-full w-[46px] shrink-0 rounded bg-white text-center text-[12px] leading-none text-black outline-none ring-1 ring-[#e5e5e5] focus:ring-black max-[480px]:w-[38px] max-[480px]:text-[11px]"
+                    />
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
 
             <div className="mt-4 flex h-[58px] gap-3 max-[480px]:mt-4 max-[480px]:h-[54px] max-[480px]:gap-2">
@@ -505,7 +511,7 @@ export default function ProductDetails({ product }: { product: Product }) {
                       product.price ??
                       product.priceMin,
                     customName:
-                      nameValue || numberValue
+                      product.allowCustomName && (nameValue || numberValue)
                         ? `${nameValue.trim()} ${numberValue.trim()}`.trim()
                         : undefined,
                   })
