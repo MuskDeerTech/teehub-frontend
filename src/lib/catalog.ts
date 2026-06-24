@@ -167,6 +167,36 @@ export async function getAllProducts(): Promise<Product[]> {
   return getProductsByCategory("all");
 }
 
+/**
+ * Full-text-ish product search over published products. The query is split on
+ * whitespace and every word must appear (case-insensitively) in the title, so
+ * "rcb jersey" matches "BENGALURU PRACTICE JERSEY 2026 (RCB)" regardless of
+ * word order. An empty query returns nothing (the page shows a prompt). Backs
+ * both the navbar search overlay's "view all" page and direct /search visits.
+ */
+export async function searchProducts(
+  query: string,
+  limit = PAGE_LIMIT,
+): Promise<Product[]> {
+  const words = query.trim().split(/\s+/).filter(Boolean);
+  if (words.length === 0) return [];
+
+  const payload = await getPayload({ config });
+  const res = await payload.find({
+    collection: "products",
+    where: {
+      and: [
+        { isPublished: { equals: true } },
+        ...words.map((word) => ({ title: { like: word } })),
+      ],
+    },
+    sort: "sortOrder",
+    depth: 1,
+    limit,
+  });
+  return res.docs.map(toProduct);
+}
+
 /** Newest published products across every category. */
 export async function getLatestProducts(limit = PAGE_LIMIT): Promise<Product[]> {
   const payload = await getPayload({ config });

@@ -26,6 +26,46 @@
   -webkit-text-fill-color: transparent;
 }
 
+/* Hero background slider transitions. Two layers animate at once — the
+   outgoing team's banner leaves while the incoming one enters from the
+   opposite edge — giving a clear directional slide even when the artwork is
+   currently identical across teams. */
+@keyframes hero-in-right {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes hero-out-left {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-100%);
+  }
+}
+
+@keyframes hero-in-left {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes hero-out-right {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(100%);
+  }
+}
+
 html,
 body {
   width: 100%;

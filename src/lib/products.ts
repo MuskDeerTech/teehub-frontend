@@ -65,7 +65,31 @@ export const menuCollections = [
   "ICONICS",
 ];
 
-export type Team = { name: string; logo: string; logoWidth: number; logoHeight: number };
+export type Team = {
+  name: string;
+  logo: string;
+  logoWidth: number;
+  logoHeight: number;
+  // Hero split-background images shown when this team is active. Optional for
+  // now (every team falls back to the shared default banners); drop a per-team
+  // pair in here later and the Hero slider picks it up with no code changes.
+  bannerLeft?: string;
+  bannerRight?: string;
+};
+
+/** Shared Hero banners used until per-team artwork is supplied. */
+export const DEFAULT_HERO_BANNER = {
+  left: "/images/cat-bannerl.jpg",
+  right: "/images/cat-bannerr.jpg",
+} as const;
+
+/** The left/right Hero background for a team, falling back to the defaults. */
+export function teamBanner(team: Team): { left: string; right: string } {
+  return {
+    left: team.bannerLeft ?? DEFAULT_HERO_BANNER.left,
+    right: team.bannerRight ?? DEFAULT_HERO_BANNER.right,
+  };
+}
 
 export const teams: Team[] = [
   { name: "MI", logo: "/svg/teams/mi.svg", logoWidth: 300, logoHeight: 189 },

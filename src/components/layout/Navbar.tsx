@@ -14,6 +14,7 @@ import {
 import { navLinks, type Category } from "@/lib/products";
 import MegaMenu from "@/components/layout/MegaMenu";
 import CollectionsDropdown from "@/components/layout/CollectionsDropdown";
+import SearchOverlay from "@/components/layout/SearchOverlay";
 import AuthForm from "@/components/auth/AuthForm";
 import { useAuth } from "@/components/auth/AuthContext";
 import { useCart } from "@/components/cart/CartContext";
@@ -60,6 +61,7 @@ export default function Navbar() {
 
   const [menuOpen, setMenuOpen] = useState(false);
   const [collectionsOpen, setCollectionsOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
   const [authOpen, setAuthOpen] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
   const [categoriesLoaded, setCategoriesLoaded] = useState(false);
@@ -173,20 +175,37 @@ export default function Navbar() {
       {/* ICONS */}
       <div className="flex items-center gap-7 max-[768px]:flex-1 max-[768px]:justify-end max-[768px]:gap-5 max-[360px]:hidden">
         {/* LOCATION */}
-        <span
+        <a
+          href="https://maps.app.goo.gl/c6Nf1VdPwNkn75qV7"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Find our store on Google Maps"
+          title="Visit our store — VOC Street, Kumar Nagar, Tiruppur"
           onMouseEnter={() => setCollectionsOpen(false)}
           className="flex h-7 w-7 cursor-pointer items-center justify-center"
         >
           <IconMapPin size={26} stroke={1.5} className="text-black" />
-        </span>
+        </a>
 
         {/* SEARCH */}
-        <span
+        <button
+          type="button"
+          aria-label="Search"
+          aria-expanded={searchOpen}
+          onClick={() => {
+            setCollectionsOpen(false);
+            setMenuOpen(false);
+            setSearchOpen((v) => !v);
+          }}
           onMouseEnter={() => setCollectionsOpen(false)}
           className="flex h-7 w-7 cursor-pointer items-center justify-center"
         >
-          <IconSearch size={26} stroke={1.5} className="text-black" />
-        </span>
+          <IconSearch
+            size={26}
+            stroke={1.5}
+            className={`transition-colors ${searchOpen ? "text-[#f36d43]" : "text-black"}`}
+          />
+        </button>
 
         {/* PROFILE */}
         <button
@@ -204,12 +223,17 @@ export default function Navbar() {
         </button>
 
         {/* INSTAGRAM */}
-        <span
+        <a
+          href="https://www.instagram.com/tee_hub_shop/"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="TeeHub on Instagram"
+          title="Follow us on Instagram"
           onMouseEnter={() => setCollectionsOpen(false)}
           className="flex h-7 w-7 cursor-pointer items-center justify-center"
         >
           <IconBrandInstagram size={26} stroke={1.5} className="text-black " />
-        </span>
+        </a>
 
         {/* BAG */}
         <button
@@ -249,6 +273,8 @@ export default function Navbar() {
         </button>
       </div>
       </nav>
+
+      <SearchOverlay open={searchOpen} onClose={() => setSearchOpen(false)} />
 
       <CollectionsDropdown
         open={collectionsOpen}

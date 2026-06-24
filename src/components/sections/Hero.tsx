@@ -4,11 +4,25 @@ import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 import Dots from "@/components/ui/Dots";
-import { categoryList, teams } from "@/lib/products";
+import { categoryList, teamBanner, teams } from "@/lib/products";
+
+const SLIDE_MS = 600;
+
+// Which slide an animating layer is and where it's heading, mapped to the
+// keyframes defined in globals.css.
+const SLIDE_ANIM: Record<"forward" | "backward", { in: string; out: string }> = {
+  forward: { in: "hero-in-right", out: "hero-out-left" },
+  backward: { in: "hero-in-left", out: "hero-out-right" },
+};
 
 export default function Hero() {
   // Default to RCB so the initial window shows MI · RCB · CSK.
   const [activeIndex, setActiveIndex] = useState(1);
+  // While set, the background is mid-slide: `from` leaves, `to` enters.
+  const [transition, setTransition] = useState<{
+    from: number;
+    dir: "forward" | "backward";
+  } | null>(null);
 
   const teamCount = teams.length;
   const prevIndex = (activeIndex - 1 + teamCount) % teamCount;
@@ -18,6 +32,45 @@ export default function Hero() {
   // (matches the RCB default at activeIndex 1).
   const dotCount = 4;
   const activeDot = (activeIndex + 1) % dotCount;
+
+  const goTo = (index: number, dir: "forward" | "backward") => {
+    if (index === activeIndex) return;
+    setTransition({ from: activeIndex, dir });
+    setActiveIndex(index);
+  };
+
+  const goPrev = () => goTo(prevIndex, "backward");
+  const goNext = () => goTo(nextIndex, "forward");
+
+  // One full split background (left + right banner) for a given team.
+  const renderBanner = (index: number, priority = false) => {
+    const { left, right } = teamBanner(teams[index]);
+    return (
+      <>
+        <div className="relative h-full w-1/2 overflow-hidden">
+          <Image
+            src={left}
+            alt=""
+            fill
+            priority={priority}
+            sizes="50vw"
+            className="object-cover"
+          />
+        </div>
+        <div className="relative h-full w-1/2 overflow-hidden">
+          <Image
+            src={right}
+            alt=""
+            fill
+            priority={priority}
+            sizes="50vw"
+            className="object-cover"
+          />
+          <div className="absolute inset-0 bg-black/25" />
+        </div>
+      </>
+    );
+  };
 
   const renderTeamCard = (
     index: number,
@@ -29,13 +82,13 @@ export default function Hero() {
       <div
         key={team.name}
         onClick={() => {
-          if (position === "left") setActiveIndex(prevIndex);
-          else if (position === "right") setActiveIndex(nextIndex);
+          if (position === "left") goPrev();
+          else if (position === "right") goNext();
         }}
         className={`flex shrink-0 items-center justify-center rounded-[10px] bg-white transition-all duration-200 ${
           active
             ? "h-[clamp(70px,8vw,100px)] w-[clamp(70px,8vw,100px)]"
-            : "h-[clamp(52px,6vw,72px)] w-[clamp(52px,6vw,72px)] cursor-pointer opacity-90"
+            : "h-[clamp(52px,6vw,72px)] w-[clamp(52px,6vw,72px)] cursor-pointer opacity-90 hover:opacity-100"
         }`}
       >
         <Image
@@ -50,7 +103,39 @@ export default function Hero() {
   };
 
   return (
-    <section className="relative grid h-[calc(100vh_-_72px)] min-h-[650px] w-full grid-cols-2 overflow-hidden">
+    <section className="relative h-[calc(100vh_-_72px)] min-h-[650px] w-full overflow-hidden">
+      {/* BACKGROUND SLIDER */}
+      <div className="absolute inset-0 z-0 bg-black">
+        {transition ? (
+          // Mid-slide: the outgoing and incoming banners tile together so a
+          // visible seam sweeps across (the slide reads even when the artwork
+          // is currently identical for every team).
+          <>
+            <div
+              className="absolute inset-0 flex"
+              style={{
+                animation: `${SLIDE_ANIM[transition.dir].out} ${SLIDE_MS}ms cubic-bezier(0.22,1,0.36,1) both`,
+              }}
+            >
+              {renderBanner(transition.from)}
+            </div>
+            <div
+              className="absolute inset-0 flex"
+              style={{
+                animation: `${SLIDE_ANIM[transition.dir].in} ${SLIDE_MS}ms cubic-bezier(0.22,1,0.36,1) both`,
+              }}
+              onAnimationEnd={() => setTransition(null)}
+            >
+              {renderBanner(activeIndex)}
+            </div>
+          </>
+        ) : (
+          <div className="absolute inset-0 flex">
+            {renderBanner(activeIndex, true)}
+          </div>
+        )}
+      </div>
+
       {/* CATEGORY */}
       <div className="scrollbar-hide absolute left-6 right-6 top-6 z-10 flex gap-3 overflow-x-auto">
         {categoryList.map((cat) => (
@@ -64,35 +149,12 @@ export default function Hero() {
         ))}
       </div>
 
-      {/* LEFT */}
-      <div className="relative h-full overflow-hidden">
-        <Image
-          src="/images/cat-bannerl.jpg"
-          alt="Banner Left"
-          fill
-          priority
-          sizes="50vw"
-          className="object-cover"
-        />
-        <div className="pointer-events-none absolute -left-7.5 top-1/2 z-[5] -translate-y-1/2 whitespace-nowrap font-display text-[clamp(60px,14vw,280px)] uppercase leading-[0.85] text-[#ff5820] min-[1440px]:text-[240px] max-[1024px]:text-[160px] max-[768px]:w-1/2 max-[360px]:hidden">
-          TEE
-        </div>
+      {/* TEE / HUB overlay text (fixed above the moving background). */}
+      <div className="pointer-events-none absolute -left-7.5 top-1/2 z-[5] -translate-y-1/2 whitespace-nowrap font-display text-[clamp(60px,14vw,280px)] uppercase leading-[0.85] text-[#ff5820] min-[1440px]:text-[240px] max-[1024px]:text-[160px] max-[768px]:w-1/2 max-[360px]:hidden">
+        TEE
       </div>
-
-      {/* RIGHT */}
-      <div className="relative h-full overflow-hidden">
-        <Image
-          src="/images/cat-bannerr.jpg"
-          alt="Banner Right"
-          fill
-          priority
-          sizes="50vw"
-          className="object-cover"
-        />
-        <div className="absolute inset-0 bg-black/25" />
-        <div className="pointer-events-none absolute -right-7.5 top-1/2 z-[5] -translate-y-1/2 whitespace-nowrap font-display text-[clamp(60px,14vw,280px)] uppercase leading-[0.85] text-[#ff5820] min-[1440px]:text-[240px] max-[1024px]:text-[160px] max-[768px]:w-1/2 max-[360px]:hidden">
-          HUB
-        </div>
+      <div className="pointer-events-none absolute -right-7.5 top-1/2 z-[5] -translate-y-1/2 whitespace-nowrap font-display text-[clamp(60px,14vw,280px)] uppercase leading-[0.85] text-[#ff5820] min-[1440px]:text-[240px] max-[1024px]:text-[160px] max-[768px]:w-1/2 max-[360px]:hidden">
+        HUB
       </div>
 
       {/* CENTER BUTTON */}
@@ -104,9 +166,9 @@ export default function Hero() {
       <div className="absolute bottom-[30px] left-1/2 z-20 flex w-[clamp(280px,45vw,520px)] -translate-x-1/2 flex-col items-center gap-2">
         <div className="flex items-center justify-center gap-3">
           <button
-            onClick={() => setActiveIndex(prevIndex)}
+            onClick={goPrev}
             aria-label="Previous team"
-            className="h-[clamp(24px,3vw,34px)] w-[clamp(24px,3vw,34px)] cursor-pointer rounded-full bg-white/25 text-white"
+            className="flex h-[clamp(24px,3vw,34px)] w-[clamp(24px,3vw,34px)] cursor-pointer items-center justify-center rounded-full bg-white/25 text-white transition-colors duration-200 hover:bg-white/40"
           >
             ‹
           </button>
@@ -116,9 +178,9 @@ export default function Hero() {
           {renderTeamCard(nextIndex, "right")}
 
           <button
-            onClick={() => setActiveIndex(nextIndex)}
+            onClick={goNext}
             aria-label="Next team"
-            className="h-[clamp(24px,3vw,34px)] w-[clamp(24px,3vw,34px)] cursor-pointer rounded-full bg-white/25 text-white"
+            className="flex h-[clamp(24px,3vw,34px)] w-[clamp(24px,3vw,34px)] cursor-pointer items-center justify-center rounded-full bg-white/25 text-white transition-colors duration-200 hover:bg-white/40"
           >
             ›
           </button>
