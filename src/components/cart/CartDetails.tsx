@@ -1,9 +1,11 @@
 "use client";
 
 import Image from "next/image";
+import { useState } from "react";
 import {
   IconBolt,
   IconCash,
+  IconRuler2,
   IconShieldCheck,
   IconShoppingBag,
   IconTruck,
@@ -11,6 +13,7 @@ import {
 } from "@tabler/icons-react";
 import type { CartItem } from "./CartContext";
 import CheckoutOverlay from "./CheckoutOverlay";
+import SizeGuideModal from "@/components/ui/SizeGuideModal";
 
 const SIZES = ["XS", "S", "M", "L", "XL", "XXL"];
 const POLICY_ITEMS = [
@@ -208,6 +211,7 @@ export default function CartDetails({
 }: CartDetailsProps) {
   const discount = totalMrp - totalPrice;
   const hasItems = items.length > 0;
+  const [showGuide, setShowGuide] = useState(false);
 
   return (
     <CheckoutOverlay
@@ -228,6 +232,17 @@ export default function CartDetails({
             ✕
           </button>
         </div>
+
+        {hasItems && (
+          <button
+            type="button"
+            onClick={() => setShowGuide(true)}
+            className="flex items-center justify-center gap-1.5 border-b border-gray-100 bg-[#fafafa] py-2 text-xs font-medium text-gray-600 transition-colors hover:text-[#f36d43]"
+          >
+            <IconRuler2 size={15} stroke={1.8} />
+            Not sure about your size? View Size Guide
+          </button>
+        )}
 
         {!hasItems ? (
           <div className="flex flex-1 flex-col items-center justify-center px-6 py-16 text-center">
@@ -350,6 +365,8 @@ export default function CartDetails({
           </>
         )}
       </div>
+
+      {showGuide && <SizeGuideModal onClose={() => setShowGuide(false)} />}
     </CheckoutOverlay>
   );
 }

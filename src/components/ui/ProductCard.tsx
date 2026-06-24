@@ -2,9 +2,11 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useState } from "react";
 import { useCart } from "@/components/cart/CartContext";
 import { formatPriceRange } from "@/lib/products";
 import type { Product } from "@/lib/products";
+import QuickAddModal from "@/components/ui/QuickAddModal";
 
 type Variant = "hoodie" | "polo";
 
@@ -95,6 +97,7 @@ export default function ProductCard({
 }) {
   const c = config[variant];
   const { addItem } = useCart();
+  const [quickAddOpen, setQuickAddOpen] = useState(false);
 
   // Detail-page sale price (`price`/`originalPrice`) when the admin has set
   // it; otherwise fall back to the card's min–max range so the card never
@@ -103,7 +106,13 @@ export default function ProductCard({
   const unitPrice = product.price ?? product.priceMin;
   const unitMrp = product.originalPrice ?? unitPrice;
 
+  // Jerseys (name & number enabled) open a popup so the customer picks a size
+  // and types their name/number first; everything else quick-adds at size L.
   function handleAddToCart() {
+    if (product.allowCustomName) {
+      setQuickAddOpen(true);
+      return;
+    }
     addItem({
       id: product.slug,
       name: product.title,
@@ -195,6 +204,15 @@ export default function ProductCard({
           </button>
         </div>
       </div>
+
+      {quickAddOpen && (
+        <QuickAddModal
+          product={product}
+          unitPrice={unitPrice}
+          unitMrp={unitMrp}
+          onClose={() => setQuickAddOpen(false)}
+        />
+      )}
     </div>
   );
 }
