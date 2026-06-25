@@ -17,6 +17,7 @@ export interface CartItem {
   name: string;
   image: string;
   size: string;
+  availableSizes?: string[];
   quantity: number;
   price: number;
   mrp: number;

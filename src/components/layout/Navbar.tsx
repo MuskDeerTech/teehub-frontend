@@ -168,7 +168,7 @@ export default function Navbar() {
           width={181}
           height={57}
           priority
-          className="h-[52px] w-auto"
+          style={{ height: "52px", width: "auto" }}
         />
       </Link>
 

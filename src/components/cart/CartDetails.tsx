@@ -15,7 +15,7 @@ import type { CartItem } from "./CartContext";
 import CheckoutOverlay from "./CheckoutOverlay";
 import SizeGuideModal from "@/components/ui/SizeGuideModal";
 
-const SIZES = ["XS", "S", "M", "L", "XL", "XXL"];
+const FALLBACK_SIZES = ["XS", "S", "M", "L", "XL", "XXL", "XXXL"];
 const POLICY_ITEMS = [
   { Icon: IconTruckReturn, label: "Return &\nExchange" },
   { Icon: IconCash, label: "Cash On\nDelivery" },
@@ -85,7 +85,11 @@ function CartLineItem({
 }) {
   const discountPercent =
     item.mrp > 0 ? Math.round(((item.mrp - item.price) / item.mrp) * 100) : 0;
-  const sizeIndex = Math.max(0, SIZES.indexOf(item.size));
+  const sizes = item.availableSizes?.length
+    ? item.availableSizes
+    : FALLBACK_SIZES;
+  const selectedSizeIndex = sizes.indexOf(item.size);
+  const sizeIndex = selectedSizeIndex >= 0 ? selectedSizeIndex : 0;
   const lineTotal = item.price * item.quantity;
 
   return (
@@ -164,7 +168,7 @@ function CartLineItem({
               label="Previous size"
               onClick={() =>
                 onUpdate(item.lineId, {
-                  size: SIZES[Math.max(0, sizeIndex - 1)],
+                  size: sizes[Math.max(0, sizeIndex - 1)],
                 })
               }
             >
@@ -177,7 +181,7 @@ function CartLineItem({
               label="Next size"
               onClick={() =>
                 onUpdate(item.lineId, {
-                  size: SIZES[Math.min(SIZES.length - 1, sizeIndex + 1)],
+                  size: sizes[Math.min(sizes.length - 1, sizeIndex + 1)],
                 })
               }
             >

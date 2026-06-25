@@ -3,15 +3,11 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
-import { useCart } from "@/components/cart/CartContext";
 import { formatPriceRange } from "@/lib/products";
 import type { Product } from "@/lib/products";
 import QuickAddModal from "@/components/ui/QuickAddModal";
 
 type Variant = "hoodie" | "polo";
-
-// Quick-add starts at L; customers can adjust it with the cart size controls.
-const DEFAULT_SIZE = "L";
 
 /**
  * ─────────────────────────────────────────────────────────────────────────
@@ -96,7 +92,6 @@ export default function ProductCard({
   product: Product;
 }) {
   const c = config[variant];
-  const { addItem } = useCart();
   const [quickAddOpen, setQuickAddOpen] = useState(false);
 
   // Detail-page sale price (`price`/`originalPrice`) when the admin has set
@@ -106,22 +101,8 @@ export default function ProductCard({
   const unitPrice = product.price ?? product.priceMin;
   const unitMrp = product.originalPrice ?? unitPrice;
 
-  // Jerseys (name & number enabled) open a popup so the customer picks a size
-  // and types their name/number first; everything else quick-adds at size L.
   function handleAddToCart() {
-    if (product.allowCustomName) {
-      setQuickAddOpen(true);
-      return;
-    }
-    addItem({
-      id: product.slug,
-      name: product.title,
-      image: product.image ?? "",
-      size: DEFAULT_SIZE,
-      quantity: 1,
-      price: unitPrice,
-      mrp: unitMrp,
-    });
+    setQuickAddOpen(true);
   }
 
   return (

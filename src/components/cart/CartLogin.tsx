@@ -146,9 +146,9 @@ export default function CartLogin({
             <Image
               src="/images/teehub-logo.png"
               alt="TeeHub Logo"
-              width={120}
-              height={40}
-              className="h-10 w-auto"
+              width={181}
+              height={57}
+              style={{ height: "40px", width: "auto" }}
             />
           </div>
 

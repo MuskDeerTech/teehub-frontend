@@ -56,7 +56,7 @@ export default function QuickAddModal({
     const customName = nameValue.trim();
     const customNumber = numberValue.trim();
 
-    if (!customName || !customNumber) {
+    if (product.allowCustomName && (!customName || !customNumber)) {
       setShowValidation(true);
       return;
     }
@@ -66,10 +66,13 @@ export default function QuickAddModal({
       name: product.title,
       image: product.image ?? "",
       size: selectedSize,
+      availableSizes: sizes,
       quantity: 1,
       price: unitPrice,
       mrp: unitMrp,
-      customName: `${customName} ${customNumber}`,
+      customName: product.allowCustomName
+        ? `${customName} ${customNumber}`
+        : undefined,
     });
     onClose();
   }
@@ -154,45 +157,47 @@ export default function QuickAddModal({
           </div>
 
           {/* Name & Number */}
-          <div className="mt-4">
-            <span className="text-sm font-medium text-black">
-              Name & T-shirt Number
-            </span>
-            <div className="mt-2 flex gap-2">
-              <input
-                type="text"
-                placeholder="NAME"
-                required
-                aria-invalid={showValidation && !nameValue.trim()}
-                value={nameValue}
-                onChange={(e) => setNameValue(e.target.value)}
-                className={`h-10 min-w-0 flex-1 rounded-lg bg-white px-3 text-center text-sm uppercase text-black outline-none ring-1 focus:ring-black ${
-                  showValidation && !nameValue.trim()
-                    ? "ring-red-500"
-                    : "ring-[#e5e5e5]"
-                }`}
-              />
-              <input
-                type="text"
-                inputMode="numeric"
-                placeholder="07"
-                required
-                aria-invalid={showValidation && !numberValue.trim()}
-                value={numberValue}
-                onChange={(e) => setNumberValue(e.target.value)}
-                className={`h-10 w-16 shrink-0 rounded-lg bg-white text-center text-sm text-black outline-none ring-1 focus:ring-black ${
-                  showValidation && !numberValue.trim()
-                    ? "ring-red-500"
-                    : "ring-[#e5e5e5]"
-                }`}
-              />
+          {product.allowCustomName && (
+            <div className="mt-4">
+              <span className="text-sm font-medium text-black">
+                Name & T-shirt Number
+              </span>
+              <div className="mt-2 flex gap-2">
+                <input
+                  type="text"
+                  placeholder="NAME"
+                  required
+                  aria-invalid={showValidation && !nameValue.trim()}
+                  value={nameValue}
+                  onChange={(e) => setNameValue(e.target.value)}
+                  className={`h-10 min-w-0 flex-1 rounded-lg bg-white px-3 text-center text-sm uppercase text-black outline-none ring-1 focus:ring-black ${
+                    showValidation && !nameValue.trim()
+                      ? "ring-red-500"
+                      : "ring-[#e5e5e5]"
+                  }`}
+                />
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  placeholder="07"
+                  required
+                  aria-invalid={showValidation && !numberValue.trim()}
+                  value={numberValue}
+                  onChange={(e) => setNumberValue(e.target.value)}
+                  className={`h-10 w-16 shrink-0 rounded-lg bg-white text-center text-sm text-black outline-none ring-1 focus:ring-black ${
+                    showValidation && !numberValue.trim()
+                      ? "ring-red-500"
+                      : "ring-[#e5e5e5]"
+                  }`}
+                />
+              </div>
+              {showValidation && (!nameValue.trim() || !numberValue.trim()) && (
+                <p className="mt-2 text-xs text-red-600" role="alert">
+                  Name and T-shirt number are both required.
+                </p>
+              )}
             </div>
-            {showValidation && (!nameValue.trim() || !numberValue.trim()) && (
-              <p className="mt-2 text-xs text-red-600" role="alert">
-                Name and T-shirt number are both required.
-              </p>
-            )}
-          </div>
+          )}
 
           <button
             type="button"
