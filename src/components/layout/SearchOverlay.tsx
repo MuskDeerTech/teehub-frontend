@@ -138,7 +138,7 @@ export default function SearchOverlay({ open, onClose }: SearchOverlayProps) {
     <>
       {/* Click-away backdrop below the navbar */}
       <div
-        className="fixed inset-0 top-[72px] z-[90] bg-black/30 max-[360px]:top-[70px]"
+        className="fixed inset-0 top-[72px] z-[90] bg-black/30 max-[1024px]:top-[76px]"
         onClick={onClose}
       />
 

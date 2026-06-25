@@ -23,7 +23,7 @@ export default function MegaMenu({
     <>
       {/* Click-away overlay below the navbar */}
       <div
-        className="fixed inset-0 top-[72px] z-[90] bg-black/20 max-[360px]:top-[70px]"
+        className="fixed inset-0 top-[72px] z-[90] bg-black/20 max-[1024px]:top-[76px]"
         onClick={onClose}
       />
 

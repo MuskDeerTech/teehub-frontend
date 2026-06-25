@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   IconUser,
   IconSearch,
@@ -66,6 +66,8 @@ export default function Navbar() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [categoriesLoaded, setCategoriesLoaded] = useState(false);
   const [categoriesLoading, setCategoriesLoading] = useState(false);
+  const [mobileDockVisible, setMobileDockVisible] = useState(true);
+  const lastScrollY = useRef(0);
 
   const ensureCategories = () => {
     if (!categoriesLoaded && !categoriesLoading) setCategoriesLoading(true);
@@ -97,6 +99,28 @@ export default function Navbar() {
     return () => controller.abort();
   }, [categoriesLoaded, categoriesLoading, menuOpen, collectionsOpen]);
 
+  useEffect(() => {
+    lastScrollY.current = window.scrollY;
+
+    const handleScroll = () => {
+      const currentScrollY = Math.max(window.scrollY, 0);
+      const difference = currentScrollY - lastScrollY.current;
+
+      if (currentScrollY <= 24) {
+        setMobileDockVisible(true);
+      } else if (difference > 6) {
+        setMobileDockVisible(false);
+      } else if (difference < -3) {
+        setMobileDockVisible(true);
+      }
+
+      lastScrollY.current = currentScrollY;
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
   const toggleMenu = () => {
     const next = !menuOpen;
     setMenuOpen(next);
@@ -115,8 +139,8 @@ export default function Navbar() {
       className="sticky top-0 z-[100] relative"
       onMouseLeave={() => setCollectionsOpen(false)}
     >
-      <nav className="flex h-[72px] w-full items-center justify-between border-b border-[#e7e7e7] bg-[#f8f8f8] px-[42px] max-[768px]:px-5 max-[360px]:h-[70px] max-[360px]:justify-center max-[360px]:px-0">
-      <div className="flex items-center gap-[34px] max-[768px]:flex-1 max-[768px]:justify-start max-[768px]:gap-[15px] max-[360px]:hidden">
+      <nav className="flex h-[72px] w-full items-center justify-between border-b border-[#e7e7e7] bg-[#f8f8f8] px-[42px] max-[1024px]:h-[76px] max-[1024px]:px-6 max-[480px]:px-4">
+      <div className="flex items-center gap-[34px] max-[1024px]:hidden">
         {navLinks.map((link) => {
           if (link === "NEW IN") {
             return (
@@ -160,7 +184,7 @@ export default function Navbar() {
         href="/"
         aria-label="TeeHub home"
         onMouseEnter={() => setCollectionsOpen(false)}
-        className="absolute left-1/2 -translate-x-1/2 max-[768px]:left-[55%]"
+        className="absolute left-1/2 -translate-x-1/2 max-[1024px]:static max-[1024px]:translate-x-0"
       >
         <Image
           src="/images/teehub-logo.png"
@@ -168,12 +192,12 @@ export default function Navbar() {
           width={181}
           height={57}
           priority
-          style={{ height: "52px", width: "auto" }}
+          className="h-[52px] w-auto max-[480px]:h-11"
         />
       </Link>
 
       {/* ICONS */}
-      <div className="flex items-center gap-7 max-[768px]:flex-1 max-[768px]:justify-end max-[768px]:gap-5 max-[360px]:hidden">
+      <div className="flex items-center gap-7">
         {/* LOCATION */}
         <a
           href="https://maps.app.goo.gl/c6Nf1VdPwNkn75qV7"
@@ -182,7 +206,7 @@ export default function Navbar() {
           aria-label="Find our store on Google Maps"
           title="Visit our store — VOC Street, Kumar Nagar, Tiruppur"
           onMouseEnter={() => setCollectionsOpen(false)}
-          className="flex h-7 w-7 cursor-pointer items-center justify-center"
+          className="flex h-7 w-7 cursor-pointer items-center justify-center max-[1024px]:hidden"
         >
           <IconMapPin size={26} stroke={1.5} className="text-black" />
         </a>
@@ -198,7 +222,7 @@ export default function Navbar() {
             setSearchOpen((v) => !v);
           }}
           onMouseEnter={() => setCollectionsOpen(false)}
-          className="flex h-7 w-7 cursor-pointer items-center justify-center"
+          className="flex h-7 w-7 cursor-pointer items-center justify-center max-[1024px]:hidden"
         >
           <IconSearch
             size={26}
@@ -213,7 +237,7 @@ export default function Navbar() {
           aria-label={user ? "Account" : "Sign in"}
           onClick={() => (user ? router.push("/account") : setAuthOpen(true))}
           onMouseEnter={() => setCollectionsOpen(false)}
-          className="relative flex h-7 w-7 cursor-pointer items-center justify-center"
+          className="relative flex h-7 w-7 cursor-pointer items-center justify-center max-[1024px]:hidden"
         >
           <IconUser
             size={26}
@@ -230,7 +254,7 @@ export default function Navbar() {
           aria-label="TeeHub on Instagram"
           title="Follow us on Instagram"
           onMouseEnter={() => setCollectionsOpen(false)}
-          className="flex h-7 w-7 cursor-pointer items-center justify-center"
+          className="flex h-7 w-7 cursor-pointer items-center justify-center max-[1024px]:hidden"
         >
           <IconBrandInstagram size={26} stroke={1.5} className="text-black " />
         </a>
@@ -241,7 +265,7 @@ export default function Navbar() {
           aria-label={`Open cart (${totalCount} items)`}
           onClick={openCart}
           onMouseEnter={() => setCollectionsOpen(false)}
-          className="relative flex h-7 w-7 cursor-pointer items-center justify-center"
+          className="relative flex h-7 w-7 cursor-pointer items-center justify-center max-[1024px]:hidden"
         >
           <IconShoppingBag
             size={26}
@@ -261,7 +285,7 @@ export default function Navbar() {
           aria-expanded={menuOpen}
           onClick={toggleMenu}
           onMouseEnter={() => setCollectionsOpen(false)}
-          className="flex h-7 w-11 cursor-pointer items-center justify-center"
+          className="flex h-9 w-11 cursor-pointer items-center justify-center max-[1024px]:h-10 max-[1024px]:w-14 max-[1024px]:rounded-full max-[1024px]:bg-[#efefef] max-[480px]:h-10 max-[480px]:w-12"
         >
           <Image
             src="/svg/icons/hamburg.svg"
@@ -273,6 +297,66 @@ export default function Navbar() {
         </button>
       </div>
       </nav>
+
+      <div
+        aria-label="Mobile navigation"
+        className={`fixed left-1/2 z-[110] hidden w-[calc(100%-32px)] max-w-[420px] -translate-x-1/2 items-center justify-around rounded-full border border-white/35 bg-[#d9d9d9]/14 px-3 py-2.5 shadow-[0_12px_40px_rgba(0,0,0,0.22)] backdrop-blur-[14px] transition-all duration-300 max-[1024px]:flex ${
+          mobileDockVisible &&
+          !menuOpen &&
+          !searchOpen &&
+          !authOpen &&
+          !cartOpen
+            ? "bottom-5 translate-y-0 opacity-100"
+            : "pointer-events-none bottom-0 translate-y-[130%] opacity-0"
+        }`}
+      >
+        <a
+          href="https://maps.app.goo.gl/c6Nf1VdPwNkn75qV7"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Find our store on Google Maps"
+          className="flex h-12 w-12 items-center justify-center rounded-full text-white transition-colors hover:bg-white/15"
+        >
+          <IconMapPin size={27} stroke={1.7} />
+        </a>
+
+        <button
+          type="button"
+          aria-label="Search"
+          aria-expanded={searchOpen}
+          onClick={() => {
+            setMenuOpen(false);
+            setCollectionsOpen(false);
+            setSearchOpen(true);
+          }}
+          className="flex h-12 w-12 cursor-pointer items-center justify-center rounded-full text-white transition-colors hover:bg-white/15"
+        >
+          <IconSearch size={28} stroke={1.7} />
+        </button>
+
+        <button
+          type="button"
+          aria-label={user ? "Account" : "Sign in"}
+          onClick={() => (user ? router.push("/account") : setAuthOpen(true))}
+          className="flex h-12 w-12 cursor-pointer items-center justify-center rounded-full text-white transition-colors hover:bg-white/15"
+        >
+          <IconUser size={28} stroke={1.7} />
+        </button>
+
+        <button
+          type="button"
+          aria-label={`Open cart (${totalCount} items)`}
+          onClick={openCart}
+          className="relative flex h-12 w-12 cursor-pointer items-center justify-center rounded-full text-white transition-colors hover:bg-white/15"
+        >
+          <IconShoppingBag size={28} stroke={1.7} />
+          {totalCount > 0 && (
+            <span className="absolute right-1 top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#ff5b1f] px-1 text-[9px] font-bold text-white">
+              {totalCount > 99 ? "99+" : totalCount}
+            </span>
+          )}
+        </button>
+      </div>
 
       <SearchOverlay open={searchOpen} onClose={() => setSearchOpen(false)} />
 

@@ -3,8 +3,8 @@ const footerLinkClass =
 
 export default function BottomBanner() {
   return (
-    <div className="w-full overflow-hidden border-2 border-[#111] bg-white px-[clamp(44px,5.2vw,100px)] pb-[28px] pt-[24px] max-[768px]:px-8 max-[768px]:pb-5 max-[768px]:pt-5 max-[480px]:px-4 max-[480px]:pb-4 max-[480px]:pt-4">
-      <div className="mx-auto w-full max-w-[1302px]">
+    <div className="w-full overflow-hidden border-2 border-[#111] bg-white px-[clamp(16px,4vw,80px)] pb-[28px] pt-[24px] max-[768px]:pb-5 max-[768px]:pt-5 max-[480px]:pb-4 max-[480px]:pt-4">
+      <div className="w-full">
         <img
           src="/svg/banner.svg"
           alt="TEE HUB"

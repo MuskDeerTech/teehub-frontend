@@ -52,9 +52,9 @@ export default async function FootballHoodies() {
           flex ${config.slider.gap}
           snap-x snap-mandatory overflow-x-auto pb-2.5
           [&>*]:shrink-0 [&>*]:snap-center
-          [&>*]:w-[85%]
+          [&>*]:w-[70%]
 
-          sm:[&>*]:w-[calc(50%-10px)]
+          sm:[&>*]:w-[42%]
 
           lg:grid lg:grid-cols-4 ${config.slider.gapLg} lg:overflow-visible lg:snap-none lg:pb-0
           lg:[&>*]:w-auto lg:[&>*]:shrink
