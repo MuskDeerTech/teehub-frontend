@@ -2,7 +2,8 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { IconChevronLeft, IconChevronRight } from "@tabler/icons-react";
 import { formatPriceRange } from "@/lib/products";
 import type { Product } from "@/lib/products";
 import QuickAddModal from "@/components/ui/QuickAddModal";
@@ -93,6 +94,55 @@ export default function ProductCard({
 }) {
   const c = config[variant];
   const [quickAddOpen, setQuickAddOpen] = useState(false);
+  const [imageIndex, setImageIndex] = useState(0);
+  const cardImages = useMemo(
+    () =>
+      [
+        ...(product.image
+          ? [{ src: product.image, alt: product.title }]
+          : []),
+        ...(product.images ?? []).map((image) => ({
+          src: image.src,
+          alt: image.alt || product.title,
+        })),
+      ].filter(
+        (image, index, images) =>
+          images.findIndex((candidate) => candidate.src === image.src) ===
+          index,
+      ),
+    [product.image, product.images, product.title],
+  );
+  const activeImage = cardImages[imageIndex];
+  const hasMultipleImages = cardImages.length > 1;
+
+  useEffect(() => {
+    if (!hasMultipleImages) return;
+
+    const preloadGallery = () => {
+      cardImages.slice(1).forEach((image) => {
+        const preload = new window.Image();
+        preload.src = image.src;
+      });
+    };
+
+    const idleWindow = window as Window & {
+      requestIdleCallback?: (
+        callback: () => void,
+        options?: { timeout: number },
+      ) => number;
+      cancelIdleCallback?: (id: number) => void;
+    };
+
+    if (idleWindow.requestIdleCallback) {
+      const idleId = idleWindow.requestIdleCallback(preloadGallery, {
+        timeout: 2000,
+      });
+      return () => idleWindow.cancelIdleCallback?.(idleId);
+    }
+
+    const timeoutId = globalThis.setTimeout(preloadGallery, 500);
+    return () => globalThis.clearTimeout(timeoutId);
+  }, [cardImages, hasMultipleImages]);
 
   // Detail-page sale price (`price`/`originalPrice`) when the admin has set
   // it; otherwise fall back to the card's min–max range so the card never
@@ -105,11 +155,20 @@ export default function ProductCard({
     setQuickAddOpen(true);
   }
 
+  function showPreviousImage() {
+    setImageIndex((current) =>
+      current === 0 ? cardImages.length - 1 : current - 1,
+    );
+  }
+
+  function showNextImage() {
+    setImageIndex((current) => (current + 1) % cardImages.length);
+  }
+
   return (
     <div className="group flex w-full flex-col">
       {/* IMAGE */}
-      <Link
-        href={`/product/${product.slug}`}
+      <div
         className={[
           "relative block w-full overflow-hidden",
           c.image.rounded,
@@ -118,14 +177,20 @@ export default function ProductCard({
           c.image.aspectLg,
         ].join(" ")}
       >
-        {product.image ? (
+        <Link
+          href={`/product/${product.slug}`}
+          aria-label={`View ${product.title}`}
+          className="absolute inset-0"
+        >
+        {activeImage ? (
           <Image
-            src={product.image}
-            alt={product.title}
+            key={activeImage.src}
+            src={activeImage.src}
+            alt={activeImage.alt}
             fill
             sizes="(max-width: 640px) 85vw, (max-width: 1024px) 50vw, 25vw"
             className={[
-              "object-cover transition-transform duration-300",
+              "object-cover transition-all duration-300",
               c.image.objectPositionCustom ? "" : c.image.position,
               c.image.zoom,
               "group-hover:scale-[1.04]",
@@ -139,7 +204,34 @@ export default function ProductCard({
         ) : (
           <div className="h-full w-full bg-[#f0f0f0]" />
         )}
-      </Link>
+        </Link>
+
+        {hasMultipleImages && (
+          <>
+            <button
+              type="button"
+              aria-label={`Previous image of ${product.title}`}
+              onClick={showPreviousImage}
+              className="absolute left-2 top-1/2 z-10 flex h-9 w-9 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full bg-black/45 text-white opacity-0 shadow-md backdrop-blur-sm transition-all duration-200 hover:bg-black/65 focus:opacity-100 group-hover:opacity-100"
+            >
+              <IconChevronLeft size={22} stroke={2} />
+            </button>
+
+            <button
+              type="button"
+              aria-label={`Next image of ${product.title}`}
+              onClick={showNextImage}
+              className="absolute right-2 top-1/2 z-10 flex h-9 w-9 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full bg-black/45 text-white opacity-0 shadow-md backdrop-blur-sm transition-all duration-200 hover:bg-black/65 focus:opacity-100 group-hover:opacity-100"
+            >
+              <IconChevronRight size={22} stroke={2} />
+            </button>
+
+            <span className="pointer-events-none absolute bottom-2 left-1/2 z-10 -translate-x-1/2 rounded-full bg-black/45 px-2 py-1 text-[10px] font-medium text-white opacity-0 backdrop-blur-sm transition-opacity duration-200 group-hover:opacity-100">
+              {imageIndex + 1}/{cardImages.length}
+            </span>
+          </>
+        )}
+      </div>
 
       {/* TEXT BLOCK */}
       <div className={`flex flex-1 flex-col ${c.gapImageToText}`}>
