@@ -1,13 +1,4 @@
-/**
- * Server-side catalog data layer: the storefront's bridge to Payload.
- *
- * These functions mirror the old static helpers in products.ts
- * (getProductsByCategory / getProductBySlug / getCategory) but read from the
- * database via Payload's Local API, mapping each doc into the existing
- * `Product`/`Category` types so no component changes shape. Server components
- * only — the client-side filter logic in products.ts stays as-is and operates
- * on the mapped objects it receives as props.
- */
+
 import { getPayload } from "payload";
 import config from "@payload-config";
 import type {
@@ -168,13 +159,7 @@ export async function getAllProducts(): Promise<Product[]> {
   return getProductsByCategory("all");
 }
 
-/**
- * Full-text-ish product search over published products. The query is split on
- * whitespace and every word must appear (case-insensitively) in the title, so
- * "rcb jersey" matches "BENGALURU PRACTICE JERSEY 2026 (RCB)" regardless of
- * word order. An empty query returns nothing (the page shows a prompt). Backs
- * both the navbar search overlay's "view all" page and direct /search visits.
- */
+
 export async function searchProducts(
   query: string,
   limit = PAGE_LIMIT,

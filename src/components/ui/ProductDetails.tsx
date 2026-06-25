@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import BookmarkButton from "@/components/ui/BookmarkButton";
+import SizeGuideModal from "@/components/ui/SizeGuideModal";
 import { productBookmarkId } from "@/lib/bookmarks";
 import { useCart } from "@/components/cart/CartContext";
 import type { ImageFit, Product } from "@/lib/products";
@@ -727,33 +728,7 @@ export default function ProductDetails({ product }: { product: Product }) {
         />
       )}
 
-      {showGuide && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
-          <div className="w-full max-w-[500px] rounded-lg bg-white p-6">
-            <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-xl font-semibold">Size Guide</h2>
-
-              <button
-                type="button"
-                onClick={() => setShowGuide(false)}
-                aria-label="Close size guide"
-                className="text-lg"
-              >
-                x
-              </button>
-            </div>
-
-            <div className="space-y-2">
-              <p>XS - 34-36 inches</p>
-              <p>S - 36-38 inches</p>
-              <p>M - 38-40 inches</p>
-              <p>L - 40-42 inches</p>
-              <p>XL - 42-44 inches</p>
-              <p>XXL - 44-46 inches</p>
-            </div>
-          </div>
-        </div>
-      )}
+      {showGuide && <SizeGuideModal onClose={() => setShowGuide(false)} />}
 
       
         {copied && (

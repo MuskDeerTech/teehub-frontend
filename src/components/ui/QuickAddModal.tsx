@@ -36,6 +36,7 @@ export default function QuickAddModal({
   const [selectedSize, setSelectedSize] = useState(sizes[0]);
   const [nameValue, setNameValue] = useState("");
   const [numberValue, setNumberValue] = useState("");
+  const [showValidation, setShowValidation] = useState(false);
   const [showGuide, setShowGuide] = useState(false);
   const mounted = useSyncExternalStore(
     subscribeNoop,
@@ -52,6 +53,14 @@ export default function QuickAddModal({
   }, [onClose]);
 
   function handleAdd() {
+    const customName = nameValue.trim();
+    const customNumber = numberValue.trim();
+
+    if (!customName || !customNumber) {
+      setShowValidation(true);
+      return;
+    }
+
     addItem({
       id: product.slug,
       name: product.title,
@@ -60,10 +69,7 @@ export default function QuickAddModal({
       quantity: 1,
       price: unitPrice,
       mrp: unitMrp,
-      customName:
-        nameValue || numberValue
-          ? `${nameValue.trim()} ${numberValue.trim()}`.trim()
-          : undefined,
+      customName: `${customName} ${customNumber}`,
     });
     onClose();
   }
@@ -156,19 +162,36 @@ export default function QuickAddModal({
               <input
                 type="text"
                 placeholder="NAME"
+                required
+                aria-invalid={showValidation && !nameValue.trim()}
                 value={nameValue}
                 onChange={(e) => setNameValue(e.target.value)}
-                className="h-10 min-w-0 flex-1 rounded-lg bg-white px-3 text-center text-sm uppercase text-black outline-none ring-1 ring-[#e5e5e5] focus:ring-black"
+                className={`h-10 min-w-0 flex-1 rounded-lg bg-white px-3 text-center text-sm uppercase text-black outline-none ring-1 focus:ring-black ${
+                  showValidation && !nameValue.trim()
+                    ? "ring-red-500"
+                    : "ring-[#e5e5e5]"
+                }`}
               />
               <input
                 type="text"
                 inputMode="numeric"
                 placeholder="07"
+                required
+                aria-invalid={showValidation && !numberValue.trim()}
                 value={numberValue}
                 onChange={(e) => setNumberValue(e.target.value)}
-                className="h-10 w-16 shrink-0 rounded-lg bg-white text-center text-sm text-black outline-none ring-1 ring-[#e5e5e5] focus:ring-black"
+                className={`h-10 w-16 shrink-0 rounded-lg bg-white text-center text-sm text-black outline-none ring-1 focus:ring-black ${
+                  showValidation && !numberValue.trim()
+                    ? "ring-red-500"
+                    : "ring-[#e5e5e5]"
+                }`}
               />
             </div>
+            {showValidation && (!nameValue.trim() || !numberValue.trim()) && (
+              <p className="mt-2 text-xs text-red-600" role="alert">
+                Name and T-shirt number are both required.
+              </p>
+            )}
           </div>
 
           <button
