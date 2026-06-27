@@ -4,7 +4,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 import Dots from "@/components/ui/Dots";
-import { categoryList, teamBanner, teams } from "@/lib/products";
+import type { HomepageHero } from "@/lib/homepage";
+import { categoryList, teamBanner } from "@/lib/products";
 
 const SLIDE_MS = 600;
 
@@ -15,7 +16,7 @@ const SLIDE_ANIM: Record<"forward" | "backward", { in: string; out: string }> = 
   backward: { in: "hero-in-left", out: "hero-out-right" },
 };
 
-export default function Hero() {
+export default function Hero({ hero }: { hero: HomepageHero }) {
   // Default to RCB so the initial window shows MI · RCB · CSK.
   const [activeIndex, setActiveIndex] = useState(1);
   // While set, the background is mid-slide: `from` leaves, `to` enters.
@@ -24,27 +25,47 @@ export default function Hero() {
     dir: "forward" | "backward";
   } | null>(null);
 
+  const teams = hero.teams;
   const teamCount = teams.length;
-  const prevIndex = (activeIndex - 1 + teamCount) % teamCount;
-  const nextIndex = (activeIndex + 1) % teamCount;
+  const activeTeamIndex = activeIndex % teamCount;
+  const prevIndex = (activeTeamIndex - 1 + teamCount) % teamCount;
+  const nextIndex = (activeTeamIndex + 1) % teamCount;
 
   // Fixed 4 dots that advance one step per click, starting on the third dot
   // (matches the RCB default at activeIndex 1).
   const dotCount = 4;
-  const activeDot = (activeIndex + 1) % dotCount;
+  const activeDot = (activeTeamIndex + 1) % dotCount;
 
   const goTo = (index: number, dir: "forward" | "backward") => {
-    if (index === activeIndex) return;
-    setTransition({ from: activeIndex, dir });
+    if (index === activeTeamIndex) return;
+    setTransition({ from: activeTeamIndex, dir });
     setActiveIndex(index);
   };
 
   const goPrev = () => goTo(prevIndex, "backward");
   const goNext = () => goTo(nextIndex, "forward");
 
-  // One full split background (left + right banner) for a given team.
+  // CMS teams use one full-bleed background image; the built-in fallback keeps
+  // the current split artwork so the default homepage looks unchanged.
   const renderBanner = (index: number, priority = false) => {
-    const { left, right } = teamBanner(teams[index]);
+    const team = teams[index];
+    if (team.backgroundImage) {
+      return (
+        <>
+          <Image
+            src={team.backgroundImage}
+            alt=""
+            fill
+            priority={priority}
+            sizes="100vw"
+            className="object-cover"
+          />
+          <div className="absolute inset-0 bg-black/25" />
+        </>
+      );
+    }
+
+    const { left, right } = teamBanner(team);
     return (
       <>
         <div className="relative h-full w-1/2 overflow-hidden">
@@ -126,12 +147,12 @@ export default function Hero() {
               }}
               onAnimationEnd={() => setTransition(null)}
             >
-              {renderBanner(activeIndex)}
+              {renderBanner(activeTeamIndex)}
             </div>
           </>
         ) : (
           <div className="absolute inset-0 flex">
-            {renderBanner(activeIndex, true)}
+            {renderBanner(activeTeamIndex, true)}
           </div>
         )}
       </div>
@@ -158,9 +179,14 @@ export default function Hero() {
       </div>
 
       {/* CENTER BUTTON */}
-      <button className="absolute left-1/2 top-[55%] z-20 h-[clamp(60px,7vw,85px)] w-[clamp(180px,20vw,260px)] -translate-x-1/2 -translate-y-1/2 cursor-pointer rounded-full bg-[#ff5b1f] text-[clamp(20px,2vw,30px)] font-normal text-white shadow-[0_12px_30px_rgba(0,0,0,0.25)] min-[1440px]:h-[60px] min-[1440px]:text-[30px] max-[1024px]:h-[50px]">
-        SHOP NOW
-      </button>
+      {hero.showCta && (
+        <Link
+          href={hero.ctaHref}
+          className="absolute left-1/2 top-[55%] z-20 flex h-[clamp(60px,7vw,85px)] w-[clamp(180px,20vw,260px)] -translate-x-1/2 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full bg-[#ff5b1f] text-[clamp(20px,2vw,30px)] font-normal text-white shadow-[0_12px_30px_rgba(0,0,0,0.25)] min-[1440px]:h-[60px] min-[1440px]:text-[30px] max-[1024px]:h-[50px]"
+        >
+          {hero.ctaLabel}
+        </Link>
+      )}
 
       {/* TEAM SLIDER */}
       <div className="absolute bottom-[30px] left-1/2 z-20 flex w-[clamp(280px,45vw,520px)] -translate-x-1/2 flex-col items-center gap-2">
@@ -174,7 +200,7 @@ export default function Hero() {
           </button>
 
           {renderTeamCard(prevIndex, "left")}
-          {renderTeamCard(activeIndex, "center")}
+          {renderTeamCard(activeTeamIndex, "center")}
           {renderTeamCard(nextIndex, "right")}
 
           <button

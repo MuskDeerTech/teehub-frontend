@@ -1,76 +1,55 @@
 import Image from "next/image";
+import Link from "next/link";
+import type { HomepageBanner } from "@/lib/homepage";
 
 const config = {
   section: {
-    // h-[mobile] sm:h-[tablet] md:h-[tablet-lg] lg:h-[desktop]
-    className: "h-[340px] sm:h-[500px] md:h-[650px] lg:h-[822px]",
-  },
- 
-  redAccent: {
-    className:
-      "w-[90px] sm:w-[130px] md:w-[180px] lg:w-[220px] xl:w-[200px] xl:h-[150px] bottom-0 right-0 xl:right-[120px]",
-  },
- 
-  orangeAccent: {
-    // hidden below sm: — was crowding the free-delivery badge on small phones
-    className:
-      "hidden sm:block sm:w-[140px] md:w-[180px] lg:w-[220px] xl:w-[350px] xl:h-[300px] top-0 left-[60px] sm:left-[50px] xl:left-[75px]",
-  },
- 
-  freeDelivery: {
-    className:
-      "w-[130px] sm:w-[190px] md:w-[260px] lg:w-[320px] xl:w-[400px] xl:h-[325px] top-8 left-2 sm:top-12 sm:left-4 md:top-16 lg:top-[100px] lg:left-5 xl:top-[160px] xl:left-[60px]",
-  },
- 
-  codBadge: {
-    className:
-      "w-[110px] sm:w-[160px] md:w-[210px] lg:w-[260px] xl:w-[250px] xl:h-[220px] bottom-2 right-1 sm:bottom-4 sm:right-2 xl:bottom-[50px] xl:right-[100px]",
+    className: "h-[100svh] min-h-[560px] max-[640px]:min-h-[620px]",
   },
 } as const;
  
-export default function PlayBoldBanner() {
+export default function PlayBoldBanner({ banner }: { banner: HomepageBanner }) {
+  if (!banner.image) return null;
+
+  const hasContent = Boolean(
+    banner.heading || banner.subtext || banner.showCta,
+  );
+
   return (
     <section className={`relative w-full overflow-hidden ${config.section.className}`}>
       <Image
-        src="/images/play-blod-banner.png"
-        alt="Play Bold"
+        src={banner.image}
+        alt={banner.heading || "Banner 3"}
         fill
         priority
         sizes="100vw"
-        className="z-[1] object-cover object-top"
+        className="z-[1] object-cover object-center"
       />
- 
-      <Image
-        src="/images/red.png"
-        alt=""
-        width={274}
-        height={229}
-        className={`absolute z-[2] h-auto ${config.redAccent.className}`}
-      />
- 
-      <Image
-        src="/images/orange.png"
-        alt=""
-        width={274}
-        height={409}
-        className={`absolute z-[2] h-auto ${config.orangeAccent.className}`}
-      />
- 
-      <Image
-        src="/images/free-delivery.png"
-        alt="Free Delivery"
-        width={448}
-        height={335}
-        className={`absolute z-[3] h-auto ${config.freeDelivery.className}`}
-      />
- 
-      <Image
-        src="/images/cod.png"
-        alt="COD Available"
-        width={329}
-        height={238}
-        className={`absolute z-[3] h-auto ${config.codBadge.className}`}
-      />
+
+      {hasContent && (
+        <div className="absolute inset-0 z-[4] flex items-center justify-center px-4 text-center">
+          <div className="flex max-w-[520px] flex-col items-center gap-3">
+            {banner.heading && (
+              <h2 className="text-[clamp(26px,4vw,52px)] font-bold uppercase leading-none text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.45)]">
+                {banner.heading}
+              </h2>
+            )}
+            {banner.subtext && (
+              <p className="text-[13px] font-semibold text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.45)] sm:text-[15px]">
+                {banner.subtext}
+              </p>
+            )}
+            {banner.showCta && (
+              <Link
+                href={banner.ctaHref}
+                className="flex h-10 items-center justify-center rounded-full border border-white bg-transparent px-6 text-[13px] font-bold text-white transition-colors duration-200 hover:bg-white hover:text-black sm:h-11 sm:px-7 sm:text-[14px]"
+              >
+                {banner.ctaLabel}
+              </Link>
+            )}
+          </div>
+        </div>
+      )}
     </section>
   );
 }

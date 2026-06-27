@@ -42,6 +42,82 @@ const adminOrOrderOwner: Access = ({ req: { user } }) => {
   return false;
 };
 
+const homepageDefaultCategorySlugs = {
+  categorySectionOne: "hoodies",
+  categorySectionTwo: "polo",
+} as const;
+
+type HomepageCategoryField = keyof typeof homepageDefaultCategorySlugs;
+
+async function findCategoryBySlug(req: any, slug: string) {
+  const result = await req.payload.find({
+    collection: "categories",
+    where: { slug: { equals: slug } },
+    limit: 1,
+    depth: 0,
+    overrideAccess: true,
+  });
+  return result.docs[0];
+}
+
+function valueId(value: unknown) {
+  if (typeof value === "object" && value !== null && "id" in value) {
+    return (value as { id?: string | number }).id;
+  }
+  return value;
+}
+
+const showHomepageCategoryDefaults = async ({
+  doc,
+  req,
+}: {
+  doc: any;
+  req: any;
+}) => {
+  const next = { ...doc } as Record<string, unknown>;
+
+  for (const field of Object.keys(
+    homepageDefaultCategorySlugs,
+  ) as HomepageCategoryField[]) {
+    if (next[field]) continue;
+    const category = await findCategoryBySlug(
+      req,
+      homepageDefaultCategorySlugs[field],
+    );
+    if (category) next[field] = category;
+  }
+
+  return next;
+};
+
+const saveHomepageCategoryDefaults = async ({
+  data,
+  req,
+}: {
+  data?: any;
+  req: any;
+}) => {
+  const next = { ...(data ?? {}) } as Record<string, unknown>;
+
+  for (const field of Object.keys(
+    homepageDefaultCategorySlugs,
+  ) as HomepageCategoryField[]) {
+    const id = valueId(next[field]);
+    if (id) {
+      next[field] = id;
+      continue;
+    }
+
+    const category = await findCategoryBySlug(
+      req,
+      homepageDefaultCategorySlugs[field],
+    );
+    if (category) next[field] = category.id;
+  }
+
+  return next;
+};
+
 const woocommerceIdField = {
   name: "woocommerceId",
   label: "WooCommerce ID",
@@ -1143,6 +1219,10 @@ const HomePage: GlobalConfig = {
     read: () => true,
     update: isAdmin,
   },
+  hooks: {
+    afterRead: [showHomepageCategoryDefaults],
+    beforeValidate: [saveHomepageCategoryDefaults],
+  },
   fields: [
     {
       type: "tabs",
@@ -1151,33 +1231,47 @@ const HomePage: GlobalConfig = {
           label: "Hero",
           fields: [
             {
+              name: "heroShowCta",
+              label: "Show CTA",
+              type: "checkbox",
+              defaultValue: true,
+            },
+            {
+              name: "heroCtaLabel",
+              type: "text",
+              defaultValue: "SHOP NOW",
+              admin: {
+                hidden: true,
+              },
+            },
+            {
+              name: "heroCtaHref",
+              type: "text",
+              defaultValue: "/all/",
+              admin: {
+                hidden: true,
+              },
+            },
+            {
               type: "row",
+              admin: { hidden: true },
               fields: [
                 {
                   name: "heroLeftImage",
+                  label: "Legacy Left Image",
                   type: "upload",
                   relationTo: "media",
                   admin: { width: "50%" },
                 },
                 {
                   name: "heroRightImage",
+                  label: "Legacy Right Image",
                   type: "upload",
                   relationTo: "media",
                   admin: { width: "50%" },
                 },
               ],
             },
-            {
-              name: "heroCtaLabel",
-              type: "text",
-              defaultValue: "SHOP NOW",
-            },
-            {
-              name: "heroCtaHref",
-              type: "text",
-              admin: { description: "Where the hero button links, e.g. /category/all." },
-            },
-            // The IPL team logos in the hero slider.
             {
               name: "heroTeams",
               type: "array",
@@ -1185,6 +1279,13 @@ const HomePage: GlobalConfig = {
               fields: [
                 { name: "name", type: "text", required: true },
                 { name: "logo", type: "upload", relationTo: "media", required: true },
+                {
+                  name: "backgroundImage",
+                  label: "Background Image",
+                  type: "upload",
+                  relationTo: "media",
+                  required: true,
+                },
               ],
             },
           ],
@@ -1192,35 +1293,49 @@ const HomePage: GlobalConfig = {
         {
           label: "Product Sections",
           description:
-            "Each row of products is picked from the catalog. Order here is the display order.",
+            "Latest Drops always shows the newest products. Choose categories for the next two homepage rows.",
           fields: [
             {
-              name: "latestDrops",
-              type: "relationship",
-              relationTo: "products",
-              hasMany: true,
+              name: "latestDropsNote",
+              label: "Latest Drops",
+              type: "text",
+              defaultValue:
+                "Always shown automatically from the latest uploaded products.",
+              admin: {
+                readOnly: true,
+                description:
+                  "No setup needed here. The storefront sorts published products by Date and shows the newest ones.",
+              },
             },
             {
-              name: "footballHoodies",
+              name: "categorySectionOne",
+              label: "Category Section 1",
               type: "relationship",
-              relationTo: "products",
-              hasMany: true,
+              relationTo: "categories",
+              admin: {
+                description:
+                  "Pick the category for the first category-based homepage product row.",
+              },
             },
             {
-              name: "poloShirts",
+              name: "categorySectionTwo",
+              label: "Category Section 2",
               type: "relationship",
-              relationTo: "products",
-              hasMany: true,
+              relationTo: "categories",
+              admin: {
+                description:
+                  "Pick the category for the second category-based homepage product row.",
+              },
             },
           ],
         },
         {
           label: "Banners",
-          description: "Full-width promo sections between the product rows.",
+          description: "Homepage promo banners between the product rows.",
           fields: [
-            // Hoodies banner: single background image + heading/count + CTA.
             {
               name: "hoodiesBanner",
+              label: "Banner 1",
               type: "group",
               fields: [
                 { name: "image", type: "upload", relationTo: "media" },
@@ -1230,26 +1345,50 @@ const HomePage: GlobalConfig = {
                   type: "text",
                   admin: { description: 'e.g. "13 Products".' },
                 },
-                { name: "ctaLabel", type: "text", defaultValue: "SHOP NOW" },
-                { name: "ctaHref", type: "text" },
+                {
+                  name: "showCta",
+                  label: "Show CTA",
+                  type: "checkbox",
+                  defaultValue: true,
+                },
+                {
+                  name: "ctaLabel",
+                  type: "text",
+                  defaultValue: "SHOP NOW",
+                  admin: {
+                    hidden: true,
+                  },
+                },
+                {
+                  name: "ctaHref",
+                  type: "text",
+                  defaultValue: "/category/all",
+                  admin: {
+                    hidden: true,
+                  },
+                },
               ],
             },
-            // Jacket section: split left/right image with overlaid heading + CTA.
             {
               name: "jacketBanner",
+              label: "Banner 2",
               type: "group",
               fields: [
+                { name: "image", type: "upload", relationTo: "media" },
                 {
                   type: "row",
+                  admin: { hidden: true },
                   fields: [
                     {
                       name: "leftImage",
+                      label: "Legacy Left Image",
                       type: "upload",
                       relationTo: "media",
                       admin: { width: "50%" },
                     },
                     {
                       name: "rightImage",
+                      label: "Legacy Right Image",
                       type: "upload",
                       relationTo: "media",
                       admin: { width: "50%" },
@@ -1261,15 +1400,77 @@ const HomePage: GlobalConfig = {
                   type: "text",
                   defaultValue: "NEW JACKET AT BEST PRICE",
                 },
-                { name: "ctaLabel", type: "text", defaultValue: "SHOP NOW" },
-                { name: "ctaHref", type: "text" },
+                { name: "subtext", type: "text" },
+                {
+                  name: "showCta",
+                  label: "Show CTA",
+                  type: "checkbox",
+                  defaultValue: true,
+                },
+                {
+                  name: "ctaLabel",
+                  type: "text",
+                  defaultValue: "SHOP NOW",
+                  admin: {
+                    hidden: true,
+                  },
+                },
+                {
+                  name: "ctaHref",
+                  type: "text",
+                  defaultValue: "/category/all",
+                  admin: {
+                    hidden: true,
+                  },
+                },
               ],
             },
-            // "Play Bold" promo is a composed graphic; just a swappable backdrop.
+            {
+              name: "banner3",
+              label: "Banner 3",
+              type: "group",
+              fields: [
+                {
+                  name: "image",
+                  label: "Background Image",
+                  type: "upload",
+                  relationTo: "media",
+                },
+                { name: "heading", type: "text" },
+                { name: "subtext", type: "text" },
+                {
+                  name: "showCta",
+                  label: "Show CTA",
+                  type: "checkbox",
+                  defaultValue: false,
+                },
+                {
+                  name: "ctaLabel",
+                  type: "text",
+                  defaultValue: "SHOP NOW",
+                  admin: {
+                    hidden: true,
+                  },
+                },
+                {
+                  name: "ctaHref",
+                  type: "text",
+                  defaultValue: "/category/all",
+                  admin: {
+                    hidden: true,
+                  },
+                },
+              ],
+            },
             {
               name: "playBoldImage",
               type: "upload",
               relationTo: "media",
+              admin: {
+                hidden: true,
+                description:
+                  "Legacy Banner 3 image field kept to avoid schema data loss.",
+              },
             },
           ],
         },

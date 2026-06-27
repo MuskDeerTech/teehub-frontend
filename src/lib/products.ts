@@ -70,9 +70,9 @@ export type Team = {
   logo: string;
   logoWidth: number;
   logoHeight: number;
-  // Hero split-background images shown when this team is active. Optional for
-  // now (every team falls back to the shared default banners); drop a per-team
-  // pair in here later and the Hero slider picks it up with no code changes.
+  // CMS-controlled Hero background for this team. The split fields are kept for
+  // the built-in fallback artwork that exists today.
+  backgroundImage?: string;
   bannerLeft?: string;
   bannerRight?: string;
 };

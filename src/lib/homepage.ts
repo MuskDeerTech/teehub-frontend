@@ -1,0 +1,191 @@
+import { getPayload } from "payload";
+import config from "@payload-config";
+import type { Category as CategoryDoc, Media } from "../../payload-types";
+import {
+  DEFAULT_HERO_BANNER,
+  teams as fallbackHeroTeams,
+  type Team,
+} from "@/lib/products";
+
+export type HomepageCategorySection = {
+  slug: string;
+  label: string;
+};
+
+export type HomepageBanner = {
+  image?: string;
+  heading?: string;
+  subtext?: string;
+  showCta: boolean;
+  ctaLabel: string;
+  ctaHref: string;
+};
+
+export type HomepageHero = {
+  showCta: boolean;
+  ctaLabel: string;
+  ctaHref: string;
+  teams: Team[];
+};
+
+const FALLBACK_SECTIONS: [HomepageCategorySection, HomepageCategorySection] = [
+  { slug: "hoodies", label: "Hoodies" },
+  { slug: "polo", label: "Polo T-shirts" },
+];
+
+function toCategorySection(
+  category: number | CategoryDoc | null | undefined,
+  fallback: HomepageCategorySection,
+): HomepageCategorySection {
+  if (typeof category === "object" && category !== null) {
+    return {
+      slug: category.slug,
+      label: category.name,
+    };
+  }
+  return fallback;
+}
+
+function mediaUrl(media: number | Media | null | undefined) {
+  return typeof media === "object" && media !== null ? media.url ?? undefined : undefined;
+}
+
+function textOr(value: string | null | undefined, fallback: string) {
+  return value?.trim() || fallback;
+}
+
+function toBanner(
+  banner:
+    | {
+        image?: (number | null) | Media;
+        heading?: string | null;
+        subtext?: string | null;
+        showCta?: boolean | null;
+        ctaLabel?: string | null;
+        ctaHref?: string | null;
+      }
+    | null
+    | undefined,
+): HomepageBanner {
+  return {
+    image: mediaUrl(banner?.image),
+    heading: banner?.heading?.trim() || undefined,
+    subtext: banner?.subtext?.trim() || undefined,
+    showCta: banner?.showCta ?? false,
+    ctaLabel: textOr(banner?.ctaLabel, "SHOP NOW"),
+    ctaHref: textOr(banner?.ctaHref, "/category/all"),
+  };
+}
+
+function mediaDimensions(media: Media) {
+  return {
+    width: media.width ?? 300,
+    height: media.height ?? 300,
+  };
+}
+
+function toHeroTeam(
+  team:
+    | {
+        name?: string | null;
+        logo?: (number | null) | Media;
+        backgroundImage?: (number | null) | Media;
+      }
+    | null
+    | undefined,
+): Team | null {
+  if (
+    !team?.name ||
+    typeof team.logo !== "object" ||
+    team.logo === null ||
+    typeof team.backgroundImage !== "object" ||
+    team.backgroundImage === null
+  ) {
+    return null;
+  }
+
+  const logo = mediaUrl(team.logo);
+  const background = mediaUrl(team.backgroundImage);
+  if (!logo || !background) return null;
+
+  const { width, height } = mediaDimensions(team.logo);
+  return {
+    name: team.name,
+    logo,
+    logoWidth: width,
+    logoHeight: height,
+    backgroundImage: background,
+  };
+}
+
+export async function getHomepageHero(): Promise<HomepageHero> {
+  const payload = await getPayload({ config });
+  const homepage = (await payload.findGlobal({
+    slug: "homepage",
+    depth: 1,
+  })) as {
+    heroShowCta?: boolean | null;
+    heroCtaLabel?: string | null;
+    heroCtaHref?: string | null;
+    heroTeams?: Parameters<typeof toHeroTeam>[0][] | null;
+  };
+
+  const cmsTeams = homepage.heroTeams
+    ?.map(toHeroTeam)
+    .filter((team): team is Team => Boolean(team));
+
+  return {
+    showCta: homepage.heroShowCta ?? true,
+    ctaLabel: textOr(homepage.heroCtaLabel, "SHOP NOW"),
+    ctaHref: textOr(homepage.heroCtaHref, "/all/"),
+    teams: cmsTeams?.length
+      ? cmsTeams
+      : fallbackHeroTeams.map((team) => ({
+          ...team,
+          bannerLeft: team.bannerLeft ?? DEFAULT_HERO_BANNER.left,
+          bannerRight: team.bannerRight ?? DEFAULT_HERO_BANNER.right,
+        })),
+  };
+}
+
+export async function getHomepageCategorySections(): Promise<
+  [HomepageCategorySection, HomepageCategorySection]
+> {
+  const payload = await getPayload({ config });
+  const homepage = await payload.findGlobal({
+    slug: "homepage",
+    depth: 1,
+  }) as {
+    categorySectionOne?: number | CategoryDoc | null;
+    categorySectionTwo?: number | CategoryDoc | null;
+  };
+
+  return [
+    toCategorySection(homepage.categorySectionOne, FALLBACK_SECTIONS[0]),
+    toCategorySection(homepage.categorySectionTwo, FALLBACK_SECTIONS[1]),
+  ];
+}
+
+export async function getHomepageBanners(): Promise<
+  [HomepageBanner, HomepageBanner, HomepageBanner]
+> {
+  const payload = await getPayload({ config });
+  const homepage = (await payload.findGlobal({
+    slug: "homepage",
+    depth: 1,
+  })) as {
+    hoodiesBanner?: Parameters<typeof toBanner>[0];
+    jacketBanner?: Parameters<typeof toBanner>[0];
+    banner3?: Parameters<typeof toBanner>[0];
+    playBoldImage?: (number | null) | Media;
+  };
+
+  return [
+    toBanner(homepage.hoodiesBanner),
+    toBanner(homepage.jacketBanner),
+    {
+      ...toBanner(homepage.banner3),
+      image: mediaUrl(homepage.banner3?.image) ?? mediaUrl(homepage.playBoldImage),
+    },
+  ];
+}

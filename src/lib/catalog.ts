@@ -139,6 +139,27 @@ export async function getProductsByCategory(slug: string): Promise<Product[]> {
   return res.docs.map(toProduct);
 }
 
+/** Newest published products for a category, used by homepage category rows. */
+export async function getLatestProductsByCategory(
+  slug: string,
+  limit = PAGE_LIMIT,
+): Promise<Product[]> {
+  const payload = await getPayload({ config });
+  const res = await payload.find({
+    collection: "products",
+    where: {
+      and: [
+        { isPublished: { equals: true } },
+        { "category.slug": { equals: slug } },
+      ],
+    },
+    sort: "-originalCreatedAt",
+    depth: 1,
+    limit,
+  });
+  return res.docs.map(toProduct);
+}
+
 export async function getProductBySlug(
   slug: string,
 ): Promise<Product | undefined> {

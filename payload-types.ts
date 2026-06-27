@@ -975,23 +975,31 @@ export interface PayloadMigrationsSelect<T extends boolean = true> {
  */
 export interface Homepage {
   id: number;
+  heroShowCta?: boolean | null;
+  heroCtaLabel?: string | null;
+  heroCtaHref?: string | null;
   heroLeftImage?: (number | null) | Media;
   heroRightImage?: (number | null) | Media;
-  heroCtaLabel?: string | null;
-  /**
-   * Where the hero button links, e.g. /category/all.
-   */
-  heroCtaHref?: string | null;
   heroTeams?:
     | {
         name: string;
         logo: number | Media;
+        backgroundImage: number | Media;
         id?: string | null;
       }[]
     | null;
-  latestDrops?: (number | Product)[] | null;
-  footballHoodies?: (number | Product)[] | null;
-  poloShirts?: (number | Product)[] | null;
+  /**
+   * No setup needed here. The storefront sorts published products by Date and shows the newest ones.
+   */
+  latestDropsNote?: string | null;
+  /**
+   * Pick the category for the first category-based homepage product row.
+   */
+  categorySectionOne?: (number | null) | Category;
+  /**
+   * Pick the category for the second category-based homepage product row.
+   */
+  categorySectionTwo?: (number | null) | Category;
   hoodiesBanner?: {
     image?: (number | null) | Media;
     heading?: string | null;
@@ -999,16 +1007,31 @@ export interface Homepage {
      * e.g. "13 Products".
      */
     subtext?: string | null;
+    showCta?: boolean | null;
     ctaLabel?: string | null;
     ctaHref?: string | null;
   };
   jacketBanner?: {
+    image?: (number | null) | Media;
     leftImage?: (number | null) | Media;
     rightImage?: (number | null) | Media;
     heading?: string | null;
+    subtext?: string | null;
+    showCta?: boolean | null;
     ctaLabel?: string | null;
     ctaHref?: string | null;
   };
+  banner3?: {
+    image?: (number | null) | Media;
+    heading?: string | null;
+    subtext?: string | null;
+    showCta?: boolean | null;
+    ctaLabel?: string | null;
+    ctaHref?: string | null;
+  };
+  /**
+   * Legacy Banner 3 image field kept to avoid schema data loss.
+   */
   playBoldImage?: (number | null) | Media;
   updatedAt?: string | null;
   createdAt?: string | null;
@@ -1018,35 +1041,51 @@ export interface Homepage {
  * via the `definition` "homepage_select".
  */
 export interface HomepageSelect<T extends boolean = true> {
-  heroLeftImage?: T;
-  heroRightImage?: T;
+  heroShowCta?: T;
   heroCtaLabel?: T;
   heroCtaHref?: T;
+  heroLeftImage?: T;
+  heroRightImage?: T;
   heroTeams?:
     | T
     | {
         name?: T;
         logo?: T;
+        backgroundImage?: T;
         id?: T;
       };
-  latestDrops?: T;
-  footballHoodies?: T;
-  poloShirts?: T;
+  latestDropsNote?: T;
+  categorySectionOne?: T;
+  categorySectionTwo?: T;
   hoodiesBanner?:
     | T
     | {
         image?: T;
         heading?: T;
         subtext?: T;
+        showCta?: T;
         ctaLabel?: T;
         ctaHref?: T;
       };
   jacketBanner?:
     | T
     | {
+        image?: T;
         leftImage?: T;
         rightImage?: T;
         heading?: T;
+        subtext?: T;
+        showCta?: T;
+        ctaLabel?: T;
+        ctaHref?: T;
+      };
+  banner3?:
+    | T
+    | {
+        image?: T;
+        heading?: T;
+        subtext?: T;
+        showCta?: T;
         ctaLabel?: T;
         ctaHref?: T;
       };

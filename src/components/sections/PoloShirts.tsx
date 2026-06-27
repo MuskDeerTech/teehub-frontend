@@ -1,6 +1,7 @@
 import Link from "next/link";
 import ProductCard from "@/components/ui/ProductCard";
-import { getProductsByCategory } from "@/lib/catalog";
+import { getLatestProductsByCategory } from "@/lib/catalog";
+import type { HomepageCategorySection } from "@/lib/homepage";
 
 /**
  * ─────────────────────────────────────────────────────────────────────────
@@ -31,8 +32,12 @@ const config = {
   },
 } as const;
 
-export default async function PoloShirts() {
-  const products = (await getProductsByCategory("polo")) .slice(0,4);
+export default async function PoloShirts({
+  category,
+}: {
+  category: HomepageCategorySection;
+}) {
+  const products = await getLatestProductsByCategory(category.slug, 4);
 
   if (products.length === 0) return null;
 
@@ -46,10 +51,10 @@ export default async function PoloShirts() {
         <h2
           className={`m-0 font-normal leading-[27.65px] tracking-[1px] text-[#111] ${config.heading.size} max-[768px]:text-[clamp(22px,3vw,45px)] max-[480px]:text-[16px] max-[480px]:leading-[1.3] max-[360px]:flex-1 max-[360px]:text-left max-[360px]:text-[16px]`}
         >
-          Polo T-shirts
+          {category.label}
         </h2>
         <Link
-          href="/category/polo"
+          href={`/category/${category.slug}`}
           className={`whitespace-nowrap rounded-[30px] bg-[#ff5b1f] font-semibold text-white ${config.button.paddingX} ${config.button.paddingY} max-[480px]:h-auto max-[480px]:px-3.5 max-[480px]:py-2 max-[480px]:text-[11px] max-[360px]:ml-auto max-[360px]:px-3 max-[360px]:py-[7px] max-[360px]:text-[10px]`}
         >
           DISCOVER MORE
