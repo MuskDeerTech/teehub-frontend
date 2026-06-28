@@ -3,7 +3,7 @@
 import { Suspense, useEffect, useState } from "react";
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
-import { IconMapPin, IconUserCircle, IconCheck } from "@tabler/icons-react";
+import { IconMapPin, IconUserCircle } from "@tabler/icons-react";
 import { useAuth } from "@/components/auth/AuthContext";
 
 type OrderItem = {
@@ -251,15 +251,9 @@ function AccountView() {
             </div>
           ) : (
             <div className="flex flex-col gap-4">
-              {orders.flatMap((order) =>
-                (order.items ?? []).map((item, index) => (
-                  <OrderItemCard
-                    key={`${order.id}-${index}`}
-                    item={item}
-                    orderNumber={order.orderNumber}
-                  />
-                )),
-              )}
+              {orders.map((order) => (
+                <OrderCard key={order.id} order={order} />
+              ))}
             </div>
           )}
         </div>
@@ -268,26 +262,58 @@ function AccountView() {
   );
 }
 
-function OrderItemCard({
-  item,
-  orderNumber,
-}: {
-  item: OrderItem;
-  orderNumber: string;
-}) {
+function OrderCard({ order }: { order: Order }) {
+  const status = orderStatus(order.status);
+  const items = order.items ?? [];
+
+  return (
+    <div className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-gray-100">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3 border-b border-gray-100 pb-3">
+        <div>
+          <p className="text-xs font-medium uppercase tracking-wide text-gray-400">
+            Ordered on
+          </p>
+          <p className="mt-1 text-sm font-semibold text-gray-900">
+            {formatOrderDate(order.originalCreatedAt)}
+          </p>
+        </div>
+        <div className="flex items-center gap-3">
+          {typeof order.totalPrice === "number" && (
+            <p className="text-sm font-bold text-[#F26522]">
+              ₹{order.totalPrice}
+            </p>
+          )}
+          <span
+            className={`rounded-full px-3 py-1 text-xs font-semibold ${status.className}`}
+          >
+            {status.label}
+          </span>
+        </div>
+      </div>
+
+      <div className="flex flex-col gap-4">
+        {items.map((item, index) => (
+          <OrderItemRow key={`${order.id}-${index}`} item={item} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function OrderItemRow({ item }: { item: OrderItem }) {
   const discount =
     item.mrp && item.mrp > item.price
       ? Math.round(((item.mrp - item.price) / item.mrp) * 100)
       : 0;
   return (
-    <div className="flex gap-4 rounded-2xl bg-white p-4 shadow-sm ring-1 ring-gray-100">
-      <div className="relative h-28 w-24 flex-shrink-0 overflow-hidden rounded-lg bg-gray-100">
+    <div className="flex gap-4">
+      <div className="relative h-24 w-20 flex-shrink-0 overflow-hidden rounded-lg bg-gray-100">
         {item.image && (
           <Image
             src={item.image}
             alt={item.name}
             fill
-            sizes="96px"
+            sizes="80px"
             className="object-cover"
           />
         )}
@@ -318,10 +344,51 @@ function OrderItemCard({
           <span>Qty: {item.quantity}</span>
           {item.size && <span>Size: {item.size}</span>}
         </div>
-        <p className="mt-2 text-[11px] text-gray-400">{orderNumber}</p>
       </div>
     </div>
   );
+}
+
+function orderStatus(status?: string) {
+  switch (status) {
+    case "delivered":
+      return {
+        label: "Completed",
+        className: "bg-green-50 text-green-700 ring-1 ring-green-100",
+      };
+    case "cancelled":
+      return {
+        label: "Cancelled",
+        className: "bg-red-50 text-red-700 ring-1 ring-red-100",
+      };
+    case "shipped":
+      return {
+        label: "In progress",
+        className: "bg-blue-50 text-blue-700 ring-1 ring-blue-100",
+      };
+    case "confirmed":
+      return {
+        label: "Confirmed",
+        className: "bg-orange-50 text-[#F26522] ring-1 ring-orange-100",
+      };
+    default:
+      return {
+        label: "In progress",
+        className: "bg-blue-50 text-blue-700 ring-1 ring-blue-100",
+      };
+  }
+}
+
+function formatOrderDate(value?: string) {
+  if (!value) return "Date unavailable";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "Date unavailable";
+
+  return new Intl.DateTimeFormat("en", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  }).format(date);
 }
 
 function SectionTitle({
