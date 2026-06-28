@@ -41,6 +41,11 @@ function mediaDocs(images: ProductDoc["images"]): Media[] {
 }
 
 function toProduct(doc: ProductDoc): Product {
+  const category =
+    typeof doc.category === "object" && doc.category !== null
+      ? doc.category
+      : undefined;
+
   // Admin-set per-image fits, keyed by media id; entries for images no longer
   // in the gallery are simply never looked up.
   const fits: Record<string, ImageFit> =
@@ -62,6 +67,8 @@ function toProduct(doc: ProductDoc): Product {
   return {
     slug: doc.slug,
     title: doc.title,
+    categorySlug: category?.slug ?? undefined,
+    categoryLabel: category?.name ?? undefined,
     bg: doc.bg,
     priceMin: doc.priceMin,
     priceMax: doc.priceMax ?? doc.priceMin,

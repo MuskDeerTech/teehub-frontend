@@ -48,7 +48,7 @@ export default async function CategoryPage({
     "mt-9 grid grid-cols-3 gap-x-16 gap-y-12 max-[640px]:grid-cols-2 max-[420px]:grid-cols-1";
 
   return (
-    <main className="mx-auto w-full max-w-[1440px] px-[clamp(16px,4vw,80px)] py-10">
+    <main className="mx-auto w-full px-[clamp(16px,4vw,80px)] py-10">
       {/* Suspense boundary: the filter panel and grid read the URL query string
           via useSearchParams, which Next requires to be wrapped to keep the
           rest of the page statically renderable. */}

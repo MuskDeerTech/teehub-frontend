@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import {
   IconUser,
@@ -56,6 +56,7 @@ function mapCategory(doc: PayloadCategory): Category {
 
 export default function Navbar() {
   const router = useRouter();
+  const pathname = usePathname();
   const { openCart, cartOpen, totalCount } = useCart();
   const { user } = useAuth();
 
@@ -68,6 +69,10 @@ export default function Navbar() {
   const [categoriesLoading, setCategoriesLoading] = useState(false);
   const [mobileDockVisible, setMobileDockVisible] = useState(true);
   const lastScrollY = useRef(0);
+  const isHomePage = pathname === "/";
+  const mobileDockIconClass = isHomePage
+    ? "text-white hover:bg-white/15"
+    : "text-black hover:bg-black/5";
 
   const ensureCategories = () => {
     if (!categoriesLoaded && !categoriesLoading) setCategoriesLoading(true);
@@ -315,7 +320,7 @@ export default function Navbar() {
           target="_blank"
           rel="noopener noreferrer"
           aria-label="Find our store on Google Maps"
-          className="flex h-12 w-12 items-center justify-center rounded-full text-white transition-colors hover:bg-white/15"
+          className={`flex h-12 w-12 items-center justify-center rounded-full transition-colors ${mobileDockIconClass}`}
         >
           <IconMapPin size={27} stroke={1.7} />
         </a>
@@ -329,7 +334,7 @@ export default function Navbar() {
             setCollectionsOpen(false);
             setSearchOpen(true);
           }}
-          className="flex h-12 w-12 cursor-pointer items-center justify-center rounded-full text-white transition-colors hover:bg-white/15"
+          className={`flex h-12 w-12 cursor-pointer items-center justify-center rounded-full transition-colors ${mobileDockIconClass}`}
         >
           <IconSearch size={28} stroke={1.7} />
         </button>
@@ -338,7 +343,7 @@ export default function Navbar() {
           type="button"
           aria-label={user ? "Account" : "Sign in"}
           onClick={() => (user ? router.push("/account") : setAuthOpen(true))}
-          className="flex h-12 w-12 cursor-pointer items-center justify-center rounded-full text-white transition-colors hover:bg-white/15"
+          className={`flex h-12 w-12 cursor-pointer items-center justify-center rounded-full transition-colors ${mobileDockIconClass}`}
         >
           <IconUser size={28} stroke={1.7} />
         </button>
@@ -347,7 +352,7 @@ export default function Navbar() {
           type="button"
           aria-label={`Open cart (${totalCount} items)`}
           onClick={openCart}
-          className="relative flex h-12 w-12 cursor-pointer items-center justify-center rounded-full text-white transition-colors hover:bg-white/15"
+          className={`relative flex h-12 w-12 cursor-pointer items-center justify-center rounded-full transition-colors ${mobileDockIconClass}`}
         >
           <IconShoppingBag size={28} stroke={1.7} />
           {totalCount > 0 && (

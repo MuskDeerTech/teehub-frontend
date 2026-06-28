@@ -18,7 +18,7 @@ export default async function NewInPage() {
   ]);
 
   return (
-    <main className="mx-auto w-full max-w-[1440px] px-[clamp(16px,4vw,80px)] py-10">
+    <main className="mx-auto w-full px-[clamp(16px,4vw,80px)] py-10">
       <div className="mb-6">
         <h1 className="text-[clamp(24px,3vw,36px)] font-extrabold tracking-tight text-[#111]">
           New In

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import JerseyCard from "@/components/ui/JerseyCard";
+import ProductGrid from "@/components/ui/ProductGrid";
 import { searchProducts } from "@/lib/catalog";
 
 type SearchParams = { q?: string };
@@ -27,11 +27,8 @@ export default async function SearchPage({
   const term = q?.trim() ?? "";
   const products = term ? await searchProducts(term) : [];
 
-  const gridClass =
-    "mt-9 grid grid-cols-3 gap-x-16 gap-y-12 max-[640px]:grid-cols-2 max-[420px]:grid-cols-1";
-
   return (
-    <main className="mx-auto w-full max-w-[1440px] px-[clamp(16px,4vw,80px)] py-10">
+    <main className="mx-auto w-full px-[clamp(16px,4vw,80px)] py-10">
       <h1 className="text-[22px] font-bold uppercase tracking-[1px] text-black">
         {term ? `Results for “${term}”` : "Search"}
       </h1>
@@ -46,15 +43,7 @@ export default async function SearchPage({
           Type a search in the bar above to find products.
         </p>
       ) : products.length > 0 ? (
-        <div className={gridClass}>
-          {products.map((product) => (
-            <JerseyCard
-              key={product.slug}
-              product={product}
-              href={`/product/${product.slug}`}
-            />
-          ))}
-        </div>
+        <ProductGrid products={products} />
       ) : (
         <div className="mt-20 text-center">
           <p className="text-[15px] text-[#777]">

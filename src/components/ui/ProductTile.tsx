@@ -44,7 +44,7 @@ export default function ProductTile({ product }: { product: Product }) {
               alt={product.title}
               fill
               sizes="(max-width: 480px) 100vw, (max-width: 768px) 50vw, 33vw"
-              className="object-contain transition-transform duration-300 group-hover:scale-[1.04]"
+              className="object-fill transition-transform duration-300 group-hover:scale-[1.04]"
               // Neutral canvas: the card's position/zoom comes entirely from the
               // admin's Card Fit crop, so what's set in Payload is what renders.
               style={fitTransform(product.cardFit)}

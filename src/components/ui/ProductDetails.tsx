@@ -70,7 +70,7 @@ function getGallery(product: Product) {
 const inr = (n: number) => `₹${n}`;
 
 // Shared viewport height for frozen left/right panels on desktop.
-const panelHeightClass = "lg:h-[calc(100dvh-95px)]";
+const panelHeightClass = "lg:h-[calc(100dvh-94px)]";
 const stickyPanelClass = `lg:sticky lg:top-[84px] lg:self-start relative z-0 ${panelHeightClass}`;
 const subscribeNoop = () => () => {};
 const getClientSnapshot = () => true;
@@ -119,7 +119,7 @@ function GalleryImage({
         width={700}
         height={900}
         priority={priority}
-        className="pointer-events-none h-full w-full origin-bottom object-contain object-[50%_90%]"
+        className="pointer-events-none h-full w-full origin-center object-cover"
         style={fitTransform(image.fit)}
       />
     </div>
@@ -257,6 +257,7 @@ export default function ProductDetails({ product }: { product: Product }) {
   const [copied, setCopied] = useState(false);
   const [showShare, setShowShare] = useState(false);
   const shareRef = useRef<HTMLDivElement>(null);
+  const mobileGalleryRef = useRef<HTMLDivElement>(null);
   const shareUrl = typeof window !== "undefined" ? window.location.href : "";
 
   const copyLink = async () => {
@@ -278,9 +279,16 @@ export default function ProductDetails({ product }: { product: Product }) {
     "details & description",
   );
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+  const [mobileGalleryIndex, setMobileGalleryIndex] = useState(0);
 
   const gallery = useMemo(() => getGallery(product), [product]);
   const openPreview = (index: number) => setLightboxIndex(index);
+  const handleMobileGalleryScroll = () => {
+    const el = mobileGalleryRef.current;
+    if (!el) return;
+    const nextIndex = Math.round(el.scrollLeft / el.clientWidth);
+    setMobileGalleryIndex(Math.min(Math.max(nextIndex, 0), gallery.length - 1));
+  };
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
@@ -314,9 +322,38 @@ export default function ProductDetails({ product }: { product: Product }) {
         zIndex: cartOpen ? -1 : "auto",
       }}
     >
-      <div className="mx-auto grid w-full max-w-[1475px] grid-cols-1 gap-3 px-3 py-4 lg:items-start lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(580px,580px)] lg:py-3 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(650px,650px)] lg:px-4">
+      <div className="mx-auto grid w-full grid-cols-1 gap-3 px-3 py-4 lg:items-start lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(420px,420px)] lg:py-3 lg:px-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(650px,650px)]">
+        {/* Mobile/tablet gallery — horizontal swipe before product info. */}
+        {gallery.length > 0 && (
+          <div className="lg:hidden">
+            <div
+              ref={mobileGalleryRef}
+              onScroll={handleMobileGalleryScroll}
+              className="scrollbar-hide flex snap-x snap-mandatory overflow-x-auto"
+            >
+              {gallery.map((image, index) => (
+                <div key={`${image.src}-${index}`} className="w-full shrink-0 snap-center">
+                  <div className="relative">
+                    <GalleryImage
+                      image={image}
+                      product={product}
+                      priority={index === 0}
+                      onPreview={() => openPreview(index)}
+                    />
+                    {gallery.length > 1 && (
+                      <span className="absolute bottom-3 left-3 rounded-full bg-black/70 px-2.5 py-1 text-[12px] font-semibold text-white">
+                        {mobileGalleryIndex + 1} / {gallery.length}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Frozen left — first gallery image */}
-        <div className={stickyPanelClass}>
+        <div className={`hidden lg:block ${stickyPanelClass}`}>
           {gallery[0] && (
             <GalleryImage
               image={gallery[0]}
@@ -329,7 +366,7 @@ export default function ProductDetails({ product }: { product: Product }) {
         </div>
 
         {/* Scrollable middle*/}
-        <div className="flex flex-col gap-3 relative z-0">
+        <div className="relative z-0 hidden flex-col gap-3 lg:flex">
           {gallery.slice(1).map((image, index) => (
             <GalleryImage
               key={`${image.src}-${index + 1}`}
@@ -344,7 +381,7 @@ export default function ProductDetails({ product }: { product: Product }) {
 
         {/* Frozen right — product info */}
         <div
-          className={`flex min-h-0 min-w-0 flex-col gap-2 pb-2 lg:overflow-hidden lg:pb-3 ${stickyPanelClass}`}
+          className={`flex min-h-0 min-w-0 flex-col gap-2 pb-2 lg:overflow-hidden lg:pb-0 ${stickyPanelClass}`}
         >
           <div className="shrink-0 rounded-lg border border-[#d8d8d8] bg-white p-4">
             <div className="flex items-start justify-between gap-3">
@@ -662,7 +699,7 @@ export default function ProductDetails({ product }: { product: Product }) {
             </div>
           </div>
 
-          <div className="flex shrink-0 flex-col overflow-hidden rounded-lg border border-[#d8d8d8] bg-white">
+          <div className="flex min-h-0 flex-col overflow-hidden rounded-lg border border-[#d8d8d8] bg-white lg:flex-1">
             <div className="grid shrink-0 grid-cols-3 border-b">
               {tabs.map((tab) => (
                 <button
@@ -680,7 +717,7 @@ export default function ProductDetails({ product }: { product: Product }) {
               ))}
             </div>
 
-            <div className="max-h-[145px] overflow-y-auto overscroll-contain px-3 pt-3 pb-2 text-[11px] leading-normal text-gray-600">
+            <div className="max-h-[145px] overflow-y-auto overscroll-contain px-3 pt-3 pb-2 text-[11px] leading-normal text-gray-600 lg:max-h-none lg:flex-1">
               {activeTab === "details & description" && (
                 <>
                   <p className="font-medium text-black">Details</p>

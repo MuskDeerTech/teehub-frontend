@@ -37,7 +37,11 @@ export default async function ProductPage({
     <>
       <ProductDetails product={product} />
     
-      <LatestDrops productPage excludeSlug={product.slug} />
+      <LatestDrops
+        productPage
+        excludeSlug={product.slug}
+        categorySlug={product.categorySlug}
+      />
     </>
   );
 }

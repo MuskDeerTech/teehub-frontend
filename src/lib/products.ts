@@ -222,6 +222,8 @@ export const poloShirts: ApparelProduct[] = [
 export type Product = {
   slug: string;
   title: string;
+  categorySlug?: string;
+  categoryLabel?: string;
   bg: string;
   priceMin: number;
   priceMax: number;

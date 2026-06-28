@@ -1,15 +1,20 @@
 import Link from "next/link";
 import ProductCard from "@/components/ui/ProductCard";
-import { getLatestProducts } from "@/lib/catalog";
+import { getLatestProducts, getLatestProductsByCategory } from "@/lib/catalog";
 
 export default async function LatestDrops({
   productPage = false,
   excludeSlug,
+  categorySlug,
 }: {
   productPage?: boolean;
   excludeSlug?: string;
+  categorySlug?: string;
 }) {
-  const latestProducts = await getLatestProducts(productPage ? 5 : 4);
+  const latestProducts =
+    productPage && categorySlug
+      ? await getLatestProductsByCategory(categorySlug, 5)
+      : await getLatestProducts(productPage ? 5 : 4);
   const products = latestProducts
     .filter((product) => product.slug !== excludeSlug)
     .slice(0, 4);
