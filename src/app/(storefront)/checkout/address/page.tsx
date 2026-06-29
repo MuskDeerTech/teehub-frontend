@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import {
@@ -9,6 +9,7 @@ import {
   IconUser,
   IconFileCheck,
 } from "@tabler/icons-react";
+import { useAuth } from "@/components/auth/AuthContext";
 import { useCart } from "@/components/cart/CartContext";
 
 const INPUT =
@@ -16,12 +17,12 @@ const INPUT =
 
 export default function CheckoutAddressPage() {
   const router = useRouter();
+  const { user, loading: authLoading } = useAuth();
   const {
     items,
     totalCount,
     totalMrp,
     totalPrice,
-    phone,
     customer,
     closeCart,
     goToStep,
@@ -45,6 +46,12 @@ export default function CheckoutAddressPage() {
   });
   const [errors, setErrors] = useState<Partial<typeof form>>({});
 
+  useEffect(() => {
+    if (authLoading || user) return;
+    goToStep("login");
+    router.push("/");
+  }, [authLoading, goToStep, router, user]);
+
   const set =
     (key: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement>) => {
       setForm((f) => ({ ...f, [key]: e.target.value }));
@@ -66,10 +73,9 @@ export default function CheckoutAddressPage() {
     return e;
   };
 
-  // Back goes to the login step of the drawer (login/details still live
-  // there), so we re-open the drawer at "login" and land on the storefront.
+  // Back returns to the cart drawer. Logged-out users still land on login.
   const handleBack = () => {
-    goToStep("login");
+    goToStep(user ? "details" : "login");
     router.push("/");
   };
 
@@ -106,7 +112,7 @@ export default function CheckoutAddressPage() {
         pincode: form.pincode,
         city: form.city.trim(),
         state: form.state.trim(),
-        phone: phone ? `+91 ${phone}` : "",
+        phone: user?.phone ?? "",
         email: form.email.trim(),
       });
       router.push("/checkout/payment");
@@ -118,10 +124,10 @@ export default function CheckoutAddressPage() {
   };
 
   return (
-    <div className="mx-auto min-h-screen w-full max-w-6xl bg-white">
+    <div className="min-h-[calc(100vh-72px)] w-full bg-white">
       {/* HEADER */}
       <div className="px-4 pt-5" />
-      <div className="flex items-start justify-between px-6">
+      <div className="flex items-start justify-between px-[clamp(16px,4vw,80px)]">
         <div className="flex flex-1 items-center gap-2">
           <button onClick={handleBack} aria-label="Back to login" className="cursor-pointer">
             <IconChevronLeft size={28} />
@@ -170,7 +176,7 @@ export default function CheckoutAddressPage() {
       </div>
 
       {/* COUPONS */}
-      <div className="mt-4 px-6">
+      <div className="mt-4 px-[clamp(16px,4vw,80px)]">
         <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
           {[1, 2, 3].map((item) => (
             <button
@@ -178,7 +184,7 @@ export default function CheckoutAddressPage() {
               key={item}
               onClick={() => setSelectedCoupon(item)}
               aria-pressed={selectedCoupon === item}
-              className={`min-w-[357px] flex-shrink-0 rounded-lg border p-3 text-left transition ${
+                className={`min-w-[240px] flex-1 flex-shrink-0 rounded-lg border p-3 text-left transition ${
                 selectedCoupon === item
                   ? "border-[#F26522]"
                   : "border-gray-200 bg-white"
@@ -198,7 +204,7 @@ export default function CheckoutAddressPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-6 px-6 pb-8 pt-4 lg:grid-cols-[minmax(0,1fr)_380px]">
+      <div className="grid grid-cols-1 gap-8 px-[clamp(16px,4vw,80px)] pb-8 pt-4 lg:grid-cols-[minmax(0,1fr)_520px]">
         {/* LEFT — FORM */}
         <div>
           {/* SUCCESS BANNER */}
@@ -390,7 +396,7 @@ export default function CheckoutAddressPage() {
 
         {/* RIGHT — ORDER SUMMARY */}
         <div className="lg:row-start-right">
-          <div className="rounded-lg border border-[#e5e5e5] bg-white p-5 lg:sticky lg:top-20">
+          <div className="rounded-lg border border-[#e5e5e5] bg-white p-5">
             <h2 className="mb-3 text-base font-semibold text-black">
               Order Summary
             </h2>

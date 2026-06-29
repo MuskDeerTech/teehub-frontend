@@ -4,10 +4,13 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
+import { useAuth } from "@/components/auth/AuthContext";
 
 export type CartStep = "details" | "login" | "register" | "payment";
 
@@ -42,7 +45,6 @@ interface CartContextValue {
   cartOpen: boolean;
   step: CartStep;
   customer: CustomerData | null;
-  phone: string;
   totalCount: number;
   totalMrp: number;
   totalPrice: number;
@@ -53,21 +55,121 @@ interface CartContextValue {
   openCart: () => void;
   closeCart: () => void;
   goToStep: (step: CartStep) => void;
-  setPhone: (phone: string) => void;
   setCustomer: (customer: CustomerData) => void;
 }
 
 const CartContext = createContext<CartContextValue | null>(null);
+const CART_STORAGE_KEY = "teehub-cart-items";
 
 const lineIdFor = (item: NewCartItem) =>
   `${item.id}:${item.size}:${item.customName ?? ""}`;
 
+function isCartItem(value: unknown): value is CartItem {
+  if (!value || typeof value !== "object") return false;
+  const item = value as Partial<CartItem>;
+  return (
+    typeof item.lineId === "string" &&
+    typeof item.id === "string" &&
+    typeof item.name === "string" &&
+    typeof item.image === "string" &&
+    typeof item.size === "string" &&
+    typeof item.quantity === "number" &&
+    typeof item.price === "number" &&
+    typeof item.mrp === "number"
+  );
+}
+
+function normalizeCartItems(value: unknown) {
+  return Array.isArray(value) ? value.filter(isCartItem) : [];
+}
+
+function mergeCartItems(accountItems: CartItem[], localItems: CartItem[]) {
+  const merged = new Map<string, CartItem>();
+  for (const item of [...accountItems, ...localItems]) {
+    const existing = merged.get(item.lineId);
+    if (!existing) {
+      merged.set(item.lineId, item);
+      continue;
+    }
+    merged.set(item.lineId, {
+      ...existing,
+      ...item,
+      quantity: Math.max(existing.quantity, item.quantity),
+    });
+  }
+  return [...merged.values()];
+}
+
+function readStoredCartItems() {
+  try {
+    const stored = window.localStorage.getItem(CART_STORAGE_KEY);
+    if (!stored) return [];
+    const parsed = JSON.parse(stored);
+    return normalizeCartItems(parsed);
+  } catch {
+    return [];
+  }
+}
+
 export function CartProvider({ children }: { children: ReactNode }) {
+  const { user } = useAuth();
+  const userId = user?.id ? String(user.id) : "";
   const [items, setItems] = useState<CartItem[]>([]);
+  const [cartLoaded, setCartLoaded] = useState(false);
+  const [accountCartReady, setAccountCartReady] = useState(false);
   const [cartOpen, setCartOpen] = useState(false);
   const [step, setStep] = useState<CartStep>("details");
-  const [phone, setPhoneState] = useState("");
   const [customer, setCustomerState] = useState<CustomerData | null>(null);
+  const mergedUserId = useRef("");
+
+  useEffect(() => {
+    setItems(readStoredCartItems());
+    setCartLoaded(true);
+  }, []);
+
+  useEffect(() => {
+    if (!cartLoaded) return;
+    window.localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(items));
+  }, [cartLoaded, items]);
+
+  useEffect(() => {
+    if (!cartLoaded) return;
+
+    if (!userId) {
+      mergedUserId.current = "";
+      setAccountCartReady(false);
+      return;
+    }
+
+    if (mergedUserId.current === userId) return;
+
+    const accountItems = normalizeCartItems(
+      (user as { savedCart?: unknown } | null)?.savedCart,
+    );
+    setItems((current) => mergeCartItems(accountItems, current));
+    mergedUserId.current = userId;
+    setAccountCartReady(true);
+  }, [cartLoaded, user, userId]);
+
+  useEffect(() => {
+    if (!cartLoaded || !accountCartReady || !userId) return;
+
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => {
+      fetch(`/api/customers/${userId}`, {
+        method: "PATCH",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ savedCart: items }),
+        signal: controller.signal,
+      }).catch(() => {});
+    }, 350);
+
+    return () => {
+      window.clearTimeout(timeout);
+      controller.abort();
+    };
+  }, [accountCartReady, cartLoaded, items, userId]);
 
   const addItem = useCallback((item: NewCartItem) => {
     const lineId = lineIdFor(item);
@@ -104,7 +206,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
     setItems([]);
     setStep("details");
     setCustomerState(null);
-    setPhoneState("");
   }, []);
 
   const openCart = useCallback(() => {
@@ -117,10 +218,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const goToStep = useCallback((nextStep: CartStep) => {
     setStep(nextStep);
     setCartOpen(true);
-  }, []);
-
-  const setPhone = useCallback((nextPhone: string) => {
-    setPhoneState(nextPhone);
   }, []);
 
   const setCustomer = useCallback((nextCustomer: CustomerData) => {
@@ -147,7 +244,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
       cartOpen,
       step,
       customer,
-      phone,
       ...totals,
       addItem,
       removeItem,
@@ -156,7 +252,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
       openCart,
       closeCart,
       goToStep,
-      setPhone,
       setCustomer,
     }),
     [
@@ -164,7 +259,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
       cartOpen,
       step,
       customer,
-      phone,
       totals,
       addItem,
       removeItem,
@@ -173,7 +267,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
       openCart,
       closeCart,
       goToStep,
-      setPhone,
       setCustomer,
     ],
   );

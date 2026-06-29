@@ -161,7 +161,7 @@ function AccountView() {
         {/* LEFT: details form */}
         <form
           onSubmit={handleSave}
-          className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-100"
+          className="rounded-2xl border border-[#ECECEC] bg-white p-6 shadow-[0_2px_10px_rgba(0,0,0,0.04)]"
         >
           {saved && (
             <div className="mb-4 rounded-lg bg-green-100 py-2 text-center text-sm font-medium text-green-700">
@@ -246,7 +246,7 @@ function AccountView() {
             Order History [{orders.length}]
           </h2>
           {orders.length === 0 ? (
-            <div className="rounded-2xl bg-white p-10 text-center text-gray-500 shadow-sm ring-1 ring-gray-100">
+            <div className="rounded-2xl border border-[#ECECEC] bg-white p-10 text-center text-gray-500 shadow-[0_2px_10px_rgba(0,0,0,0.04)]">
               You have no orders yet.
             </div>
           ) : (
@@ -267,7 +267,7 @@ function OrderCard({ order }: { order: Order }) {
   const items = order.items ?? [];
 
   return (
-    <div className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-gray-100">
+    <div className="rounded-2xl border border-[#ECECEC] bg-white p-4 shadow-[0_2px_10px_rgba(0,0,0,0.04)]">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3 border-b border-gray-100 pb-3">
         <div>
           <p className="text-xs font-medium uppercase tracking-wide text-gray-400">
@@ -296,6 +296,10 @@ function OrderCard({ order }: { order: Order }) {
           <OrderItemRow key={`${order.id}-${index}`} item={item} />
         ))}
       </div>
+
+      <p className="mt-4 text-right text-sm font-bold text-gray-900">
+        Order ID: {order.orderNumber}
+      </p>
     </div>
   );
 }

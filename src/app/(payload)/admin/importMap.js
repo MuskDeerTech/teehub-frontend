@@ -1,5 +1,6 @@
 import { default as default_b72609fdfe494fa7fc30ad69d13527bf } from '../../../../src/components/admin/OrderDateCell'
 import { default as default_f59e992a24c39eff7977373cbcc65cc4 } from '../../../../src/components/admin/CurrencyCell'
+import { default as default_bf5a3526980182c87210aea1c4c954ee } from '../../../../src/components/admin/SavedCartField'
 import { default as default_b3bdbaeac36b397934490ab857666025 } from '../../../../src/components/admin/ColorPickerField'
 import { default as default_b7163f7bd6d89a288532e44ab4b202d9 } from '../../../../src/components/admin/ThumbFitField'
 import { default as default_953f92639e3e859f4222a54885ace342 } from '../../../../src/components/admin/ProductDateCell'
@@ -39,6 +40,7 @@ import { CollectionCards as CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1 } f
 export const importMap = {
   "/src/components/admin/OrderDateCell#default": default_b72609fdfe494fa7fc30ad69d13527bf,
   "/src/components/admin/CurrencyCell#default": default_f59e992a24c39eff7977373cbcc65cc4,
+  "/src/components/admin/SavedCartField#default": default_bf5a3526980182c87210aea1c4c954ee,
   "/src/components/admin/ColorPickerField#default": default_b3bdbaeac36b397934490ab857666025,
   "/src/components/admin/ThumbFitField#default": default_b7163f7bd6d89a288532e44ab4b202d9,
   "/src/components/admin/ProductDateCell#default": default_953f92639e3e859f4222a54885ace342,

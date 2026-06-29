@@ -19,12 +19,16 @@ interface AuthFormProps {
   open: boolean;
   onClose: () => void;
   initialMode?: AuthMode;
+  onAuthenticated?: () => void;
+  onBack?: () => void;
 }
 
 export default function AuthForm({
   open,
   onClose,
   initialMode = "login",
+  onAuthenticated,
+  onBack,
 }: AuthFormProps) {
   const router = useRouter();
   const { login, register } = useAuth();
@@ -68,11 +72,16 @@ export default function AuthForm({
       if (isRegister) {
         await register({ fullName: fullName.trim(), email: value, password });
         onClose();
-        router.push("/account?welcome=1");
+        if (onAuthenticated) {
+          onAuthenticated();
+        } else {
+          router.push("/account?welcome=1");
+        }
       } else {
         // Returning users stay on the page they logged in from.
         await login(value, password);
         onClose();
+        onAuthenticated?.();
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong.");
@@ -91,7 +100,7 @@ export default function AuthForm({
       <div className="px-6 py-6">
         {/* HEADER */}
         <div className="flex items-center gap-2">
-          <button type="button" onClick={onClose} aria-label="Back">
+          <button type="button" onClick={onBack ?? onClose} aria-label="Back">
             <IconChevronLeft size={28} />
           </button>
           <Image

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import {
@@ -17,6 +17,7 @@ import {
   IconPlus,
   IconQrcode,
 } from "@tabler/icons-react";
+import { useAuth } from "@/components/auth/AuthContext";
 import { useCart } from "@/components/cart/CartContext";
 
 const WALLETS = [
@@ -41,7 +42,16 @@ const BANKS = [
 
 export default function CheckoutPaymentPage() {
   const router = useRouter();
-  const { totalCount, totalMrp, totalPrice, customer, closeCart } = useCart();
+  const { user, loading: authLoading } = useAuth();
+  const {
+    totalCount,
+    totalMrp,
+    totalPrice,
+    customer,
+    clearCart,
+    closeCart,
+    goToStep,
+  } = useCart();
 
   const [selectedCoupon, setSelectedCoupon] = useState<number | null>(1);
   const [selectedPayment, setSelectedPayment] = useState("online");
@@ -55,6 +65,12 @@ export default function CheckoutPaymentPage() {
   const [submitError, setSubmitError] = useState("");
 
   const onlineTotal = Math.max(0, totalPrice - 30);
+
+  useEffect(() => {
+    if (authLoading || user) return;
+    goToStep("login");
+    router.push("/");
+  }, [authLoading, goToStep, router, user]);
 
   // Back goes to the address page (previous step).
   const handleBack = () => router.push("/checkout/address");
@@ -98,6 +114,7 @@ export default function CheckoutPaymentPage() {
       //   headers: { "Content-Type": "application/json" },
       //   body: JSON.stringify({ paymentMethod: selectedPayment, couponCode, makeGift }),
       // });
+      clearCart();
       closeCart();
       router.push("/");
     } catch {
@@ -108,10 +125,10 @@ export default function CheckoutPaymentPage() {
   };
 
   return (
-    <div className="mx-auto min-h-screen w-full max-w-6xl bg-white">
+    <div className="min-h-[calc(100vh-72px)] w-full bg-white">
        {/* HEADER */}
       <div className="px-4 pt-5" />
-      <div className="flex items-start justify-between px-6">
+      <div className="flex items-start justify-between px-[clamp(16px,4vw,80px)]">
         <div className="flex flex-1 items-center gap-2">
           <button onClick={handleBack} aria-label="Back to login" className="cursor-pointer">
             <IconChevronLeft size={28} />
@@ -160,7 +177,7 @@ export default function CheckoutPaymentPage() {
       </div>
 
        {/* COUPONS */}
-      <div className="mt-4 px-6">
+      <div className="mt-4 px-[clamp(16px,4vw,80px)]">
         <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
           {[1, 2, 3].map((item) => (
             <button
@@ -168,7 +185,7 @@ export default function CheckoutPaymentPage() {
               key={item}
               onClick={() => setSelectedCoupon(item)}
               aria-pressed={selectedCoupon === item}
-              className={`min-w-[357px] flex-shrink-0 rounded-lg border p-3 text-left transition ${
+                className={`min-w-[240px] flex-1 flex-shrink-0 rounded-lg border p-3 text-left transition ${
                 selectedCoupon === item
                   ? "border-[#F26522]"
                   : "border-gray-200 bg-white"
@@ -188,7 +205,7 @@ export default function CheckoutPaymentPage() {
         </div>
       </div>
 
-      <div className="px-6 pb-8 pt-4 flex flex-col gap-4">
+      <div className="px-[clamp(16px,4vw,80px)] pb-8 pt-4 flex flex-col gap-4">
         {/* DELIVERY TO */}
         <div className="bg-white rounded-xl p-4">
           <div className="flex items-center justify-between mb-2">

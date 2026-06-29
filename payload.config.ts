@@ -784,6 +784,9 @@ const Customers: CollectionConfig = {
         create: isAdminField,
         update: isAdminField,
       },
+      admin: {
+        hidden: true,
+      },
     },
     {
       name: "fullName",
@@ -842,6 +845,18 @@ const Customers: CollectionConfig = {
         readOnly: true,
         components: {
           Cell: "/src/components/admin/CurrencyCell#default",
+        },
+      },
+    },
+    {
+      name: "savedCart",
+      label: "Saved cart",
+      type: "json",
+      admin: {
+        description:
+          "Current customer cart synced from the storefront for cross-device checkout.",
+        components: {
+          Field: "/src/components/admin/SavedCartField#default",
         },
       },
     },
@@ -1166,6 +1181,9 @@ const Orders: CollectionConfig = {
       name: "woocommerceData",
       label: "WooCommerce legacy snapshot",
       type: "json",
+      admin: {
+        hidden: true,
+      },
     },
   ],
 };

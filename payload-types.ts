@@ -209,6 +209,18 @@ export interface Customer {
   lastActiveSource?: ('woocommerce' | 'payload') | null;
   orderCount?: number | null;
   totalSpent?: number | null;
+  /**
+   * Current customer cart synced from the storefront for cross-device checkout.
+   */
+  savedCart?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
   addresses?:
     | {
         /**
@@ -708,6 +720,7 @@ export interface CustomersSelect<T extends boolean = true> {
   lastActiveSource?: T;
   orderCount?: T;
   totalSpent?: T;
+  savedCart?: T;
   addresses?:
     | T
     | {
