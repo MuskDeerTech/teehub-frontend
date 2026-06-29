@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import {
@@ -11,13 +11,66 @@ import {
 } from "@tabler/icons-react";
 import { useAuth } from "@/components/auth/AuthContext";
 import { useCart } from "@/components/cart/CartContext";
+import type { CustomerData } from "@/components/cart/CartContext";
+import type { Customer } from "../../../../../payload-types";
 
 const INPUT =
   "w-full border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-[#f36d43] rounded-sm";
 
+type CheckoutForm = {
+  pincode: string;
+  city: string;
+  state: string;
+  flatHouse: string;
+  apartment: string;
+  fullName: string;
+  email: string;
+};
+
+type SavedAddress = NonNullable<Customer["addresses"]>[number];
+
+function splitAddress(address?: string | null) {
+  const [flatHouse = "", ...rest] = (address ?? "").split(",");
+  return {
+    flatHouse: flatHouse.trim(),
+    apartment: rest.join(",").trim(),
+  };
+}
+
+function defaultAddress(user: Customer | null) {
+  return (
+    user?.addresses?.find((address) => address.isDefault) ??
+    user?.addresses?.[0]
+  );
+}
+
+function formFromCustomerData(
+  customer: CustomerData | null,
+  user: Customer | null,
+): CheckoutForm {
+  const savedAddress = defaultAddress(user);
+  const cartAddress = splitAddress(customer?.address);
+  const payloadAddress = splitAddress(savedAddress?.address);
+
+  return {
+    pincode: customer?.pincode ?? savedAddress?.pincode ?? "",
+    city: customer?.city ?? savedAddress?.city ?? "",
+    state: customer?.state ?? savedAddress?.state ?? "",
+    flatHouse: customer?.address
+      ? cartAddress.flatHouse
+      : payloadAddress.flatHouse,
+    apartment: customer?.address
+      ? cartAddress.apartment
+      : payloadAddress.apartment,
+    fullName:
+      customer?.fullName ?? savedAddress?.fullName ?? user?.fullName ?? "",
+    email: customer?.email ?? user?.email ?? "",
+  };
+}
+
 export default function CheckoutAddressPage() {
   const router = useRouter();
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, updateProfile } = useAuth();
   const {
     items,
     totalCount,
@@ -30,21 +83,24 @@ export default function CheckoutAddressPage() {
   } = useCart();
 
   const [selectedCoupon, setSelectedCoupon] = useState<number | null>(1);
-  const [saveAs, setSaveAs] = useState<"Home" | "Work">("Home");
+  const [saveAs, setSaveAs] = useState<"Home" | "Work" | null>(null);
   const [showSuccess, setShowSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
   const [submitError, setSubmitError] = useState("");
 
-  const [form, setForm] = useState({
-    pincode: customer?.pincode ?? "",
-    city: customer?.city ?? "",
-    state: customer?.state ?? "",
-    flatHouse: customer?.address.split(",")[0]?.trim() ?? "",
-    apartment: customer?.address.split(",").slice(1).join(",").trim() ?? "",
-    fullName: customer?.fullName ?? "",
-    email: customer?.email ?? "",
-  });
-  const [errors, setErrors] = useState<Partial<typeof form>>({});
+  const prefilledForm = useMemo(
+    () => formFromCustomerData(customer, user),
+    [customer, user],
+  );
+  const [draftForm, setDraftForm] = useState<CheckoutForm>(() =>
+    formFromCustomerData(customer, user),
+  );
+  const [formEdited, setFormEdited] = useState(false);
+  const form = formEdited ? draftForm : prefilledForm;
+  const savedAddress = defaultAddress(user);
+  const selectedSaveAs =
+    saveAs ?? (savedAddress?.label === "Work" ? "Work" : "Home");
+  const [errors, setErrors] = useState<Partial<CheckoutForm>>({});
 
   useEffect(() => {
     if (authLoading || user) return;
@@ -54,7 +110,11 @@ export default function CheckoutAddressPage() {
 
   const set =
     (key: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement>) => {
-      setForm((f) => ({ ...f, [key]: e.target.value }));
+      setFormEdited(true);
+      setDraftForm((f) => ({
+        ...(formEdited ? f : form),
+        [key]: e.target.value,
+      }));
       setErrors((er) => ({ ...er, [key]: "" }));
     };
 
@@ -104,17 +164,37 @@ export default function CheckoutAddressPage() {
      });*/
 
       setShowSuccess(true);
+      const fullAddress = [form.flatHouse.trim(), form.apartment.trim()]
+        .filter(Boolean)
+        .join(", ");
       setCustomer({
         fullName: form.fullName.trim(),
-        address: [form.flatHouse.trim(), form.apartment.trim()]
-          .filter(Boolean)
-          .join(", "),
-        pincode: form.pincode,
+        address: fullAddress,
+        pincode: form.pincode.trim(),
         city: form.city.trim(),
         state: form.state.trim(),
         phone: user?.phone ?? "",
         email: form.email.trim(),
       });
+      if (user) {
+        const nextAddress: SavedAddress = {
+          label: selectedSaveAs,
+          fullName: form.fullName.trim(),
+          phone: user.phone ?? "",
+          address: fullAddress,
+          city: form.city.trim(),
+          state: form.state.trim(),
+          pincode: form.pincode.trim(),
+          isDefault: true,
+        };
+        const otherAddresses = (user.addresses ?? []).filter(
+          (address) => address.label !== selectedSaveAs && !address.isDefault,
+        );
+        await updateProfile({
+          fullName: form.fullName.trim(),
+          addresses: [nextAddress, ...otherAddresses],
+        });
+      }
       router.push("/checkout/payment");
     } catch {
       setSubmitError("Something went wrong. Please try again.");
@@ -236,7 +316,11 @@ export default function CheckoutAddressPage() {
                 value={form.pincode}
                 onChange={(e) => {
                   const v = e.target.value.replace(/\D/g, "").slice(0, 6);
-                  setForm((f) => ({ ...f, pincode: v }));
+                  setFormEdited(true);
+                  setDraftForm((f) => ({
+                    ...(formEdited ? f : form),
+                    pincode: v,
+                  }));
                   setErrors((er) => ({ ...er, pincode: "" }));
                 }}
               />
@@ -354,7 +438,7 @@ export default function CheckoutAddressPage() {
                   key={type}
                   onClick={() => setSaveAs(type)}
                   className={`px-6 py-1.5 rounded-full border text-sm font-medium transition ${
-                    saveAs === type
+                    selectedSaveAs === type
                       ? "border-[#f36d43] text-[#f36d43]"
                       : "border-gray-300 text-gray-600"
                   }`}

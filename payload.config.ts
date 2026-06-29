@@ -1534,6 +1534,7 @@ export default buildConfig({
       connectionString: process.env.DATABASE_URI || "",
       max: Number(process.env.DATABASE_POOL_MAX || 2),
     },
+    push: false,
   }),
   // Uploads go to S3 only when a bucket is configured; without one Payload
   // stores files on local disk so the admin works in dev with no S3 keys.
