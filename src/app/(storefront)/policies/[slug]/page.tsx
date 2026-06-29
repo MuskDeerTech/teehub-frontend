@@ -34,8 +34,8 @@ export default async function PolicyPage({
   if (!page) notFound();
 
   return (
-    <main className="mx-auto w-full max-w-[860px] px-[clamp(16px,4vw,40px)] py-12 max-[480px]:py-8">
-      <h1 className="mb-6 text-[28px] font-bold uppercase tracking-[0.5px] text-[#111] max-[480px]:text-[22px]">
+    <main className="mx-auto w-full px-[clamp(16px,4vw,80px)] py-10">
+      <h1 className="mb-6 text-[clamp(24px,3vw,36px)] font-extrabold uppercase tracking-tight text-[#111]">
         {page.title}
       </h1>
       <div className="policy-content">

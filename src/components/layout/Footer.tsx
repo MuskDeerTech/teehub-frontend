@@ -7,12 +7,13 @@ const paymentLogos = [
   { src: "/images/verisign.png", alt: "VeriSign", width: 136, height: 57 },
 ];
 
-// Policy links point at the CMS-backed /policies/<slug> pages; the rest are
-// still placeholders until those features land.
 const orderSupport = [
   { label: "Make a return/Exchange", href: "/policies/return-exchange-policy" },
-  { label: "Refund/Exchange policy", href: "/policies/refund-cancellation-policy" },
-  { label: "Track your order", href: "#" },
+  {
+    label: "Refund & Cancellation policy",
+    href: "/policies/refund-cancellation-policy",
+  },
+  { label: "Track your order", href: "/track-order" },
   { label: "Shipping policy", href: "/policies/shipping-policy" },
   { label: "FAQ's", href: "#" },
   { label: "Terms", href: "/policies/terms-of-service" },

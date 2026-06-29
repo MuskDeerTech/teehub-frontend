@@ -172,6 +172,19 @@ export default function Navbar() {
             );
           }
 
+          if (link === "TRACK ORDER") {
+            return (
+              <Link
+                key={link}
+                href="/track-order"
+                onMouseEnter={() => setCollectionsOpen(false)}
+                className="text-[13px] font-bold tracking-[1px] text-black transition-colors duration-200 hover:text-[#ff5b1f]"
+              >
+                {link}
+              </Link>
+            );
+          }
+
           return (
             <span
               key={link}
