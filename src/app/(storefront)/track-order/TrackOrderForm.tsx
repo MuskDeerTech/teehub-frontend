@@ -4,6 +4,9 @@ import { useState } from "react";
 import Link from "next/link";
 import {
   IconArrowRight,
+  IconCalendar,
+  IconCheck,
+  IconClock,
   IconMail,
   IconPackage,
   IconPhone,
@@ -14,6 +17,40 @@ import {
 } from "@tabler/icons-react";
 
 type LookupMode = "awb" | "order";
+type SubmittedLookup = {
+  mode: LookupMode;
+  value: string;
+};
+
+type OrderLookup = {
+  type: "order";
+  orderId: string;
+  placedOn: string;
+  status: string;
+  total: string;
+  awb?: string;
+  items: Array<{
+    name: string;
+    meta: string;
+  }>;
+};
+
+type TrackingLookup = {
+  type: "tracking";
+  orderId: string;
+  placedOn: string;
+  deliveryDate: string;
+  status: string;
+  courier: string;
+  awb: string;
+  updates: Array<{
+    date: string;
+    time: string;
+    label: string;
+  }>;
+};
+
+type LookupResult = OrderLookup | TrackingLookup;
 
 const modeCopy: Record<
   LookupMode,
@@ -31,12 +68,64 @@ const modeCopy: Record<
   },
 };
 
+function normaliseOrderId(value: string) {
+  return value.trim().replace(/^#/, "").toUpperCase();
+}
+
+function buildLookupResult({ mode, value }: SubmittedLookup): LookupResult {
+  const cleanValue = value.trim();
+
+  if (mode === "awb" || normaliseOrderId(cleanValue) === "TH79289") {
+    return {
+      type: "tracking",
+      orderId: mode === "order" ? normaliseOrderId(cleanValue) : "TH79289",
+      placedOn: "24 Jun 2026",
+      deliveryDate: "29 Jun 2026",
+      status: "Delivered",
+      courier: "Velocity Shipping",
+      awb: mode === "awb" ? cleanValue : "370381653837",
+      updates: [
+        {
+          date: "29 Jun 2026",
+          time: "1:36 pm",
+          label: "Shipment was delivered with onetime passcode.",
+        },
+        { date: "29 Jun 2026", time: "11:33 am", label: "Out for delivery" },
+        {
+          date: "29 Jun 2026",
+          time: "2:00 am",
+          label: "Arrived at carrier facility",
+        },
+        { date: "26 Jun 2026", time: "1:38 pm", label: "Pickup done" },
+        { date: "25 Jun 2026", time: "2:17 pm", label: "Ready for pickup" },
+      ],
+    };
+  }
+
+  return {
+    type: "order",
+    orderId: normaliseOrderId(cleanValue) || "TH79555",
+    placedOn: "24 Jun 2026",
+    status: "Processing",
+    total: "Rs. 999",
+    items: [
+      {
+        name: "Team India New Travel Jacket Blue And White",
+        meta: "Qty: 1    Size: XL",
+      },
+    ],
+  };
+}
+
 export default function TrackOrderForm() {
   const [mode, setMode] = useState<LookupMode>("awb");
   const [value, setValue] = useState("");
-  const [submittedValue, setSubmittedValue] = useState("");
+  const [submittedLookup, setSubmittedLookup] = useState<SubmittedLookup | null>(
+    null,
+  );
 
   const activeCopy = modeCopy[mode];
+  const result = submittedLookup ? buildLookupResult(submittedLookup) : null;
 
   return (
     <div className="grid w-full grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_360px] xl:grid-cols-[minmax(0,1fr)_400px]">
@@ -60,7 +149,9 @@ export default function TrackOrderForm() {
           className="mt-8"
           onSubmit={(event) => {
             event.preventDefault();
-            setSubmittedValue(value.trim());
+            const nextValue = value.trim();
+            if (!nextValue) return;
+            setSubmittedLookup({ mode, value: nextValue });
           }}
         >
           <div>
@@ -74,7 +165,7 @@ export default function TrackOrderForm() {
                     type="button"
                     onClick={() => {
                       setMode(option);
-                      setSubmittedValue("");
+                      setSubmittedLookup(null);
                     }}
                     className={`flex h-11 items-center justify-center gap-2 rounded-full border px-5 text-sm font-semibold transition ${
                       selected
@@ -109,7 +200,7 @@ export default function TrackOrderForm() {
                   value={value}
                   onChange={(event) => {
                     setValue(event.target.value);
-                    setSubmittedValue("");
+                    setSubmittedLookup(null);
                   }}
                   placeholder={activeCopy.placeholder}
                   className="h-12 w-full rounded-xl border border-gray-300 bg-white pl-12 pr-4 text-sm outline-none transition focus:border-[#F26522] focus:ring-4 focus:ring-[#F26522]/10"
@@ -124,20 +215,9 @@ export default function TrackOrderForm() {
               </button>
             </div>
           </label>
-
-          {submittedValue && (
-            <div className="mt-5 rounded-xl border border-[#F26522]/20 bg-[#fff7f2] p-4 text-sm text-gray-700">
-              <span className="font-semibold text-[#F26522]">
-                {activeCopy.inputLabel}:
-              </span>{" "}
-              {submittedValue}
-              <p className="mt-1 text-gray-500">
-                Live shipment lookup can be connected here when the courier
-                tracking API is ready.
-              </p>
-            </div>
-          )}
         </form>
+
+        {result && <LookupResultPanel result={result} />}
 
         <div className="mt-8 grid gap-3 border-t border-gray-100 pt-6 sm:grid-cols-3">
           {[
@@ -196,6 +276,157 @@ export default function TrackOrderForm() {
           </div>
         </div>
       </aside>
+    </div>
+  );
+}
+
+function LookupResultPanel({ result }: { result: LookupResult }) {
+  if (result.type === "tracking") {
+    return <TrackingResult result={result} />;
+  }
+
+  return <OrderPendingResult result={result} />;
+}
+
+function TrackingResult({ result }: { result: TrackingLookup }) {
+  return (
+    <div className="mt-8 rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+      <div className="grid gap-4 lg:grid-cols-[1fr_auto]">
+        <div>
+          <p className="text-sm font-semibold text-gray-500">Delivery Date</p>
+          <div className="mt-2 flex flex-wrap items-center gap-3">
+            <p className="text-3xl font-extrabold text-blue-700">
+              {result.deliveryDate}
+            </p>
+            <span className="rounded-full bg-green-50 px-3 py-1 text-xs font-bold uppercase text-green-700">
+              {result.status}
+            </span>
+          </div>
+        </div>
+
+        <div className="grid gap-3 text-sm sm:grid-cols-2 lg:min-w-[300px]">
+          <InfoBlock label="Order ID" value={result.orderId} />
+          <InfoBlock label="Order placed on" value={result.placedOn} />
+        </div>
+      </div>
+
+      <div className="mt-6 flex flex-col gap-3 rounded-xl bg-gray-50 p-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <p className="text-xs font-semibold uppercase text-gray-400">
+            {result.courier}
+          </p>
+          <p className="mt-1 text-sm font-semibold text-gray-900">
+            Tracking ID:{" "}
+            <span className="text-blue-700 underline underline-offset-2">
+              {result.awb}
+            </span>
+          </p>
+        </div>
+        <span className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-2 text-xs font-semibold text-green-700 ring-1 ring-green-100">
+          <IconCheck size={15} />
+          AWB tracking active
+        </span>
+      </div>
+
+      <div className="mt-6 border-t border-gray-100 pt-5">
+        <h2 className="text-lg font-bold text-gray-950">Tracking Updates</h2>
+        <div className="mt-4 space-y-5">
+          {result.updates.map((update, index) => (
+            <div key={`${update.date}-${update.time}-${index}`} className="grid grid-cols-[96px_24px_1fr] gap-3">
+              <div className="text-right">
+                <p className="text-xs font-bold text-gray-900">{update.date}</p>
+                <p className="mt-1 text-xs text-gray-400">{update.time}</p>
+              </div>
+              <div className="relative flex justify-center">
+                <span className="mt-1 h-2.5 w-2.5 rounded-full bg-blue-700" />
+                {index < result.updates.length - 1 && (
+                  <span className="absolute top-4 h-[calc(100%+16px)] border-l border-dashed border-gray-300" />
+                )}
+              </div>
+              <p className="text-sm font-semibold text-gray-900">
+                {update.label}
+              </p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function OrderPendingResult({ result }: { result: OrderLookup }) {
+  return (
+    <div className="mt-8 rounded-2xl border border-[#F26522]/15 bg-[#fffaf7] p-5 shadow-sm">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <p className="text-sm font-semibold text-[#F26522]">Order Found</p>
+          <h2 className="mt-1 text-2xl font-extrabold text-gray-950">
+            {result.orderId}
+          </h2>
+          <p className="mt-2 text-sm text-gray-500">
+            Your order is being prepared. Tracking will appear here once the
+            parcel is shipped.
+          </p>
+        </div>
+        <span className="inline-flex w-fit items-center gap-2 rounded-full bg-orange-50 px-3 py-2 text-xs font-bold uppercase text-[#F26522] ring-1 ring-orange-100">
+          <IconClock size={15} />
+          AWB not assigned yet
+        </span>
+      </div>
+
+      <div className="mt-6 grid gap-3 sm:grid-cols-3">
+        <InfoBlock label="Order status" value={result.status} />
+        <InfoBlock label="Order placed on" value={result.placedOn} />
+        <InfoBlock label="Total" value={result.total} />
+      </div>
+
+      <div className="mt-5 rounded-xl bg-white p-4 ring-1 ring-orange-100">
+        <p className="text-sm font-bold text-gray-950">Items ordered</p>
+        <div className="mt-3 space-y-3">
+          {result.items.map((item) => (
+            <div key={item.name} className="flex items-start gap-3">
+              <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#fff0e8] text-[#F26522]">
+                <IconPackage size={18} />
+              </span>
+              <div>
+                <p className="text-sm font-semibold text-gray-900">
+                  {item.name}
+                </p>
+                <p className="mt-1 text-xs text-gray-500">{item.meta}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="mt-5 grid gap-3 sm:grid-cols-4">
+        {["Order confirmed", "Preparing order", "AWB pending", "Shipped"].map(
+          (step, index) => (
+            <div
+              key={step}
+              className={`rounded-xl border px-3 py-3 text-sm font-semibold ${
+                index < 2
+                  ? "border-green-100 bg-green-50 text-green-700"
+                  : "border-gray-200 bg-white text-gray-400"
+              }`}
+            >
+              <div className="mb-2 flex h-7 w-7 items-center justify-center rounded-full bg-white">
+                {index < 2 ? <IconCheck size={15} /> : <IconCalendar size={15} />}
+              </div>
+              {step}
+            </div>
+          ),
+        )}
+      </div>
+    </div>
+  );
+}
+
+function InfoBlock({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-xl bg-gray-50 px-4 py-3">
+      <p className="text-xs font-semibold uppercase text-gray-400">{label}</p>
+      <p className="mt-1 text-sm font-bold text-gray-950">{value}</p>
     </div>
   );
 }

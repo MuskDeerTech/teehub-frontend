@@ -24,6 +24,14 @@ type Order = {
   items?: OrderItem[];
 };
 
+function splitAddress(address?: string | null) {
+  const [flatHouse = "", ...rest] = (address ?? "").split(",");
+  return {
+    flatHouse: flatHouse.trim(),
+    apartment: rest.join(",").trim(),
+  };
+}
+
 export default function AccountPage() {
   return (
     <Suspense
@@ -59,9 +67,11 @@ function AccountView() {
     if (!user) return;
     const primary =
       user.addresses?.find((a) => a.isDefault) ?? user.addresses?.[0];
+    const savedAddress = splitAddress(primary?.address);
     setFullName(user.fullName ?? "");
     setPhone(user.phone ?? "");
-    setFlat(primary?.address ?? "");
+    setFlat(savedAddress.flatHouse);
+    setArea(savedAddress.apartment);
     setCity(primary?.city ?? "");
     setState(primary?.state ?? "");
     setPincode(primary?.pincode ?? "");
