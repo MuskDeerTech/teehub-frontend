@@ -190,6 +190,10 @@ export interface Customer {
    * Imported accounts receive a random password and must reset it before signing in.
    */
   requiresPasswordReset?: boolean | null;
+  emailVerified?: boolean | null;
+  emailVerificationCodeHash?: string | null;
+  emailVerificationExpiresAt?: string | null;
+  emailVerificationAttempts?: number | null;
   woocommerceData?:
     | {
         [k: string]: unknown;
@@ -712,6 +716,10 @@ export interface AdminsSelect<T extends boolean = true> {
 export interface CustomersSelect<T extends boolean = true> {
   woocommerceId?: T;
   requiresPasswordReset?: T;
+  emailVerified?: T;
+  emailVerificationCodeHash?: T;
+  emailVerificationExpiresAt?: T;
+  emailVerificationAttempts?: T;
   woocommerceData?: T;
   fullName?: T;
   phone?: T;

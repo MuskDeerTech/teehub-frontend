@@ -11,14 +11,14 @@ import {
   IconCheck,
 } from "@tabler/icons-react";
 import CheckoutOverlay from "@/components/cart/CheckoutOverlay";
-import { useAuth } from "@/components/auth/AuthContext";
+import { AuthApiError, useAuth } from "@/components/auth/AuthContext";
 
-type AuthMode = "login" | "register";
+type AuthMode = "login" | "register" | "verify";
 
 interface AuthFormProps {
   open: boolean;
   onClose: () => void;
-  initialMode?: AuthMode;
+  initialMode?: Exclude<AuthMode, "verify">;
   onAuthenticated?: () => void;
   onBack?: () => void;
 }
@@ -31,31 +31,71 @@ export default function AuthForm({
   onBack,
 }: AuthFormProps) {
   const router = useRouter();
-  const { login, register } = useAuth();
+  const { login, register, verifyEmail, resendVerificationCode } = useAuth();
   const [mode, setMode] = useState<AuthMode>(initialMode);
   const [fullName, setFullName] = useState("");
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
+  const [verificationCode, setVerificationCode] = useState("");
+  const [pendingEmail, setPendingEmail] = useState("");
   const [remember, setRemember] = useState(false);
   const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   const isRegister = mode === "register";
+  const isVerify = mode === "verify";
 
   const switchMode = (next: AuthMode) => {
     setMode(next);
     setError("");
+    setNotice("");
+  };
+
+  const finishAuth = () => {
+    onClose();
+    if (onAuthenticated) {
+      onAuthenticated();
+    } else {
+      router.push("/account?welcome=1");
+    }
   };
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
+
+    if (isVerify) {
+      const code = verificationCode.replace(/\D/g, "").slice(0, 6);
+      if (code.length !== 6) {
+        setError("Enter the 6-digit code sent to your email.");
+        return;
+      }
+
+      setError("");
+      setNotice("");
+      setSubmitting(true);
+      try {
+        await verifyEmail(pendingEmail, code, password);
+        finishAuth();
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Something went wrong.");
+      } finally {
+        setSubmitting(false);
+      }
+      return;
+    }
+
     const value = identifier.trim().toLowerCase();
     if (isRegister && !fullName.trim()) {
       setError("Please enter your full name.");
       return;
     }
     if (!value) {
-      setError(isRegister ? "Please enter your email." : "Please enter your email or phone.");
+      setError(
+        isRegister
+          ? "Please enter your email."
+          : "Please enter your email or phone.",
+      );
       return;
     }
     if (isRegister && !value.includes("@")) {
@@ -66,23 +106,52 @@ export default function AuthForm({
       setError("Password must be at least 6 characters.");
       return;
     }
+
     setError("");
+    setNotice("");
     setSubmitting(true);
     try {
       if (isRegister) {
-        await register({ fullName: fullName.trim(), email: value, password });
-        onClose();
-        if (onAuthenticated) {
-          onAuthenticated();
-        } else {
-          router.push("/account?welcome=1");
-        }
+        const result = await register({
+          fullName: fullName.trim(),
+          email: value,
+          password,
+        });
+        setPendingEmail(result.email);
+        setVerificationCode("");
+        setMode("verify");
       } else {
-        // Returning users stay on the page they logged in from.
-        await login(value, password);
-        onClose();
-        onAuthenticated?.();
+        try {
+          await login(value, password);
+          onClose();
+          onAuthenticated?.();
+        } catch (err) {
+          if (err instanceof AuthApiError && err.code === "EMAIL_NOT_VERIFIED") {
+            const email = err.email || value;
+            await resendVerificationCode(email);
+            setPendingEmail(email);
+            setVerificationCode("");
+            setMode("verify");
+            setNotice("We sent you a new verification code.");
+            return;
+          }
+          throw err;
+        }
       }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Something went wrong.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleResend = async () => {
+    setError("");
+    setNotice("");
+    setSubmitting(true);
+    try {
+      await resendVerificationCode(pendingEmail);
+      setNotice("We sent you a new code.");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong.");
     } finally {
@@ -94,11 +163,10 @@ export default function AuthForm({
     <CheckoutOverlay
       open={open}
       onClose={onClose}
-      ariaLabel={isRegister ? "Register" : "Sign in"}
+      ariaLabel={isRegister ? "Register" : isVerify ? "Verify email" : "Sign in"}
       variant="drawer"
     >
       <div className="px-6 py-6">
-        {/* HEADER */}
         <div className="flex items-center gap-2">
           <button type="button" onClick={onBack ?? onClose} aria-label="Back">
             <IconChevronLeft size={28} />
@@ -112,68 +180,96 @@ export default function AuthForm({
           />
         </div>
 
-        {/* TITLE */}
         <div className="mt-6 mb-5 flex items-center gap-2">
           <IconUserCircle size={24} />
           <span className="text-lg font-semibold">
-            Sign In/ Register To Continue
+            {isVerify ? "Verify Your Email" : "Sign In/ Register To Continue"}
           </span>
         </div>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          {isRegister && (
-            <Field label="Your Full Name">
-              <input
-                type="text"
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                placeholder="Your Name"
-                className={inputClass}
-              />
-            </Field>
+          {isVerify ? (
+            <>
+              <p className="text-sm leading-6 text-gray-600">
+                We sent a 6-digit code to{" "}
+                <span className="font-semibold text-black">{pendingEmail}</span>.
+              </p>
+              <Field label="Verification Code*">
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  autoComplete="one-time-code"
+                  value={verificationCode}
+                  onChange={(e) =>
+                    setVerificationCode(
+                      e.target.value.replace(/\D/g, "").slice(0, 6),
+                    )
+                  }
+                  placeholder="Enter 6-digit code"
+                  className={`${inputClass} text-center text-xl tracking-[6px]`}
+                />
+              </Field>
+            </>
+          ) : (
+            <>
+              {isRegister && (
+                <Field label="Your Full Name">
+                  <input
+                    type="text"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    placeholder="Your Name"
+                    className={inputClass}
+                  />
+                </Field>
+              )}
+
+              <Field label={isRegister ? "Email*" : "Email* / Phone Number*"}>
+                <input
+                  type="text"
+                  value={identifier}
+                  onChange={(e) => setIdentifier(e.target.value)}
+                  placeholder={isRegister ? "you@example.com" : "Email or phone"}
+                  className={inputClass}
+                />
+              </Field>
+
+              <Field label="Password*">
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Enter your password"
+                  className={inputClass}
+                />
+              </Field>
+            </>
           )}
 
-          <Field label={isRegister ? "Email*" : "Email* / Phone Number*"}>
-            <input
-              type="text"
-              value={identifier}
-              onChange={(e) => setIdentifier(e.target.value)}
-              placeholder={isRegister ? "you@example.com" : "Email or phone"}
-              className={inputClass}
-            />
-          </Field>
-
-          <Field label="Password*">
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Enter your password"
-              className={inputClass}
-            />
-          </Field>
-
           {error && <p className="px-2 text-xs text-red-500">{error}</p>}
+          {notice && <p className="px-2 text-xs text-green-600">{notice}</p>}
 
-          <div className="flex items-center justify-between px-1">
-            <label className="flex cursor-pointer items-center gap-2 text-sm text-gray-600">
-              <span
-                className={`flex h-5 w-5 items-center justify-center rounded border ${
-                  remember ? "border-[#F26522]" : "border-gray-400"
-                }`}
-                onClick={() => setRemember((v) => !v)}
+          {!isVerify && (
+            <div className="flex items-center justify-between px-1">
+              <label className="flex cursor-pointer items-center gap-2 text-sm text-gray-600">
+                <span
+                  className={`flex h-5 w-5 items-center justify-center rounded border ${
+                    remember ? "border-[#F26522]" : "border-gray-400"
+                  }`}
+                  onClick={() => setRemember((v) => !v)}
+                >
+                  {remember && <IconCheck size={14} className="text-[#F26522]" />}
+                </span>
+                Remember me
+              </label>
+              <button
+                type="button"
+                className="text-sm font-medium text-blue-600 hover:underline"
               >
-                {remember && <IconCheck size={14} className="text-[#F26522]" />}
-              </span>
-              Remember me
-            </label>
-            <button
-              type="button"
-              className="text-sm font-medium text-blue-600 hover:underline"
-            >
-              Forgot password?
-            </button>
-          </div>
+                Forgot password?
+              </button>
+            </div>
+          )}
 
           <button
             type="submit"
@@ -181,32 +277,57 @@ export default function AuthForm({
             className="mt-2 h-14 w-full rounded-[10px] bg-[#F26522] text-lg font-semibold text-white transition hover:opacity-90 disabled:opacity-60"
           >
             {submitting
-              ? "Please wait…"
-              : isRegister
-                ? "Create Account"
-                : "Sign In"}
+              ? "Please wait..."
+              : isVerify
+                ? "Verify Email"
+                : isRegister
+                  ? "Create Account"
+                  : "Sign In"}
           </button>
+
+          {isVerify && (
+            <button
+              type="button"
+              onClick={handleResend}
+              disabled={submitting}
+              className="text-sm font-semibold text-[#F26522] hover:underline disabled:opacity-60"
+            >
+              Resend code
+            </button>
+          )}
         </form>
 
-        {/* DIVIDER */}
-        <div className="my-6 flex items-center gap-3 text-gray-400">
-          <span className="h-px flex-1 bg-gray-200" />
-          <span className="text-xs">OR</span>
-          <span className="h-px flex-1 bg-gray-200" />
-        </div>
+        {!isVerify && (
+          <>
+            <div className="my-6 flex items-center gap-3 text-gray-400">
+              <span className="h-px flex-1 bg-gray-200" />
+              <span className="text-xs">OR</span>
+              <span className="h-px flex-1 bg-gray-200" />
+            </div>
 
-        {/* SOCIAL */}
-        <button
-          type="button"
-          className="flex h-12 w-full items-center justify-center gap-3 rounded-[10px] border border-gray-300 font-medium text-gray-700 transition hover:bg-gray-50"
-        >
-          <IconBrandGoogle size={20} />
-          Continue with Google
-        </button>
+            <button
+              type="button"
+              className="flex h-12 w-full items-center justify-center gap-3 rounded-[10px] border border-gray-300 font-medium text-gray-700 transition hover:bg-gray-50"
+            >
+              <IconBrandGoogle size={20} />
+              Continue with Google
+            </button>
+          </>
+        )}
 
-        {/* SWITCH MODE */}
         <p className="mt-6 text-center text-sm text-gray-500">
-          {isRegister ? (
+          {isVerify ? (
+            <>
+              Wrong email?{" "}
+              <button
+                type="button"
+                onClick={() => switchMode("register")}
+                className="font-semibold text-[#F26522] hover:underline"
+              >
+                Start again
+              </button>
+            </>
+          ) : isRegister ? (
             <>
               Already have an account?{" "}
               <button
@@ -228,7 +349,7 @@ export default function AuthForm({
                 Register
               </button>
               <span className="mt-1 block text-xs text-gray-400">
-                Register now to get ₹150 off + free shipping
+                Register now to get Rs. 150 off + free shipping
               </span>
             </>
           )}

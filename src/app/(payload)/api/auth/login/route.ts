@@ -30,6 +30,12 @@ export async function POST(request: Request) {
 
   const payload = await getPayload({ config });
   let email = value.toLowerCase();
+  let account:
+    | {
+        email?: string | null;
+        emailVerified?: boolean | null;
+      }
+    | undefined;
 
   if (!value.includes("@")) {
     // Treat as a phone number; match on the raw value or its digits only.
@@ -43,7 +49,7 @@ export async function POST(request: Request) {
       depth: 0,
       overrideAccess: true,
     });
-    const account = res.docs[0];
+    account = res.docs[0];
     if (!account?.email) {
       return Response.json(
         { errors: [{ message: "No account found for that phone number." }] },
@@ -51,6 +57,26 @@ export async function POST(request: Request) {
       );
     }
     email = String(account.email).toLowerCase();
+  } else {
+    const res = await payload.find({
+      collection: "customers",
+      where: { email: { equals: email } },
+      limit: 1,
+      depth: 0,
+      overrideAccess: true,
+    });
+    account = res.docs[0];
+  }
+
+  if (account?.emailVerified === false) {
+    return Response.json(
+      {
+        code: "EMAIL_NOT_VERIFIED",
+        email,
+        errors: [{ message: "Please verify your email before signing in." }],
+      },
+      { status: 403 },
+    );
   }
 
   let result: Awaited<ReturnType<typeof payload.login>>;
