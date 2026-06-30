@@ -1,6 +1,6 @@
 import { createHash, randomInt, timingSafeEqual } from "crypto";
 
-const CODE_TTL_MINUTES = 10;
+const CODE_TTL_MINUTES = 5;
 
 export function createVerificationCode() {
   return String(randomInt(0, 1_000_000)).padStart(6, "0");
@@ -50,7 +50,8 @@ function siteUrl() {
 }
 
 export function verificationEmailHtml(code: string) {
-  const logoUrl = `${siteUrl()}/images/teehub-logo.png`;
+  const logoUrl =
+    process.env.EMAIL_LOGO_URL?.trim() || `${siteUrl()}/images/teehub-logo.png`;
 
   return `
     <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin:0;background:#f4f4f4;padding:28px 12px;font-family:Arial,Helvetica,sans-serif;color:#111111;">
