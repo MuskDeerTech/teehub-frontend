@@ -809,6 +809,29 @@ const Customers: CollectionConfig = {
       },
     },
     {
+      name: "passwordResetCodeHash",
+      type: "text",
+      admin: {
+        hidden: true,
+      },
+    },
+    {
+      name: "passwordResetExpiresAt",
+      type: "date",
+      admin: {
+        hidden: true,
+      },
+    },
+    {
+      name: "passwordResetAttempts",
+      type: "number",
+      defaultValue: 0,
+      min: 0,
+      admin: {
+        hidden: true,
+      },
+    },
+    {
       name: "woocommerceData",
       label: "WooCommerce legacy snapshot",
       type: "json",

@@ -34,6 +34,7 @@ export async function POST(request: Request) {
     | {
         email?: string | null;
         emailVerified?: boolean | null;
+        requiresPasswordReset?: boolean | null;
       }
     | undefined;
 
@@ -66,6 +67,22 @@ export async function POST(request: Request) {
       overrideAccess: true,
     });
     account = res.docs[0];
+  }
+
+  if (account?.requiresPasswordReset) {
+    return Response.json(
+      {
+        code: "PASSWORD_RESET_REQUIRED",
+        email,
+        errors: [
+          {
+            message:
+              "Welcome back. We've upgraded TeeHub accounts. Please set a new password before signing in.",
+          },
+        ],
+      },
+      { status: 403 },
+    );
   }
 
   if (account?.emailVerified === false) {

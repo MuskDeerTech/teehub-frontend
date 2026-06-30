@@ -47,7 +47,7 @@ export async function POST(request: Request) {
     to: normalizedEmail,
     subject: "Your TeeHub verification code",
     html: verificationEmailHtml(code),
-    text: `Your TeeHub verification code is ${code}. It expires in 10 minutes.`,
+    text: `Your TeeHub verification code is ${code}. It expires in 5 minutes.`,
   });
 
   return Response.json({ ok: true });

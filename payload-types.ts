@@ -194,6 +194,9 @@ export interface Customer {
   emailVerificationCodeHash?: string | null;
   emailVerificationExpiresAt?: string | null;
   emailVerificationAttempts?: number | null;
+  passwordResetCodeHash?: string | null;
+  passwordResetExpiresAt?: string | null;
+  passwordResetAttempts?: number | null;
   woocommerceData?:
     | {
         [k: string]: unknown;
@@ -720,6 +723,9 @@ export interface CustomersSelect<T extends boolean = true> {
   emailVerificationCodeHash?: T;
   emailVerificationExpiresAt?: T;
   emailVerificationAttempts?: T;
+  passwordResetCodeHash?: T;
+  passwordResetExpiresAt?: T;
+  passwordResetAttempts?: T;
   woocommerceData?: T;
   fullName?: T;
   phone?: T;

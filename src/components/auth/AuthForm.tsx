@@ -13,7 +13,8 @@ import {
 import CheckoutOverlay from "@/components/cart/CheckoutOverlay";
 import { AuthApiError, useAuth } from "@/components/auth/AuthContext";
 
-type AuthMode = "login" | "register" | "verify";
+type AuthMode = "login" | "register" | "verify" | "reset-request" | "reset";
+type ResetReason = "forgot" | "migration";
 
 interface AuthFormProps {
   open: boolean;
@@ -31,13 +32,23 @@ export default function AuthForm({
   onBack,
 }: AuthFormProps) {
   const router = useRouter();
-  const { login, register, verifyEmail, resendVerificationCode } = useAuth();
+  const {
+    login,
+    register,
+    verifyEmail,
+    resendVerificationCode,
+    requestPasswordReset,
+    resetPassword,
+  } = useAuth();
   const [mode, setMode] = useState<AuthMode>(initialMode);
   const [fullName, setFullName] = useState("");
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [verificationCode, setVerificationCode] = useState("");
+  const [resetCode, setResetCode] = useState("");
+  const [newPassword, setNewPassword] = useState("");
   const [pendingEmail, setPendingEmail] = useState("");
+  const [resetReason, setResetReason] = useState<ResetReason>("forgot");
   const [remember, setRemember] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
@@ -45,6 +56,8 @@ export default function AuthForm({
 
   const isRegister = mode === "register";
   const isVerify = mode === "verify";
+  const isResetRequest = mode === "reset-request";
+  const isReset = mode === "reset";
 
   const switchMode = (next: AuthMode) => {
     setMode(next);
@@ -76,6 +89,56 @@ export default function AuthForm({
       setSubmitting(true);
       try {
         await verifyEmail(pendingEmail, code, password);
+        finishAuth();
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Something went wrong.");
+      } finally {
+        setSubmitting(false);
+      }
+      return;
+    }
+
+    if (isResetRequest) {
+      const value = identifier.trim().toLowerCase();
+      if (!value) {
+        setError("Enter your email or phone number.");
+        return;
+      }
+
+      setError("");
+      setNotice("");
+      setSubmitting(true);
+      try {
+        const result = await requestPasswordReset(value);
+        setPendingEmail(result.email);
+        setResetCode("");
+        setNewPassword("");
+        setMode("reset");
+        setNotice("We sent you a password reset code.");
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Something went wrong.");
+      } finally {
+        setSubmitting(false);
+      }
+      return;
+    }
+
+    if (isReset) {
+      const code = resetCode.replace(/\D/g, "").slice(0, 6);
+      if (code.length !== 6) {
+        setError("Enter the 6-digit reset code sent to your email.");
+        return;
+      }
+      if (newPassword.length < 6) {
+        setError("Password must be at least 6 characters.");
+        return;
+      }
+
+      setError("");
+      setNotice("");
+      setSubmitting(true);
+      try {
+        await resetPassword(pendingEmail, code, newPassword);
         finishAuth();
       } catch (err) {
         setError(err instanceof Error ? err.message : "Something went wrong.");
@@ -135,9 +198,45 @@ export default function AuthForm({
             setNotice("We sent you a new verification code.");
             return;
           }
+          if (
+            err instanceof AuthApiError &&
+            err.code === "PASSWORD_RESET_REQUIRED"
+          ) {
+            const email = err.email || value;
+            const result = await requestPasswordReset(email);
+            setPendingEmail(result.email);
+            setResetCode("");
+            setNewPassword("");
+            setResetReason("migration");
+            setMode("reset");
+            setNotice("We sent you a password reset code.");
+            return;
+          }
           throw err;
         }
       }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Something went wrong.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const openForgotPassword = () => {
+    setResetReason("forgot");
+    setMode("reset-request");
+    setError("");
+    setNotice("");
+  };
+
+  const handleResendReset = async () => {
+    setError("");
+    setNotice("");
+    setSubmitting(true);
+    try {
+      const result = await requestPasswordReset(pendingEmail);
+      setPendingEmail(result.email);
+      setNotice("We sent you a new reset code.");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong.");
     } finally {
@@ -163,7 +262,15 @@ export default function AuthForm({
     <CheckoutOverlay
       open={open}
       onClose={onClose}
-      ariaLabel={isRegister ? "Register" : isVerify ? "Verify email" : "Sign in"}
+      ariaLabel={
+        isRegister
+          ? "Register"
+          : isVerify
+            ? "Verify email"
+            : isReset || isResetRequest
+              ? "Reset password"
+              : "Sign in"
+      }
       variant="drawer"
     >
       <div className="px-6 py-6">
@@ -183,7 +290,11 @@ export default function AuthForm({
         <div className="mt-6 mb-5 flex items-center gap-2">
           <IconUserCircle size={24} />
           <span className="text-lg font-semibold">
-            {isVerify ? "Verify Your Email" : "Sign In/ Register To Continue"}
+            {isVerify
+              ? "Verify Your Email"
+              : isReset || isResetRequest
+                ? "Set New Password"
+                : "Sign In/ Register To Continue"}
           </span>
         </div>
 
@@ -207,6 +318,67 @@ export default function AuthForm({
                   }
                   placeholder="Enter 6-digit code"
                   className={`${inputClass} text-center text-xl tracking-[6px]`}
+                />
+              </Field>
+            </>
+          ) : isResetRequest ? (
+            <>
+              <p className="text-sm leading-6 text-gray-600">
+                Enter your email or phone number and we&apos;ll send you a
+                6-digit code to reset your password.
+              </p>
+              <Field label="Email* / Phone Number*">
+                <input
+                  type="text"
+                  value={identifier}
+                  onChange={(e) => setIdentifier(e.target.value)}
+                  placeholder="Email or phone"
+                  className={inputClass}
+                />
+              </Field>
+            </>
+          ) : isReset ? (
+            <>
+              {resetReason === "migration" ? (
+                <p className="text-sm leading-6 text-gray-600">
+                  <span className="font-semibold text-black">Welcome back.</span>{" "}
+                  We&apos;ve upgraded TeeHub accounts. For security, please set a
+                  new password before signing in.
+                </p>
+              ) : (
+                <p className="text-sm leading-6 text-gray-600">
+                  We sent a 6-digit reset code to{" "}
+                  <span className="font-semibold text-black">{pendingEmail}</span>.
+                  It expires in 2 minutes.
+                </p>
+              )}
+              {resetReason === "migration" && (
+                <p className="text-sm leading-6 text-gray-600">
+                  We sent a 6-digit reset code to{" "}
+                  <span className="font-semibold text-black">{pendingEmail}</span>.
+                  It expires in 2 minutes.
+                </p>
+              )}
+              <Field label="Reset Code*">
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  autoComplete="one-time-code"
+                  value={resetCode}
+                  onChange={(e) =>
+                    setResetCode(e.target.value.replace(/\D/g, "").slice(0, 6))
+                  }
+                  placeholder="Enter 6-digit code"
+                  className={`${inputClass} text-center text-xl tracking-[6px]`}
+                />
+              </Field>
+              <Field label="New Password*">
+                <input
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="Create new password"
+                  className={inputClass}
                 />
               </Field>
             </>
@@ -249,7 +421,7 @@ export default function AuthForm({
           {error && <p className="px-2 text-xs text-red-500">{error}</p>}
           {notice && <p className="px-2 text-xs text-green-600">{notice}</p>}
 
-          {!isVerify && (
+          {!isVerify && !isReset && !isResetRequest && (
             <div className="flex items-center justify-between px-1">
               <label className="flex cursor-pointer items-center gap-2 text-sm text-gray-600">
                 <span
@@ -264,6 +436,7 @@ export default function AuthForm({
               </label>
               <button
                 type="button"
+                onClick={openForgotPassword}
                 className="text-sm font-medium text-blue-600 hover:underline"
               >
                 Forgot password?
@@ -280,9 +453,13 @@ export default function AuthForm({
               ? "Please wait..."
               : isVerify
                 ? "Verify Email"
-                : isRegister
-                  ? "Create Account"
-                  : "Sign In"}
+                : isResetRequest
+                  ? "Send Reset Code"
+                : isReset
+                  ? "Set New Password"
+                  : isRegister
+                    ? "Create Account"
+                    : "Sign In"}
           </button>
 
           {isVerify && (
@@ -295,9 +472,19 @@ export default function AuthForm({
               Resend code
             </button>
           )}
+          {isReset && (
+            <button
+              type="button"
+              onClick={handleResendReset}
+              disabled={submitting}
+              className="text-sm font-semibold text-[#F26522] hover:underline disabled:opacity-60"
+            >
+              Resend reset code
+            </button>
+          )}
         </form>
 
-        {!isVerify && (
+        {!isVerify && !isReset && !isResetRequest && (
           <>
             <div className="my-6 flex items-center gap-3 text-gray-400">
               <span className="h-px flex-1 bg-gray-200" />
@@ -325,6 +512,17 @@ export default function AuthForm({
                 className="font-semibold text-[#F26522] hover:underline"
               >
                 Start again
+              </button>
+            </>
+          ) : isReset || isResetRequest ? (
+            <>
+              Remember your password?{" "}
+              <button
+                type="button"
+                onClick={() => switchMode("login")}
+                className="font-semibold text-[#F26522] hover:underline"
+              >
+                Sign in
               </button>
             </>
           ) : isRegister ? (

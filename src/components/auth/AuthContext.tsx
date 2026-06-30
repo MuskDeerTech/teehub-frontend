@@ -26,6 +26,8 @@ interface AuthContextValue {
   register: (input: RegisterInput) => Promise<{ email: string }>;
   verifyEmail: (email: string, code: string, password: string) => Promise<void>;
   resendVerificationCode: (email: string) => Promise<void>;
+  requestPasswordReset: (identifier: string) => Promise<{ email: string }>;
+  resetPassword: (email: string, code: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   updateProfile: (data: Partial<Customer>) => Promise<void>;
 }
@@ -161,6 +163,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const requestPasswordReset = useCallback(async (identifier: string) => {
+    const res = await fetch("/api/auth/request-password-reset", {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ identifier }),
+    });
+    if (!res.ok) {
+      throw new Error(await errorMessage(res, "Could not send a reset code."));
+    }
+    const data = await res.json();
+    return { email: String(data.email ?? identifier).toLowerCase() };
+  }, []);
+
+  const resetPassword = useCallback(
+    async (email: string, code: string, password: string) => {
+      const res = await fetch("/api/auth/reset-password", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, code, password }),
+      });
+      if (!res.ok) {
+        throw new Error(await errorMessage(res, "Could not reset password."));
+      }
+      const data = await res.json();
+      if (data?.user) setUser(data.user as Customer);
+      else await login(email, password);
+    },
+    [login],
+  );
+
   const logout = useCallback(async () => {
     await api("/logout", { method: "POST" }).catch(() => {});
     setUser(null);
@@ -190,6 +224,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       register,
       verifyEmail,
       resendVerificationCode,
+      requestPasswordReset,
+      resetPassword,
       logout,
       updateProfile,
     }),
@@ -200,6 +236,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       register,
       verifyEmail,
       resendVerificationCode,
+      requestPasswordReset,
+      resetPassword,
       logout,
       updateProfile,
     ],
