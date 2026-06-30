@@ -26,7 +26,10 @@ interface AuthContextValue {
   register: (input: RegisterInput) => Promise<{ email: string }>;
   verifyEmail: (email: string, code: string, password: string) => Promise<void>;
   resendVerificationCode: (email: string) => Promise<void>;
-  requestPasswordReset: (identifier: string) => Promise<{ email: string }>;
+  requestPasswordReset: (
+    identifier: string,
+    options?: { sendCode?: boolean },
+  ) => Promise<{ email: string }>;
   resetPassword: (email: string, code: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   updateProfile: (data: Partial<Customer>) => Promise<void>;
@@ -163,19 +166,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const requestPasswordReset = useCallback(async (identifier: string) => {
-    const res = await fetch("/api/auth/request-password-reset", {
-      method: "POST",
-      credentials: "include",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ identifier }),
-    });
-    if (!res.ok) {
-      throw new Error(await errorMessage(res, "Could not send a reset code."));
-    }
-    const data = await res.json();
-    return { email: String(data.email ?? identifier).toLowerCase() };
-  }, []);
+  const requestPasswordReset = useCallback(
+    async (identifier: string, options?: { sendCode?: boolean }) => {
+      const res = await fetch("/api/auth/request-password-reset", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ identifier, sendCode: options?.sendCode }),
+      });
+      if (!res.ok) {
+        throw new Error(await errorMessage(res, "Could not send a reset code."));
+      }
+      const data = await res.json();
+      return { email: String(data.email ?? identifier).toLowerCase() };
+    },
+    [],
+  );
 
   const resetPassword = useCallback(
     async (email: string, code: string, password: string) => {

@@ -13,7 +13,10 @@ function errorResponse(message: string, status = 400) {
 }
 
 export async function POST(request: Request) {
-  const { identifier } = (await request.json()) as { identifier?: string };
+  const { identifier, sendCode = true } = (await request.json()) as {
+    identifier?: string;
+    sendCode?: boolean;
+  };
   const value = identifier?.trim();
   if (!value) return errorResponse("Enter your email or phone number.");
 
@@ -41,24 +44,26 @@ export async function POST(request: Request) {
     return errorResponse("No account found for that email or phone number.", 404);
   }
 
-  const code = createPasswordResetCode();
-  await payload.update({
-    collection: "customers",
-    id: account.id,
-    data: {
-      passwordResetCodeHash: hashPasswordResetCode(email, code),
-      passwordResetExpiresAt: passwordResetExpiry(),
-      passwordResetAttempts: 0,
-    } as any,
-    overrideAccess: true,
-  });
+  if (sendCode) {
+    const code = createPasswordResetCode();
+    await payload.update({
+      collection: "customers",
+      id: account.id,
+      data: {
+        passwordResetCodeHash: hashPasswordResetCode(email, code),
+        passwordResetExpiresAt: passwordResetExpiry(),
+        passwordResetAttempts: 0,
+      } as any,
+      overrideAccess: true,
+    });
 
-  await payload.sendEmail({
-    to: email,
-    subject: "Set your new TeeHub password",
-    html: passwordResetEmailHtml(code),
-    text: `Your TeeHub password reset code is ${code}. It expires in ${PASSWORD_RESET_TTL_MINUTES} minutes.`,
-  });
+    await payload.sendEmail({
+      to: email,
+      subject: "Set your new TeeHub password",
+      html: passwordResetEmailHtml(code),
+      text: `Your TeeHub password reset code is ${code}. It expires in ${PASSWORD_RESET_TTL_MINUTES} minutes.`,
+    });
+  }
 
   return Response.json({ email });
 }

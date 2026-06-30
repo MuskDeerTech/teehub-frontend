@@ -47,6 +47,8 @@ export default function AuthForm({
   const [verificationCode, setVerificationCode] = useState("");
   const [resetCode, setResetCode] = useState("");
   const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [resetCodeVisible, setResetCodeVisible] = useState(false);
   const [pendingEmail, setPendingEmail] = useState("");
   const [resetReason, setResetReason] = useState<ResetReason>("forgot");
   const [remember, setRemember] = useState(false);
@@ -58,6 +60,23 @@ export default function AuthForm({
   const isVerify = mode === "verify";
   const isResetRequest = mode === "reset-request";
   const isReset = mode === "reset";
+  const resetAuthState = (nextMode: AuthMode = initialMode) => {
+    setMode(nextMode);
+    setFullName("");
+    setIdentifier("");
+    setPassword("");
+    setVerificationCode("");
+    setResetCode("");
+    setNewPassword("");
+    setConfirmPassword("");
+    setResetCodeVisible(false);
+    setPendingEmail("");
+    setResetReason("forgot");
+    setRemember(false);
+    setError("");
+    setNotice("");
+    setSubmitting(false);
+  };
 
   const switchMode = (next: AuthMode) => {
     setMode(next);
@@ -65,8 +84,26 @@ export default function AuthForm({
     setNotice("");
   };
 
-  const finishAuth = () => {
+  const closeAuth = () => {
+    resetAuthState();
     onClose();
+  };
+
+  const handleBack = () => {
+    if (mode !== initialMode) {
+      switchMode(initialMode);
+      return;
+    }
+
+    if (onBack) {
+      onBack();
+    } else {
+      closeAuth();
+    }
+  };
+
+  const finishAuth = () => {
+    closeAuth();
     if (onAuthenticated) {
       onAuthenticated();
     } else {
@@ -109,12 +146,14 @@ export default function AuthForm({
       setNotice("");
       setSubmitting(true);
       try {
-        const result = await requestPasswordReset(value);
+        const result = await requestPasswordReset(value, { sendCode: false });
         setPendingEmail(result.email);
         setResetCode("");
         setNewPassword("");
+        setConfirmPassword("");
+        setResetCodeVisible(false);
         setMode("reset");
-        setNotice("We sent you a password reset code.");
+        setNotice("");
       } catch (err) {
         setError(err instanceof Error ? err.message : "Something went wrong.");
       } finally {
@@ -124,13 +163,42 @@ export default function AuthForm({
     }
 
     if (isReset) {
+      if (newPassword.length < 6) {
+        setError("Password must be at least 6 characters.");
+        return;
+      }
+      if (!confirmPassword) {
+        setError("Confirm your new password.");
+        return;
+      }
+      if (newPassword !== confirmPassword) {
+        setError("Passwords do not match.");
+        return;
+      }
+
+      if (!resetCodeVisible) {
+        setError("");
+        setNotice("");
+        setSubmitting(true);
+        try {
+          const result = await requestPasswordReset(pendingEmail, {
+            sendCode: true,
+          });
+          setPendingEmail(result.email);
+          setResetCode("");
+          setResetCodeVisible(true);
+          setNotice("We sent you a password reset code.");
+        } catch (err) {
+          setError(err instanceof Error ? err.message : "Something went wrong.");
+        } finally {
+          setSubmitting(false);
+        }
+        return;
+      }
+
       const code = resetCode.replace(/\D/g, "").slice(0, 6);
       if (code.length !== 6) {
         setError("Enter the 6-digit reset code sent to your email.");
-        return;
-      }
-      if (newPassword.length < 6) {
-        setError("Password must be at least 6 characters.");
         return;
       }
 
@@ -186,7 +254,7 @@ export default function AuthForm({
       } else {
         try {
           await login(value, password);
-          onClose();
+          closeAuth();
           onAuthenticated?.();
         } catch (err) {
           if (err instanceof AuthApiError && err.code === "EMAIL_NOT_VERIFIED") {
@@ -203,13 +271,15 @@ export default function AuthForm({
             err.code === "PASSWORD_RESET_REQUIRED"
           ) {
             const email = err.email || value;
-            const result = await requestPasswordReset(email);
+            const result = await requestPasswordReset(email, { sendCode: false });
             setPendingEmail(result.email);
             setResetCode("");
             setNewPassword("");
+            setConfirmPassword("");
+            setResetCodeVisible(false);
             setResetReason("migration");
             setMode("reset");
-            setNotice("We sent you a password reset code.");
+            setNotice("");
             return;
           }
           throw err;
@@ -234,7 +304,7 @@ export default function AuthForm({
     setNotice("");
     setSubmitting(true);
     try {
-      const result = await requestPasswordReset(pendingEmail);
+      const result = await requestPasswordReset(pendingEmail, { sendCode: true });
       setPendingEmail(result.email);
       setNotice("We sent you a new reset code.");
     } catch (err) {
@@ -261,7 +331,7 @@ export default function AuthForm({
   return (
     <CheckoutOverlay
       open={open}
-      onClose={onClose}
+      onClose={closeAuth}
       ariaLabel={
         isRegister
           ? "Register"
@@ -275,7 +345,7 @@ export default function AuthForm({
     >
       <div className="px-6 py-6">
         <div className="flex items-center gap-2">
-          <button type="button" onClick={onBack ?? onClose} aria-label="Back">
+          <button type="button" onClick={handleBack} aria-label="Back">
             <IconChevronLeft size={28} />
           </button>
           <Image
@@ -347,40 +417,59 @@ export default function AuthForm({
                 </p>
               ) : (
                 <p className="text-sm leading-6 text-gray-600">
-                  We sent a 6-digit reset code to{" "}
+                  {resetCodeVisible ? "Enter the 6-digit reset code sent to " : "Set a new password for "}
                   <span className="font-semibold text-black">{pendingEmail}</span>.
-                  It expires in 2 minutes.
+                  {resetCodeVisible ? " It expires in 2 minutes." : ""}
                 </p>
               )}
               {resetReason === "migration" && (
                 <p className="text-sm leading-6 text-gray-600">
-                  We sent a 6-digit reset code to{" "}
+                  {resetCodeVisible ? "Enter the 6-digit reset code sent to " : "Set a new password for "}
                   <span className="font-semibold text-black">{pendingEmail}</span>.
-                  It expires in 2 minutes.
+                  {resetCodeVisible ? " It expires in 2 minutes." : ""}
                 </p>
               )}
-              <Field label="Reset Code*">
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  autoComplete="one-time-code"
-                  value={resetCode}
-                  onChange={(e) =>
-                    setResetCode(e.target.value.replace(/\D/g, "").slice(0, 6))
-                  }
-                  placeholder="Enter 6-digit code"
-                  className={`${inputClass} text-center text-xl tracking-[6px]`}
-                />
-              </Field>
               <Field label="New Password*">
                 <input
                   type="password"
                   value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
+                  onChange={(e) => {
+                    setNewPassword(e.target.value);
+                    setResetCode("");
+                    setResetCodeVisible(false);
+                  }}
                   placeholder="Create new password"
                   className={inputClass}
                 />
               </Field>
+              <Field label="Confirm New Password*">
+                <input
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => {
+                    setConfirmPassword(e.target.value);
+                    setResetCode("");
+                    setResetCodeVisible(false);
+                  }}
+                  placeholder="Re-enter new password"
+                  className={inputClass}
+                />
+              </Field>
+              {resetCodeVisible && (
+                <Field label="Reset Code*">
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    autoComplete="one-time-code"
+                    value={resetCode}
+                    onChange={(e) =>
+                      setResetCode(e.target.value.replace(/\D/g, "").slice(0, 6))
+                    }
+                    placeholder="Enter 6-digit code"
+                    className={`${inputClass} text-center text-xl tracking-[6px]`}
+                  />
+                </Field>
+              )}
             </>
           ) : (
             <>
@@ -454,9 +543,11 @@ export default function AuthForm({
               : isVerify
                 ? "Verify Email"
                 : isResetRequest
-                  ? "Send Reset Code"
+                  ? "Continue"
                 : isReset
-                  ? "Set New Password"
+                  ? resetCodeVisible
+                    ? "Verify Code"
+                    : "Set New Password"
                   : isRegister
                     ? "Create Account"
                     : "Sign In"}
@@ -472,7 +563,7 @@ export default function AuthForm({
               Resend code
             </button>
           )}
-          {isReset && (
+          {isReset && resetCodeVisible && (
             <button
               type="button"
               onClick={handleResendReset}
@@ -557,7 +648,7 @@ export default function AuthForm({
           By proceeding, I agree to TeeHub&apos;s{" "}
           <Link
             href="/policies/privacy-policy"
-            onClick={onClose}
+            onClick={closeAuth}
             className="underline hover:text-[#F26522]"
           >
             Privacy Policy
@@ -565,7 +656,7 @@ export default function AuthForm({
           and{" "}
           <Link
             href="/policies/terms-of-service"
-            onClick={onClose}
+            onClick={closeAuth}
             className="underline hover:text-[#F26522]"
           >
             T&amp;C
