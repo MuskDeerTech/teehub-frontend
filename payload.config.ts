@@ -15,6 +15,7 @@ import {
 } from "payload";
 import { fileURLToPath } from "url";
 import sharp from "sharp";
+import { resendEmailAdapter } from "@/lib/email/resendAdapter";
 
 const filename = fileURLToPath(import.meta.url);
 const dirname = path.dirname(filename);
@@ -744,8 +745,9 @@ const Customers: CollectionConfig = {
     ],
   },
   access: {
-    // Public signup; reads/edits are self-scoped (or admin). Deletes are staff.
-    create: () => true,
+    // Signup goes through /api/auth/register so email verification cannot be
+    // bypassed through the public Payload REST endpoint.
+    create: isAdmin,
     read: adminOrSelf,
     update: adminOrSelf,
     delete: isAdmin,
@@ -774,6 +776,36 @@ const Customers: CollectionConfig = {
         position: "sidebar",
         description:
           "Imported accounts receive a random password and must reset it before signing in.",
+      },
+    },
+    {
+      name: "emailVerified",
+      type: "checkbox",
+      admin: {
+        hidden: true,
+      },
+    },
+    {
+      name: "emailVerificationCodeHash",
+      type: "text",
+      admin: {
+        hidden: true,
+      },
+    },
+    {
+      name: "emailVerificationExpiresAt",
+      type: "date",
+      admin: {
+        hidden: true,
+      },
+    },
+    {
+      name: "emailVerificationAttempts",
+      type: "number",
+      defaultValue: 0,
+      min: 0,
+      admin: {
+        hidden: true,
       },
     },
     {
@@ -1536,6 +1568,13 @@ export default buildConfig({
     },
     push: false,
   }),
+  email: process.env.RESEND_API_KEY
+    ? resendEmailAdapter({
+        apiKey: process.env.RESEND_API_KEY,
+        fromAddress: process.env.RESEND_FROM_EMAIL || "no-reply@teehubshop.com",
+        fromName: process.env.RESEND_FROM_NAME || "TeeHub",
+      })
+    : undefined,
   // Uploads go to S3 only when a bucket is configured; without one Payload
   // stores files on local disk so the admin works in dev with no S3 keys.
   plugins: process.env.S3_BUCKET

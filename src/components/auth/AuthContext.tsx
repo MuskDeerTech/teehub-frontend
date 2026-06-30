@@ -23,12 +23,26 @@ interface AuthContextValue {
   loading: boolean;
   /** Accepts an email or a phone number (resolved server-side). */
   login: (identifier: string, password: string) => Promise<void>;
-  register: (input: RegisterInput) => Promise<void>;
+  register: (input: RegisterInput) => Promise<{ email: string }>;
+  verifyEmail: (email: string, code: string, password: string) => Promise<void>;
+  resendVerificationCode: (email: string) => Promise<void>;
   logout: () => Promise<void>;
   updateProfile: (data: Partial<Customer>) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
+
+export class AuthApiError extends Error {
+  code?: string;
+  email?: string;
+
+  constructor(message: string, options?: { code?: string; email?: string }) {
+    super(message);
+    this.name = "AuthApiError";
+    this.code = options?.code;
+    this.email = options?.email;
+  }
+}
 
 /**
  * All requests are same-origin to Payload's REST API; `credentials: "include"`
@@ -81,7 +95,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       body: JSON.stringify({ identifier, password }),
     });
     if (!res.ok) {
-      throw new Error(await errorMessage(res, "Invalid login or password."));
+      let data: { code?: string; email?: string; errors?: { message?: string }[]; message?: string } = {};
+      try {
+        data = await res.json();
+      } catch {}
+      throw new AuthApiError(
+        data?.errors?.[0]?.message || data?.message || "Invalid login or password.",
+        { code: data?.code, email: data?.email },
+      );
     }
     const data = await res.json();
     setUser(data.user as Customer);
@@ -89,8 +110,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const register = useCallback(
     async ({ fullName, email, password, phone }: RegisterInput) => {
-      const res = await api("", {
+      const res = await fetch("/api/auth/register", {
         method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ fullName, email, password, phone }),
       });
       if (!res.ok) {
@@ -102,11 +125,41 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             : message,
         );
       }
-      // Creating an account does not start a session, so log in right after.
-      await login(email, password);
+      const data = await res.json();
+      return { email: String(data.email ?? email).toLowerCase() };
+    },
+    [],
+  );
+
+  const verifyEmail = useCallback(
+    async (email: string, code: string, password: string) => {
+      const res = await fetch("/api/auth/verify-email", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, code, password }),
+      });
+      if (!res.ok) {
+        throw new Error(await errorMessage(res, "Could not verify email."));
+      }
+      const data = await res.json();
+      if (data?.user) setUser(data.user as Customer);
+      else await login(email, password);
     },
     [login],
   );
+
+  const resendVerificationCode = useCallback(async (email: string) => {
+    const res = await fetch("/api/auth/resend-verification", {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email }),
+    });
+    if (!res.ok) {
+      throw new Error(await errorMessage(res, "Could not send a new code."));
+    }
+  }, []);
 
   const logout = useCallback(async () => {
     await api("/logout", { method: "POST" }).catch(() => {});
@@ -130,8 +183,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   const value = useMemo<AuthContextValue>(
-    () => ({ user, loading, login, register, logout, updateProfile }),
-    [user, loading, login, register, logout, updateProfile],
+    () => ({
+      user,
+      loading,
+      login,
+      register,
+      verifyEmail,
+      resendVerificationCode,
+      logout,
+      updateProfile,
+    }),
+    [
+      user,
+      loading,
+      login,
+      register,
+      verifyEmail,
+      resendVerificationCode,
+      logout,
+      updateProfile,
+    ],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
