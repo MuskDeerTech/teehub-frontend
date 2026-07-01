@@ -1,5 +1,6 @@
 import Hero from "@/components/sections/Hero";
 import LatestDrops from "@/components/sections/LatestDrops";
+import WatchAndBuy from "@/components/sections/WatchAndBuy";
 import HoodiesBanner from "@/components/sections/HoodiesBanner";
 import JacketSection from "@/components/sections/JacketSection";
 import FootballHoodies from "@/components/sections/FootballHoodies";
@@ -28,6 +29,7 @@ export default async function Home() {
     <>
       <Hero hero={hero} />
       <LatestDrops />
+      <WatchAndBuy />
       <HoodiesBanner banner={banner1} />
       <JacketSection banner={banner2} />
       <FootballHoodies category={categorySectionOne} />

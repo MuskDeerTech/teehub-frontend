@@ -1400,6 +1400,39 @@ const HomePage: GlobalConfig = {
                   "Pick the category for the second category-based homepage product row.",
               },
             },
+            {
+              name: "watchAndBuyItems",
+              label: "Watch and Buy",
+              type: "array",
+              labels: {
+                singular: "Video Card",
+                plural: "Video Cards",
+              },
+              admin: {
+                description:
+                  "Choose the product and video for each Watch and Buy card. Drag rows to reorder.",
+              },
+              fields: [
+                {
+                  name: "product",
+                  type: "relationship",
+                  relationTo: "products",
+                  required: true,
+                },
+                {
+                  name: "video",
+                  type: "upload",
+                  relationTo: "media",
+                  required: true,
+                },
+                {
+                  name: "isActive",
+                  label: "Active",
+                  type: "checkbox",
+                  defaultValue: true,
+                },
+              ],
+            },
           ],
         },
         {

@@ -1027,6 +1027,17 @@ export interface Homepage {
    * Pick the category for the second category-based homepage product row.
    */
   categorySectionTwo?: (number | null) | Category;
+  /**
+   * Choose the product and video for each Watch and Buy card. Drag rows to reorder.
+   */
+  watchAndBuyItems?:
+    | {
+        product: number | Product;
+        video: number | Media;
+        isActive?: boolean | null;
+        id?: string | null;
+      }[]
+    | null;
   hoodiesBanner?: {
     image?: (number | null) | Media;
     heading?: string | null;
@@ -1084,6 +1095,14 @@ export interface HomepageSelect<T extends boolean = true> {
   latestDropsNote?: T;
   categorySectionOne?: T;
   categorySectionTwo?: T;
+  watchAndBuyItems?:
+    | T
+    | {
+        product?: T;
+        video?: T;
+        isActive?: T;
+        id?: T;
+      };
   hoodiesBanner?:
     | T
     | {

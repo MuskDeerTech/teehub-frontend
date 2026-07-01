@@ -1,9 +1,15 @@
-import * as migration_20260630_170750_password_reset_codes from './password_reset_codes';
+import * as migration_password_reset_codes from './password_reset_codes';
+import * as migration_watch_and_buy_items from './watch_and_buy_items';
 
 export const migrations = [
   {
-    up: migration_20260630_170750_password_reset_codes.up,
-    down: migration_20260630_170750_password_reset_codes.down,
-    name: '20260630_170750_password_reset_codes'
+    up: migration_password_reset_codes.up,
+    down: migration_password_reset_codes.down,
+    name: 'password_reset_codes'
+  },
+  {
+    up: migration_watch_and_buy_items.up,
+    down: migration_watch_and_buy_items.down,
+    name: 'watch_and_buy_items'
   },
 ];

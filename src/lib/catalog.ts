@@ -40,7 +40,7 @@ function mediaDocs(images: ProductDoc["images"]): Media[] {
   );
 }
 
-function toProduct(doc: ProductDoc): Product {
+export function toProduct(doc: ProductDoc): Product {
   const category =
     typeof doc.category === "object" && doc.category !== null
       ? doc.category

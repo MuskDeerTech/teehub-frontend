@@ -1,8 +1,11 @@
 import { getPayload } from "payload";
 import config from "@payload-config";
 import type { Category as CategoryDoc, Media } from "../../payload-types";
+import type { Product as ProductDoc } from "../../payload-types";
+import { toProduct } from "@/lib/catalog";
 import {
   DEFAULT_HERO_BANNER,
+  type Product,
   teams as fallbackHeroTeams,
   type Team,
 } from "@/lib/products";
@@ -26,6 +29,11 @@ export type HomepageHero = {
   ctaLabel: string;
   ctaHref: string;
   teams: Team[];
+};
+
+export type HomepageWatchAndBuyItem = {
+  product: Product;
+  video: string;
 };
 
 const FALLBACK_SECTIONS: [HomepageCategorySection, HomepageCategorySection] = [
@@ -188,4 +196,41 @@ export async function getHomepageBanners(): Promise<
       image: mediaUrl(homepage.banner3?.image) ?? mediaUrl(homepage.playBoldImage),
     },
   ];
+}
+
+export async function getHomepageWatchAndBuy(): Promise<
+  HomepageWatchAndBuyItem[]
+> {
+  const payload = await getPayload({ config });
+  const homepage = (await payload.findGlobal({
+    slug: "homepage",
+    depth: 2,
+  })) as {
+    watchAndBuyItems?:
+      | {
+          product?: number | ProductDoc | null;
+          video?: number | Media | null;
+          isActive?: boolean | null;
+        }[]
+      | null;
+  };
+
+  return (homepage.watchAndBuyItems ?? [])
+    .filter((item) => item.isActive !== false)
+    .map((item) => {
+      const video = mediaUrl(item.video);
+      if (
+        !video ||
+        typeof item.product !== "object" ||
+        item.product === null
+      ) {
+        return null;
+      }
+
+      return {
+        product: toProduct(item.product),
+        video,
+      };
+    })
+    .filter((item): item is HomepageWatchAndBuyItem => Boolean(item));
 }
