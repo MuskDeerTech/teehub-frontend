@@ -45,18 +45,21 @@ export default async function LatestDrops({
       </div>
 
       <div
-        className="
-          scrollbar-hide
-          flex gap-6
-          snap-x snap-mandatory overflow-x-auto pb-2.5
-          [&>*]:shrink-0 [&>*]:snap-center
-          [&>*]:w-[70%]
+        className={
+          productPage
+            ? "grid grid-cols-2 gap-4 sm:gap-6 lg:grid-cols-4"
+            : `
+              scrollbar-hide
+              flex gap-4
+              snap-x snap-mandatory overflow-x-auto pb-2.5
+              [&>*]:w-[42%] [&>*]:shrink-0 [&>*]:snap-start
 
-          sm:[&>*]:w-[42%]
+              sm:gap-6 sm:[&>*]:w-[42%]
 
-          lg:grid lg:grid-cols-4 lg:gap-6 lg:overflow-visible lg:snap-none lg:pb-0
-          lg:[&>*]:w-auto lg:[&>*]:shrink
-        "
+              lg:grid lg:grid-cols-4 lg:overflow-visible lg:snap-none lg:pb-0
+              lg:[&>*]:w-auto lg:[&>*]:shrink
+            `
+        }
       >
         {products.map((product) => (
           <ProductCard key={product.slug} variant="polo" product={product} />

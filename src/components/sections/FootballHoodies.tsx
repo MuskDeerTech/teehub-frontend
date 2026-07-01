@@ -54,12 +54,11 @@ export default async function FootballHoodies({
       <div
         className={`
           scrollbar-hide
-          flex ${config.slider.gap}
+          flex gap-4
           snap-x snap-mandatory overflow-x-auto pb-2.5
-          [&>*]:shrink-0 [&>*]:snap-center
-          [&>*]:w-[70%]
+          [&>*]:w-[42%] [&>*]:shrink-0 [&>*]:snap-start
 
-          sm:[&>*]:w-[42%]
+          sm:${config.slider.gap} sm:[&>*]:w-[42%]
 
           lg:grid lg:grid-cols-4 ${config.slider.gapLg} lg:overflow-visible lg:snap-none lg:pb-0
           lg:[&>*]:w-auto lg:[&>*]:shrink
