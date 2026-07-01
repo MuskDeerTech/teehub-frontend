@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { IconChevronLeft, IconChevronRight } from "@tabler/icons-react";
 import QuickAddModal from "@/components/ui/QuickAddModal";
 import type { HomepageWatchAndBuyItem } from "@/lib/homepage";
@@ -15,25 +15,52 @@ function ProductVideoCard({
   videoSrc: string;
 }) {
   const [quickAddOpen, setQuickAddOpen] = useState(false);
+  const [shouldLoadVideo, setShouldLoadVideo] = useState(false);
+  const mediaRef = useRef<HTMLAnchorElement>(null);
   const hasSalePrice = product.price != null;
   const unitPrice = product.price ?? product.priceMin;
   const unitMrp = product.originalPrice ?? unitPrice;
 
+  useEffect(() => {
+    const media = mediaRef.current;
+    if (!media || shouldLoadVideo) return;
+
+    if (!("IntersectionObserver" in window)) {
+      setShouldLoadVideo(true);
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry?.isIntersecting) {
+          setShouldLoadVideo(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: "300px 0px", threshold: 0.01 },
+    );
+
+    observer.observe(media);
+    return () => observer.disconnect();
+  }, [shouldLoadVideo]);
+
   return (
     <article className="flex w-full flex-col">
       <Link
+        ref={mediaRef}
         href={`/product/${product.slug}`}
         aria-label={`View ${product.title}`}
         className="group relative block aspect-[9/14] w-full overflow-hidden rounded-[10px] bg-[#ededed]"
       >
         <video
-          src={videoSrc}
+          src={shouldLoadVideo ? videoSrc : undefined}
+          data-video-url={videoSrc}
           className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
-          autoPlay
+          autoPlay={shouldLoadVideo}
           muted
           loop
           playsInline
-          preload="metadata"
+          preload="none"
         />
       </Link>
 
