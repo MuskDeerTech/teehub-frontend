@@ -133,16 +133,16 @@ export default function WatchAndBuyCards({
           scrollbar-hide
           flex gap-4
           snap-x snap-mandatory overflow-x-auto pb-2.5
-          [&>*]:w-[64%] [&>*]:shrink-0 [&>*]:snap-start
+          [&>*]:w-[42%] [&>*]:shrink-0 [&>*]:snap-start
 
-          sm:gap-6 sm:[&>*]:w-[38%]
+          sm:gap-6 sm:[&>*]:w-[42%]
 
           lg:gap-6 lg:pb-0
           lg:[&>*]:w-[calc((100%_-_72px)/4)] lg:[&>*]:shrink-0
         "
       >
         {items.map(({ product, video }) => (
-          <div key={product.slug} data-video-card className="contents lg:block">
+          <div key={product.slug} data-video-card>
             <ProductVideoCard product={product} videoSrc={video} />
           </div>
         ))}
