@@ -5,11 +5,14 @@ import {
   EXPERIMENTAL_TableFeature as TableFeature,
 } from "@payloadcms/richtext-lexical";
 import { s3Storage } from "@payloadcms/storage-s3";
+import { seoPlugin } from "@payloadcms/plugin-seo";
+import type { GenerateTitle, GenerateDescription, GenerateURL } from "@payloadcms/plugin-seo/types";
 import path from "path";
 import {
   buildConfig,
   type Access,
   type CollectionConfig,
+  type Field,
   type FieldAccess,
   type GlobalConfig,
 } from "payload";
@@ -280,6 +283,84 @@ const Categories: CollectionConfig = {
       name: "isActive",
       type: "checkbox",
       defaultValue: true,
+    },
+  ],
+};
+
+// The canonical override the SEO developer asked for. Optional: blank means the
+// storefront uses the page's own URL (the common case); set it only to point
+// search engines at a different master page.
+const seoCanonicalField: Field = {
+  name: "canonicalURL",
+  type: "text",
+  label: "Canonical URL",
+  admin: {
+    description:
+      "Leave blank to use this page's own URL (recommended). Only set this to point search engines at a different master page.",
+  },
+};
+
+// The SEO plugin's meta group (meta title, description, canonical, + the plugin's
+// overview/preview widgets), rebuilt here so it can be dropped into a collection's
+// existing tab bar as one more tab. This avoids the plugin's `tabbedUI`, which
+// wraps ALL fields into a "Content" tab and thereby pulls sidebar fields into the
+// main column. The `meta` group name + subfield names map to the existing meta_*
+// columns, and the client component paths are the same ones the plugin registers.
+const seoMetaGroup: Field = {
+  name: "meta",
+  type: "group",
+  label: "SEO",
+  fields: [
+    {
+      name: "overview",
+      type: "ui",
+      label: "Overview",
+      admin: {
+        components: {
+          Field: {
+            path: "@payloadcms/plugin-seo/client#OverviewComponent",
+            clientProps: {},
+          },
+        },
+      },
+    },
+    {
+      name: "title",
+      type: "text",
+      admin: {
+        components: {
+          Field: {
+            path: "@payloadcms/plugin-seo/client#MetaTitleComponent",
+            clientProps: { hasGenerateTitleFn: true },
+          },
+        },
+      },
+    },
+    {
+      name: "description",
+      type: "textarea",
+      admin: {
+        components: {
+          Field: {
+            path: "@payloadcms/plugin-seo/client#MetaDescriptionComponent",
+            clientProps: { hasGenerateDescriptionFn: true },
+          },
+        },
+      },
+    },
+    seoCanonicalField,
+    {
+      name: "preview",
+      type: "ui",
+      label: "Preview",
+      admin: {
+        components: {
+          Field: {
+            path: "@payloadcms/plugin-seo/client#PreviewComponent",
+            clientProps: { hasGenerateURLFn: true },
+          },
+        },
+      },
     },
   ],
 };
@@ -666,6 +747,13 @@ const Products: CollectionConfig = {
               },
             },
           ],
+        },
+        // SEO joins the existing tab bar here (Images / Product Page / Catalog &
+        // Filters / SEO) instead of via the plugin's tabbedUI, so the main fields
+        // and the sidebar stay exactly where they are.
+        {
+          label: "SEO",
+          fields: [seoMetaGroup],
         },
       ],
     },
@@ -1585,6 +1673,46 @@ const HomePage: GlobalConfig = {
   ],
 };
 
+// Public site URL, used to build canonical/preview links in the SEO plugin.
+// The live domain is the single source of truth — SEO only ever matters for the
+// real site, so localhost/test hosts don't need their own value. Override with
+// NEXT_PUBLIC_SITE_URL only if the domain ever changes.
+const SEO_SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://teehubshop.com";
+
+// Maps an SEO-enabled document to its public storefront path. The homepage
+// global has no slug and lives at "/"; everything else routes by collection.
+function seoPathFor(
+  collectionSlug: string | undefined,
+  doc: { slug?: string | null } | undefined,
+): string {
+  const slug = doc?.slug ?? undefined;
+  switch (collectionSlug) {
+    case "products":
+      return slug ? `/product/${slug}` : "";
+    case "categories":
+      return slug ? `/category/${slug}` : "";
+    case "pages":
+      return slug ? `/policies/${slug}` : "";
+    default:
+      return "";
+  }
+}
+
+// Auto-fill defaults + live Google/social previews for the SEO tab. Editors can
+// override any field; when left blank the storefront falls back to these too.
+const seoGenerateTitle: GenerateTitle = ({ doc }) => {
+  const base = (doc?.title || doc?.name) as string | undefined;
+  return base ? `${base} - TeeHub` : "TeeHub";
+};
+
+const seoGenerateDescription: GenerateDescription = ({ doc }) =>
+  (doc?.description as string | undefined) || "";
+
+const seoGenerateURL: GenerateURL = ({ collectionSlug, globalSlug, doc }) => {
+  const path = globalSlug === "homepage" ? "/" : seoPathFor(collectionSlug, doc);
+  return `${SEO_SITE_URL}${path}`;
+};
+
 export default buildConfig({
   admin: {
     user: Admins.slug,
@@ -1631,27 +1759,52 @@ export default buildConfig({
         fromName: process.env.RESEND_FROM_NAME || "TeeHub",
       })
     : undefined,
-  // Uploads go to S3 only when a bucket is configured; without one Payload
-  // stores files on local disk so the admin works in dev with no S3 keys.
-  plugins: process.env.S3_BUCKET
-    ? [
-        s3Storage({
-          collections: {
-            media: true,
-          },
-          bucket: process.env.S3_BUCKET,
-          config: {
-            endpoint: process.env.S3_ENDPOINT || "",
-            region: process.env.S3_REGION || "",
-            forcePathStyle: true,
-            credentials: {
-              accessKeyId: process.env.S3_ACCESS_KEY_ID || "",
-              secretAccessKey: process.env.S3_SECRET_ACCESS_KEY || "",
+  plugins: [
+    // Adds an "SEO" tab (meta title, meta description, canonical URL) to every
+    // collection/global that has a public page. Title + description ship with a
+    // live character counter and Google preview; blank fields auto-generate.
+    seoPlugin({
+      // Products are handled manually (SEO added as a tab inside their existing
+      // tab bar) so the plugin's tabbedUI doesn't disturb the product layout.
+      // Categories/pages/homepage have no such tab bar, so the plugin appends the
+      // SEO fields as a group (tabbedUI off) — non-disruptive, sidebars intact.
+      collections: ["categories", "pages"],
+      globals: ["homepage"],
+      generateTitle: seoGenerateTitle,
+      generateDescription: seoGenerateDescription,
+      generateURL: seoGenerateURL,
+      // Append the canonical override just before the preview widget (kept last).
+      fields: ({ defaultFields }) => {
+        const previewIdx = Math.max(defaultFields.length - 1, 0);
+        return [
+          ...defaultFields.slice(0, previewIdx),
+          seoCanonicalField,
+          ...defaultFields.slice(previewIdx),
+        ];
+      },
+    }),
+    // Uploads go to S3 only when a bucket is configured; without one Payload
+    // stores files on local disk so the admin works in dev with no S3 keys.
+    ...(process.env.S3_BUCKET
+      ? [
+          s3Storage({
+            collections: {
+              media: true,
             },
-          },
-        }),
-      ]
-    : [],
+            bucket: process.env.S3_BUCKET,
+            config: {
+              endpoint: process.env.S3_ENDPOINT || "",
+              region: process.env.S3_REGION || "",
+              forcePathStyle: true,
+              credentials: {
+                accessKeyId: process.env.S3_ACCESS_KEY_ID || "",
+                secretAccessKey: process.env.S3_SECRET_ACCESS_KEY || "",
+              },
+            },
+          }),
+        ]
+      : []),
+  ],
   secret: process.env.PAYLOAD_SECRET || "",
   sharp,
   typescript: {

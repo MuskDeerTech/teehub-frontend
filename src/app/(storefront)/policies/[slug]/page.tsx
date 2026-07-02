@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { RichText } from "@payloadcms/richtext-lexical/react";
 import type { SerializedEditorState } from "@payloadcms/richtext-lexical/lexical";
 import { getPage } from "@/lib/pages";
+import { buildMetadata } from "@/lib/seo";
 
 type Params = { slug: string };
 
@@ -18,9 +19,13 @@ export async function generateMetadata({
   const { slug } = await params;
   const page = await getPage(slug);
 
-  return {
-    title: page ? `${page.title} - TeeHub` : "Page - TeeHub",
-  };
+  if (!page) return { title: "Page - TeeHub" };
+
+  return buildMetadata({
+    title: `${page.title} - TeeHub`,
+    path: `/policies/${page.slug}`,
+    seo: page.seo,
+  });
 }
 
 export default async function PolicyPage({

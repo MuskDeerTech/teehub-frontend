@@ -6,6 +6,7 @@ import { toProduct } from "@/lib/catalog";
 import {
   DEFAULT_HERO_BANNER,
   type Product,
+  type Seo,
   teams as fallbackHeroTeams,
   type Team,
 } from "@/lib/products";
@@ -124,6 +125,30 @@ function toHeroTeam(
     logoHeight: height,
     backgroundImage: background,
   };
+}
+
+/** CMS-editable SEO overrides for the homepage (from the SEO plugin `meta` group). */
+export async function getHomepageSeo(): Promise<Seo | undefined> {
+  const payload = await getPayload({ config });
+  const homepage = (await payload.findGlobal({
+    slug: "homepage",
+    depth: 0,
+  })) as {
+    meta?: {
+      title?: string | null;
+      description?: string | null;
+      canonicalURL?: string | null;
+    };
+  };
+
+  const meta = homepage.meta;
+  if (!meta) return undefined;
+  const seo: Seo = {
+    title: meta.title ?? undefined,
+    description: meta.description ?? undefined,
+    canonicalURL: meta.canonicalURL ?? undefined,
+  };
+  return seo.title || seo.description || seo.canonicalURL ? seo : undefined;
 }
 
 export async function getHomepageHero(): Promise<HomepageHero> {

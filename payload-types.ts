@@ -293,6 +293,14 @@ export interface Category {
   };
   sortOrder?: number | null;
   isActive?: boolean | null;
+  meta?: {
+    title?: string | null;
+    description?: string | null;
+    /**
+     * Leave blank to use this page's own URL (recommended). Only set this to point search engines at a different master page.
+     */
+    canonicalURL?: string | null;
+  };
   updatedAt: string;
   createdAt: string;
 }
@@ -420,6 +428,14 @@ export interface Product {
    * Fit availability — the filter panel's "Fit" section.
    */
   sizes?: ('Oversized' | 'Extra Large' | 'Large' | 'Medium' | 'Small' | 'Extra Small')[] | null;
+  meta?: {
+    title?: string | null;
+    description?: string | null;
+    /**
+     * Leave blank to use this page's own URL (recommended). Only set this to point search engines at a different master page.
+     */
+    canonicalURL?: string | null;
+  };
   updatedAt: string;
   createdAt: string;
 }
@@ -577,6 +593,14 @@ export interface Page {
     [k: string]: unknown;
   };
   isPublished?: boolean | null;
+  meta?: {
+    title?: string | null;
+    description?: string | null;
+    /**
+     * Leave blank to use this page's own URL (recommended). Only set this to point search engines at a different master page.
+     */
+    canonicalURL?: string | null;
+  };
   updatedAt: string;
   createdAt: string;
 }
@@ -784,6 +808,13 @@ export interface CategoriesSelect<T extends boolean = true> {
       };
   sortOrder?: T;
   isActive?: T;
+  meta?:
+    | T
+    | {
+        title?: T;
+        description?: T;
+        canonicalURL?: T;
+      };
   updatedAt?: T;
   createdAt?: T;
 }
@@ -848,6 +879,13 @@ export interface ProductsSelect<T extends boolean = true> {
   colors?: T;
   sleeve?: T;
   sizes?: T;
+  meta?:
+    | T
+    | {
+        title?: T;
+        description?: T;
+        canonicalURL?: T;
+      };
   updatedAt?: T;
   createdAt?: T;
 }
@@ -934,6 +972,13 @@ export interface PagesSelect<T extends boolean = true> {
   slug?: T;
   content?: T;
   isPublished?: T;
+  meta?:
+    | T
+    | {
+        title?: T;
+        description?: T;
+        canonicalURL?: T;
+      };
   updatedAt?: T;
   createdAt?: T;
 }
@@ -1071,6 +1116,14 @@ export interface Homepage {
    * Legacy Banner 3 image field kept to avoid schema data loss.
    */
   playBoldImage?: (number | null) | Media;
+  meta?: {
+    title?: string | null;
+    description?: string | null;
+    /**
+     * Leave blank to use this page's own URL (recommended). Only set this to point search engines at a different master page.
+     */
+    canonicalURL?: string | null;
+  };
   updatedAt?: string | null;
   createdAt?: string | null;
 }
@@ -1136,6 +1189,13 @@ export interface HomepageSelect<T extends boolean = true> {
         ctaHref?: T;
       };
   playBoldImage?: T;
+  meta?:
+    | T
+    | {
+        title?: T;
+        description?: T;
+        canonicalURL?: T;
+      };
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;

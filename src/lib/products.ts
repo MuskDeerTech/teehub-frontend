@@ -16,6 +16,18 @@ export type ImageFit = {
   y?: number;
 };
 
+/**
+ * CMS-editable SEO overrides (from the Payload SEO plugin's "meta" group).
+ * Every field is optional: when blank the storefront falls back to the page's
+ * own title/description/URL. `canonicalURL` is a manual master-page override —
+ * left empty, pages are canonical to themselves.
+ */
+export type Seo = {
+  title?: string;
+  description?: string;
+  canonicalURL?: string;
+};
+
 /** The CSS transform that replays an admin-set fit; undefined when no fit. */
 export function fitTransform(fit?: ImageFit): CSSProperties | undefined {
   if (!fit) return undefined;
@@ -32,6 +44,8 @@ export function fitTransform(fit?: ImageFit): CSSProperties | undefined {
 export type Category = {
   slug: string;
   label: string;
+  // Plain-text category description, used as the meta-description fallback.
+  description?: string;
   // Solid colour behind the menu thumbnail tile (a transparent cutout PNG sits
   // on top). Mirrors the product `bg` pattern; CMS-controlled per category.
   bg?: string;
@@ -42,6 +56,8 @@ export type Category = {
   // How the thumbnail sits inside the menu tile, set with the drag/zoom editor
   // in the Payload admin.
   thumbFit?: ImageFit;
+  // CMS-editable SEO overrides for the category page.
+  seo?: Seo;
 };
 
 export const categoryList: Category[] = [
@@ -261,6 +277,7 @@ export type Product = {
   description?: string; // long marketing paragraph under "Description"
   prepaidPromo?: string; // green prepaid-incentive line under the fit copy
   allowCustomName?: boolean; // show the Name & Number input (mainly jerseys)
+  seo?: Seo; // CMS-editable SEO overrides for the product page
 };
 
 // Every jersey is a short-sleeve cricket/IPL "Jersey"; colours and available

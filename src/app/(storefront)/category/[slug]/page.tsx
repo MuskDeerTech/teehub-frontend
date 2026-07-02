@@ -9,6 +9,7 @@ import {
   getProductsByCategory,
 } from "@/lib/catalog";
 import { getPlaceholderColors } from "@/lib/products";
+import { buildMetadata } from "@/lib/seo";
 
 type Params = { slug: string };
 
@@ -22,8 +23,18 @@ export async function generateMetadata({
   params: Promise<Params>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const label = slug === "all" ? "Shop All" : (await getCategory(slug))?.label;
-  return { title: label ? `${label} - TeeHub` : "Shop - TeeHub" };
+
+  if (slug === "all") {
+    return buildMetadata({ title: "Shop All - TeeHub", path: "/category/all" });
+  }
+
+  const category = await getCategory(slug);
+  return buildMetadata({
+    title: category?.label ? `${category.label} - TeeHub` : "Shop - TeeHub",
+    description: category?.description,
+    path: `/category/${slug}`,
+    seo: category?.seo,
+  });
 }
 
 export default async function CategoryPage({

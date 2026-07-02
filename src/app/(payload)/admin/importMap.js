@@ -3,6 +3,10 @@ import { default as default_f59e992a24c39eff7977373cbcc65cc4 } from '../../../..
 import { default as default_bf5a3526980182c87210aea1c4c954ee } from '../../../../src/components/admin/SavedCartField'
 import { default as default_b3bdbaeac36b397934490ab857666025 } from '../../../../src/components/admin/ColorPickerField'
 import { default as default_b7163f7bd6d89a288532e44ab4b202d9 } from '../../../../src/components/admin/ThumbFitField'
+import { OverviewComponent as OverviewComponent_a8a977ebc872c5d5ea7ee689724c0860 } from '@payloadcms/plugin-seo/client'
+import { MetaTitleComponent as MetaTitleComponent_a8a977ebc872c5d5ea7ee689724c0860 } from '@payloadcms/plugin-seo/client'
+import { MetaDescriptionComponent as MetaDescriptionComponent_a8a977ebc872c5d5ea7ee689724c0860 } from '@payloadcms/plugin-seo/client'
+import { PreviewComponent as PreviewComponent_a8a977ebc872c5d5ea7ee689724c0860 } from '@payloadcms/plugin-seo/client'
 import { default as default_953f92639e3e859f4222a54885ace342 } from '../../../../src/components/admin/ProductDateCell'
 import { default as default_0c1e45c3caa97fafdf84d171bb383668 } from '../../../../src/components/admin/CardFitField'
 import { default as default_c78439ad744d9df7f83f6ecdaf913032 } from '../../../../src/components/admin/ImageFitsField'
@@ -43,6 +47,10 @@ export const importMap = {
   "/src/components/admin/SavedCartField#default": default_bf5a3526980182c87210aea1c4c954ee,
   "/src/components/admin/ColorPickerField#default": default_b3bdbaeac36b397934490ab857666025,
   "/src/components/admin/ThumbFitField#default": default_b7163f7bd6d89a288532e44ab4b202d9,
+  "@payloadcms/plugin-seo/client#OverviewComponent": OverviewComponent_a8a977ebc872c5d5ea7ee689724c0860,
+  "@payloadcms/plugin-seo/client#MetaTitleComponent": MetaTitleComponent_a8a977ebc872c5d5ea7ee689724c0860,
+  "@payloadcms/plugin-seo/client#MetaDescriptionComponent": MetaDescriptionComponent_a8a977ebc872c5d5ea7ee689724c0860,
+  "@payloadcms/plugin-seo/client#PreviewComponent": PreviewComponent_a8a977ebc872c5d5ea7ee689724c0860,
   "/src/components/admin/ProductDateCell#default": default_953f92639e3e859f4222a54885ace342,
   "/src/components/admin/CardFitField#default": default_0c1e45c3caa97fafdf84d171bb383668,
   "/src/components/admin/ImageFitsField#default": default_c78439ad744d9df7f83f6ecdaf913032,

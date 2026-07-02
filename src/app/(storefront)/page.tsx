@@ -6,13 +6,27 @@ import JacketSection from "@/components/sections/JacketSection";
 import FootballHoodies from "@/components/sections/FootballHoodies";
 import PlayBoldBanner from "@/components/sections/PlayBoldBanner";
 import PoloShirts from "@/components/sections/PoloShirts";
+import type { Metadata } from "next";
 import {
   getHomepageBanners,
   getHomepageCategorySections,
   getHomepageHero,
+  getHomepageSeo,
 } from "@/lib/homepage";
+import { buildMetadata } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
+
+export async function generateMetadata(): Promise<Metadata> {
+  const seo = await getHomepageSeo();
+  return buildMetadata({
+    title: "TeeHub - Premium Sports Jerseys, Hoodies & Polos",
+    description:
+      "Shop IPL jerseys, football hoodies, jackets and polo t-shirts at TeeHub.",
+    path: "/",
+    seo,
+  });
+}
 
 export default async function Home() {
   const [

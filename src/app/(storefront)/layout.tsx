@@ -8,11 +8,14 @@ import { BookmarksProvider } from "@/components/providers/BookmarksProvider";
 import { CartProvider } from "@/components/cart/CartContext";
 import { AuthProvider } from "@/components/auth/AuthContext";
 import CartRoot from "@/components/cart/CartRoot";
+import { SITE_URL } from "@/lib/seo";
 
 const inter = Inter({ variable: "--font-inter", subsets: ["latin"] });
 const anton = Anton_SC({ variable: "--font-anton", weight: "400", subsets: ["latin"] });
 
 export const metadata: Metadata = {
+  // Resolves relative canonical/OG URLs to absolute ones against the live host.
+  metadataBase: new URL(SITE_URL),
   title: "TeeHub - Premium Sports Jerseys, Hoodies & Polos",
   description: "Shop IPL jerseys, football hoodies, jackets and polo t-shirts at TeeHub.",
 };

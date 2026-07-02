@@ -6,9 +6,20 @@ import type {
   Product as ProductDoc,
   Category as CategoryDoc,
 } from "../../payload-types";
-import type { Category, ImageFit, Product } from "@/lib/products";
+import type { Category, ImageFit, Product, Seo } from "@/lib/products";
 
 const PAGE_LIMIT = 200;
+
+/** The SEO plugin's `meta` group → our `Seo` shape (null fields dropped). */
+function toSeo(meta: { title?: string | null; description?: string | null; canonicalURL?: string | null } | undefined): Seo | undefined {
+  if (!meta) return undefined;
+  const seo: Seo = {
+    title: meta.title ?? undefined,
+    description: meta.description ?? undefined,
+    canonicalURL: meta.canonicalURL ?? undefined,
+  };
+  return seo.title || seo.description || seo.canonicalURL ? seo : undefined;
+}
 
 function toCategory(doc: CategoryDoc): Category {
   const thumbnail =
@@ -30,6 +41,8 @@ function toCategory(doc: CategoryDoc): Category {
           y: doc.thumbFit.y ?? undefined,
         }
       : undefined,
+    description: doc.description ?? undefined,
+    seo: toSeo(doc.meta),
   };
 }
 
@@ -99,6 +112,7 @@ export function toProduct(doc: ProductDoc): Product {
     description: doc.description ?? undefined,
     prepaidPromo: doc.prepaidPromo ?? undefined,
     allowCustomName: doc.allowCustomName ?? undefined,
+    seo: toSeo(doc.meta),
   };
 }
 
