@@ -3,7 +3,7 @@
 
 import type { CSSProperties } from "react";
 
-export const navLinks = ["NEW IN", "COLLECTIONS", "TRACK ORDER"];
+export const navLinks = ["NEW IN", "COLLECTIONS", "TRACK ORDER", "REVIEWS"];
 
 /**
  * Manual position/zoom of an image inside its card, set with the drag/zoom
