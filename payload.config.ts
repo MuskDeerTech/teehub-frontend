@@ -186,107 +186,6 @@ const Media: CollectionConfig = {
   ],
 };
 
-const Categories: CollectionConfig = {
-  slug: "categories",
-  access: {
-    read: () => true,
-    create: isAdmin,
-    update: isAdmin,
-    delete: isAdmin,
-  },
-  admin: {
-    useAsTitle: "name",
-  },
-  fields: [
-    {
-      name: "name",
-      type: "text",
-      required: true,
-    },
-    {
-      name: "slug",
-      label: "Slug (URL)",
-      type: "text",
-      required: true,
-      unique: true,
-    },
-    {
-      name: "description",
-      type: "textarea",
-    },
-    {
-      name: "thumbnailImage",
-      label: "Menu Thumbnail",
-      type: "upload",
-      relationTo: "media",
-      admin: {
-        description: "Small image shown for this category in the navbar dropdown.",
-      },
-    },
-    {
-      name: "bg",
-      type: "text",
-      defaultValue: "#f1f1f1",
-      admin: {
-        description:
-          "Hex colour (e.g. #c0352f) behind the menu thumbnail in the navbar dropdown.",
-        components: {
-          Field: "/src/components/admin/ColorPickerField#default",
-        },
-      },
-    },
-    // How the thumbnail sits inside the menu tile (drag + zoom editor).
-    // Values are replayed by MegaMenu as a CSS transform, so the admin
-    // preview and the storefront tile always match.
-    {
-      name: "thumbFit",
-      label: "Thumbnail Fit",
-      type: "group",
-      admin: {
-        description:
-          "Drag the image and zoom until it fits the tile the way you want.",
-        components: {
-          Field: "/src/components/admin/ThumbFitField#default",
-        },
-      },
-      fields: [
-        {
-          name: "scale",
-          type: "number",
-          defaultValue: 100,
-          min: 20,
-          max: 300,
-        },
-        {
-          name: "x",
-          type: "number",
-          defaultValue: 0,
-          min: -100,
-          max: 100,
-        },
-        {
-          name: "y",
-          type: "number",
-          defaultValue: 0,
-          min: -100,
-          max: 100,
-        },
-      ],
-    },
-    {
-      name: "sortOrder",
-      type: "number",
-      defaultValue: 0,
-      min: 0,
-    },
-    {
-      name: "isActive",
-      type: "checkbox",
-      defaultValue: true,
-    },
-  ],
-};
-
 // The canonical override the SEO developer asked for. Optional: blank means the
 // storefront uses the page's own URL (the common case); set it only to point
 // search engines at a different master page.
@@ -294,10 +193,6 @@ const seoCanonicalField: Field = {
   name: "canonicalURL",
   type: "text",
   label: "Canonical URL",
-  admin: {
-    description:
-      "Leave blank to use this page's own URL (recommended). Only set this to point search engines at a different master page.",
-  },
 };
 
 // The SEO plugin's meta group (meta title, description, canonical, + the plugin's
@@ -361,6 +256,121 @@ const seoMetaGroup: Field = {
           },
         },
       },
+    },
+  ],
+};
+
+const Categories: CollectionConfig = {
+  slug: "categories",
+  access: {
+    read: () => true,
+    create: isAdmin,
+    update: isAdmin,
+    delete: isAdmin,
+  },
+  admin: {
+    useAsTitle: "name",
+  },
+  fields: [
+    {
+      type: "tabs",
+      tabs: [
+        {
+          label: "Category",
+          fields: [
+            {
+              name: "name",
+              type: "text",
+              required: true,
+            },
+            {
+              name: "slug",
+              label: "Slug (URL)",
+              type: "text",
+              required: true,
+              unique: true,
+            },
+            {
+              name: "description",
+              type: "textarea",
+            },
+            {
+              name: "thumbnailImage",
+              label: "Menu Thumbnail",
+              type: "upload",
+              relationTo: "media",
+              admin: {
+                description: "Small image shown for this category in the navbar dropdown.",
+              },
+            },
+            {
+              name: "bg",
+              type: "text",
+              defaultValue: "#f1f1f1",
+              admin: {
+                description:
+                  "Hex colour (e.g. #c0352f) behind the menu thumbnail in the navbar dropdown.",
+                components: {
+                  Field: "/src/components/admin/ColorPickerField#default",
+                },
+              },
+            },
+            // How the thumbnail sits inside the menu tile (drag + zoom editor).
+            // Values are replayed by MegaMenu as a CSS transform, so the admin
+            // preview and the storefront tile always match.
+            {
+              name: "thumbFit",
+              label: "Thumbnail Fit",
+              type: "group",
+              admin: {
+                description:
+                  "Drag the image and zoom until it fits the tile the way you want.",
+                components: {
+                  Field: "/src/components/admin/ThumbFitField#default",
+                },
+              },
+              fields: [
+                {
+                  name: "scale",
+                  type: "number",
+                  defaultValue: 100,
+                  min: 20,
+                  max: 300,
+                },
+                {
+                  name: "x",
+                  type: "number",
+                  defaultValue: 0,
+                  min: -100,
+                  max: 100,
+                },
+                {
+                  name: "y",
+                  type: "number",
+                  defaultValue: 0,
+                  min: -100,
+                  max: 100,
+                },
+              ],
+            },
+            {
+              name: "sortOrder",
+              type: "number",
+              defaultValue: 0,
+              min: 0,
+            },
+            {
+              name: "isActive",
+              type: "checkbox",
+              defaultValue: true,
+            },
+          ],
+        },
+        {
+          label: "SEO",
+          fields: [seoMetaGroup],
+        },
+      ],
     },
   ],
 };
@@ -777,24 +787,38 @@ const Pages: CollectionConfig = {
   },
   fields: [
     {
-      name: "title",
-      type: "text",
-      required: true,
-    },
-    {
-      name: "slug",
-      label: "Slug (URL)",
-      type: "text",
-      required: true,
-      unique: true,
-      admin: {
-        description: "URL path under /policies, e.g. privacy-policy.",
-      },
-    },
-    {
-      name: "content",
-      type: "richText",
-      required: true,
+      type: "tabs",
+      tabs: [
+        {
+          label: "Page",
+          fields: [
+            {
+              name: "title",
+              type: "text",
+              required: true,
+            },
+            {
+              name: "slug",
+              label: "Slug (URL)",
+              type: "text",
+              required: true,
+              unique: true,
+              admin: {
+                description: "URL path under /policies, e.g. privacy-policy.",
+              },
+            },
+            {
+              name: "content",
+              type: "richText",
+              required: true,
+            },
+          ],
+        },
+        {
+          label: "SEO",
+          fields: [seoMetaGroup],
+        },
+      ],
     },
     {
       name: "isPublished",
@@ -1668,15 +1692,16 @@ const HomePage: GlobalConfig = {
             },
           ],
         },
+        {
+          label: "SEO",
+          fields: [seoMetaGroup],
+        },
       ],
     },
   ],
 };
 
 // Public site URL, used to build canonical/preview links in the SEO plugin.
-// The live domain is the single source of truth — SEO only ever matters for the
-// real site, so localhost/test hosts don't need their own value. Override with
-// NEXT_PUBLIC_SITE_URL only if the domain ever changes.
 const SEO_SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://teehubshop.com";
 
 // Maps an SEO-enabled document to its public storefront path. The homepage
@@ -1760,28 +1785,14 @@ export default buildConfig({
       })
     : undefined,
   plugins: [
-    // Adds an "SEO" tab (meta title, meta description, canonical URL) to every
-    // collection/global that has a public page. Title + description ship with a
-    // live character counter and Google preview; blank fields auto-generate.
+    // Keeps the SEO plugin's auto-generate endpoints active. The actual SEO
+    // fields are inserted manually as tabs above so they land in the right place.
     seoPlugin({
-      // Products are handled manually (SEO added as a tab inside their existing
-      // tab bar) so the plugin's tabbedUI doesn't disturb the product layout.
-      // Categories/pages/homepage have no such tab bar, so the plugin appends the
-      // SEO fields as a group (tabbedUI off) — non-disruptive, sidebars intact.
-      collections: ["categories", "pages"],
-      globals: ["homepage"],
+      collections: [],
+      globals: [],
       generateTitle: seoGenerateTitle,
       generateDescription: seoGenerateDescription,
       generateURL: seoGenerateURL,
-      // Append the canonical override just before the preview widget (kept last).
-      fields: ({ defaultFields }) => {
-        const previewIdx = Math.max(defaultFields.length - 1, 0);
-        return [
-          ...defaultFields.slice(0, previewIdx),
-          seoCanonicalField,
-          ...defaultFields.slice(previewIdx),
-        ];
-      },
     }),
     // Uploads go to S3 only when a bucket is configured; without one Payload
     // stores files on local disk so the admin works in dev with no S3 keys.

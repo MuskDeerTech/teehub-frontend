@@ -296,9 +296,6 @@ export interface Category {
   meta?: {
     title?: string | null;
     description?: string | null;
-    /**
-     * Leave blank to use this page's own URL (recommended). Only set this to point search engines at a different master page.
-     */
     canonicalURL?: string | null;
   };
   updatedAt: string;
@@ -431,9 +428,6 @@ export interface Product {
   meta?: {
     title?: string | null;
     description?: string | null;
-    /**
-     * Leave blank to use this page's own URL (recommended). Only set this to point search engines at a different master page.
-     */
     canonicalURL?: string | null;
   };
   updatedAt: string;
@@ -592,15 +586,12 @@ export interface Page {
     };
     [k: string]: unknown;
   };
-  isPublished?: boolean | null;
   meta?: {
     title?: string | null;
     description?: string | null;
-    /**
-     * Leave blank to use this page's own URL (recommended). Only set this to point search engines at a different master page.
-     */
     canonicalURL?: string | null;
   };
+  isPublished?: boolean | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -971,7 +962,6 @@ export interface PagesSelect<T extends boolean = true> {
   title?: T;
   slug?: T;
   content?: T;
-  isPublished?: T;
   meta?:
     | T
     | {
@@ -979,6 +969,7 @@ export interface PagesSelect<T extends boolean = true> {
         description?: T;
         canonicalURL?: T;
       };
+  isPublished?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -1119,9 +1110,6 @@ export interface Homepage {
   meta?: {
     title?: string | null;
     description?: string | null;
-    /**
-     * Leave blank to use this page's own URL (recommended). Only set this to point search engines at a different master page.
-     */
     canonicalURL?: string | null;
   };
   updatedAt?: string | null;
