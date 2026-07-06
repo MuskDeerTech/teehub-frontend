@@ -15,7 +15,10 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { q } = await searchParams;
   const term = q?.trim();
-  return { title: term ? `Search: ${term} - TeeHub` : "Search - TeeHub" };
+  return {
+    title: term ? `Search: ${term} - TeeHub` : "Search - TeeHub",
+    robots: { index: false, follow: true },
+  };
 }
 
 export default async function SearchPage({
