@@ -5,6 +5,55 @@ import type {
   HomepageChildrensCornerItem,
 } from "@/lib/homepage";
 
+export const demoChildrensCorner: HomepageChildrensCorner = {
+  title: "Children's Corner",
+  discoverHref: "/category/all",
+  items: [
+    {
+      name: "Disney",
+      href: "/category/all",
+      cardImage: "/children/disney.png",
+      logoImage: null,
+      tabColor: "#f5c400",
+    },
+    {
+      name: "Spider-Man",
+      href: "/category/all",
+      cardImage: "/children/spiderman.png",
+      logoImage: null,
+      tabColor: "#ff443d",
+    },
+    {
+      name: "Batman",
+      href: "/category/all",
+      cardImage: "/children/batman.png",
+      logoImage: null,
+      tabColor: "#151515",
+    },
+    {
+      name: "Winnie Pooh",
+      href: "/category/all",
+      cardImage: "/children/winnie.png",
+      logoImage: null,
+      tabColor: "#f5c400",
+    },
+    {
+      name: "Doraemon",
+      href: "/category/all",
+      cardImage: "/children/doraemon.png",
+      logoImage: null,
+      tabColor: "#56b6f2",
+    },
+    {
+      name: "Lilo & Stitch",
+      href: "/category/all",
+      cardImage: "/children/lilo.png",
+      logoImage: null,
+      tabColor: "#2254b8",
+    },
+  ],
+};
+
 const config = {
   section: {
     paddingX: "px-[30px]",
@@ -105,9 +154,33 @@ function CharacterCard({
   item: HomepageChildrensCornerItem;
   uid: string;
 }) {
+  if (!item.logoImage && item.cardImage) {
+    const isBatman = item.name === "Batman";
+
+    return (
+      <Link href={item.href} className="group relative block aspect-[183/263]">
+        <Image
+          src={item.cardImage}
+          alt={item.name}
+          fill
+          sizes="(min-width: 1024px) 13vw, 38vw"
+          className={`origin-bottom object-contain object-bottom transition-transform duration-200 ${
+            isBatman
+              ? "translate-y-[20px] scale-[1.12] group-hover:translate-y-[8px] group-hover:scale-[1.15]"
+              : "group-hover:scale-[1.03]"
+          }`}
+        />
+      </Link>
+    );
+  }
+
   return (
     <Link href={item.href} className="group relative block">
-      <CardShell tabColor={item.tabColor} cardImage={item.cardImage} uid={uid} />
+      <CardShell
+        tabColor={item.tabColor}
+        cardImage={item.cardImage}
+        uid={uid}
+      />
 
       {/* Logo centred in the white strip (strip region of the 186x236 viewBox) */}
       {item.logoImage && (

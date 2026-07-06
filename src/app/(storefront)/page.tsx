@@ -6,12 +6,13 @@ import JacketSection from "@/components/sections/JacketSection";
 import FootballHoodies from "@/components/sections/FootballHoodies";
 import PlayBoldBanner from "@/components/sections/PlayBoldBanner";
 import PoloShirts from "@/components/sections/PoloShirts";
-import ChildrensCorner from "@/components/sections/ChildrensCorner";
+import ChildrensCorner, {
+  demoChildrensCorner,
+} from "@/components/sections/ChildrensCorner";
 import type { Metadata } from "next";
 import {
   getHomepageBanners,
   getHomepageCategorySections,
-  getHomepageChildrensCorner,
   getHomepageHero,
   getHomepageSeo,
 } from "@/lib/homepage";
@@ -35,12 +36,10 @@ export default async function Home() {
     hero,
     [categorySectionOne, categorySectionTwo],
     [banner1, banner2, banner3],
-    childrensCorner,
   ] = await Promise.all([
     getHomepageHero(),
     getHomepageCategorySections(),
     getHomepageBanners(),
-    getHomepageChildrensCorner(),
   ]);
 
   return (
@@ -53,7 +52,7 @@ export default async function Home() {
       <FootballHoodies category={categorySectionOne} />
       <PlayBoldBanner banner={banner3} />
       <PoloShirts category={categorySectionTwo} />
-      <ChildrensCorner data={childrensCorner} />
+      <ChildrensCorner data={demoChildrensCorner} />
     </>
   );
 }
