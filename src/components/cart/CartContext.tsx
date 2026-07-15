@@ -41,6 +41,8 @@ export interface CustomerData {
 
 interface CartContextValue {
   items: CartItem[];
+  /** False until the cart has been read from localStorage on the client. */
+  cartLoaded: boolean;
   activeItem: CartItem | null;
   cartOpen: boolean;
   step: CartStep;
@@ -240,6 +242,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const value = useMemo<CartContextValue>(
     () => ({
       items,
+      cartLoaded,
       activeItem: items[0] ?? null,
       cartOpen,
       step,
@@ -256,6 +259,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }),
     [
       items,
+      cartLoaded,
       cartOpen,
       step,
       customer,

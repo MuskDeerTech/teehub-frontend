@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useState } from "react";
 import {
   IconBolt,
@@ -16,7 +17,8 @@ import CheckoutOverlay from "./CheckoutOverlay";
 import SizeGuideModal from "@/components/ui/SizeGuideModal";
 
 const FALLBACK_SIZES = ["XS", "S", "M", "L", "XL", "XXL", "XXXL"];
-const POLICY_ITEMS = [
+// Shared with the /cart page so the drawer and the full page stay identical.
+export const POLICY_ITEMS = [
   { Icon: IconTruckReturn, label: "Return &\nExchange" },
   { Icon: IconCash, label: "Cash On\nDelivery" },
   { Icon: IconTruck, label: "Delivery\nCharges" },
@@ -24,7 +26,7 @@ const POLICY_ITEMS = [
   { Icon: IconBolt, label: "Fast\nDelivery" },
 ];
 
-const PAYMENT_METHODS = [
+export const PAYMENT_METHODS = [
   { name: "Visa", src: "/images/card-logo/visa-logo.png", scale: 0.95 },
   { name: "RuPay", src: "/images/card-logo/rupay-logo.png", scale: 1 },
   {
@@ -74,7 +76,7 @@ function StepButton({
   );
 }
 
-function CartLineItem({
+export function CartLineItem({
   item,
   onUpdate,
   onRemove,
@@ -329,14 +331,14 @@ export default function CartDetails({
               {PAYMENT_METHODS.map(({ name, src, scale }) => (
                 <div
                   key={name}
-                  className="flex h-10 w-[52px] shrink-0 items-center justify-center"
+                  className="flex h-10 w-13 shrink-0 items-center justify-center"
                 >
                   <Image
                     src={src}
                     alt={name}
                     width={52}
                     height={32}
-                    className="h-8 w-[52px] object-contain"
+                    className="h-8 w-13 object-contain"
                     style={{ transform: `scale(${scale})` }}
                   />
                 </div>
@@ -362,6 +364,13 @@ export default function CartDetails({
               >
                 Proceed To Buy
               </button>
+              <Link
+                href="/cart"
+                onClick={onClose}
+                className="mt-2 block w-full rounded-xl border border-gray-300 py-2.5 text-center text-sm font-semibold text-gray-700 transition-colors hover:border-[#f36d43] hover:text-[#f36d43]"
+              >
+                View Full Cart
+              </Link>
               <p className="mt-1.5 text-center text-xs text-gray-400">
                 Safe and secure checkout
               </p>
