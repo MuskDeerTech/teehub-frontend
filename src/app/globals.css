@@ -131,40 +131,46 @@ html.image-preview-open nav {
   text-decoration: underline;
 }
 
-/* Price-range slider in the filter panel. `--pct` (set inline from React) fills
-   the track up to the current value in orange and leaves the rest grey. */
-.price-slider {
+/* Dual-handle price slider in the filter panel. Two <input type="range">
+   elements sit stacked on the same track; the track itself is drawn by the
+   panel with plain divs (grey rail + orange fill between the handles), so the
+   inputs are invisible except for their thumbs. `pointer-events: none` on the
+   input and `auto` on the thumb means each handle is grabbable without the
+   top input blocking the bottom one. */
+.range-dual {
   -webkit-appearance: none;
   appearance: none;
-  height: 4px;
-  border-radius: 999px;
-  background: linear-gradient(
-    to right,
-    #f1571f 0%,
-    #f1571f var(--pct, 100%),
-    #e3e3e3 var(--pct, 100%),
-    #e3e3e3 100%
-  );
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  background: transparent;
+  pointer-events: none;
   outline: none;
+}
+
+.range-dual::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  pointer-events: auto;
+  width: 14px;
+  height: 14px;
+  border-radius: 999px;
+  background: #f1571f;
   cursor: pointer;
 }
 
-.price-slider::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 16px;
-  height: 16px;
+.range-dual::-moz-range-thumb {
+  pointer-events: auto;
+  width: 14px;
+  height: 14px;
   border-radius: 999px;
   background: #f1571f;
-  border: 2px solid #fff;
-  box-shadow: 0 0 0 1px #f1571f;
+  border: none;
+  cursor: pointer;
 }
 
-.price-slider::-moz-range-thumb {
-  width: 16px;
-  height: 16px;
-  border-radius: 999px;
-  background: #f1571f;
-  border: 2px solid #fff;
-  box-shadow: 0 0 0 1px #f1571f;
+.range-dual::-moz-range-track {
+  background: transparent;
 }

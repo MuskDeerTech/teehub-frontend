@@ -1,8 +1,16 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type CSSProperties, type ComponentType } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { IconRestore } from "@tabler/icons-react";
+import {
+  IconBallBaseball,
+  IconBallFootball,
+  IconCricket,
+  IconHanger,
+  IconShirt,
+  IconShirtFilled,
+  IconShirtSport,
+} from "@tabler/icons-react";
 import {
   FACET_PARAM,
   getFacetCounts,
@@ -12,52 +20,96 @@ import {
   type Product,
 } from "@/lib/products";
 
+type PillIcon = ComponentType<{
+  size?: number;
+  stroke?: number;
+  className?: string;
+  style?: CSSProperties;
+}>;
+
 /**
- * Each panel section maps to one product facet. `options` is the full ordered
- * label list for that facet; the live count decides which actually render (an
- * option with zero matches is hidden). Add real data in `products.ts` and the
- * counts here update automatically.
+ * One pill in a facet section. `value` is what's stored on the product (and in
+ * the URL); `label` is what the pill shows (defaults to `value`). `color` tints
+ * the icon and draws the selected border; `bg` is the pill's pastel fill.
  */
-const sections: { title: string; facet: FacetKey; options: string[] }[] = [
+type PillOption = {
+  value: string;
+  label?: string;
+  icon: PillIcon;
+  color: string;
+  bg: string;
+};
+
+/**
+ * The full, fixed option list per facet — every option always renders, with a
+ * live count next to it, regardless of what the current page's products have.
+ * `value`s must stay in sync with the facet select options in payload.config.ts.
+ */
+const pillSections: { title: string; facet: FacetKey; options: PillOption[] }[] = [
   {
     title: "Theme",
     facet: "themes",
-    options: ["Cricket", "IPL", "Football", "Movie"],
+    options: [
+      { value: "Cricket", icon: IconCricket, color: "#5B4FC7", bg: "#E7E3FA" },
+      { value: "IPL", icon: IconBallBaseball, color: "#2E9E4F", bg: "#DFF3E1" },
+      { value: "Football", icon: IconBallFootball, color: "#E2492F", bg: "#FBE3D8" },
+    ],
   },
   {
     title: "Category",
     facet: "type",
-    options: ["T-Shirts", "Polos", "Jerseys", "Hoodies"],
-  },
-  {
-    title: "Colors",
-    facet: "colors",
-    options: ["Black", "Red", "Orange", "Blue", "White", "Yellow"],
+    options: [
+      { value: "T-Shirts", icon: IconShirt, color: "#C426A9", bg: "#FBDFF0" },
+      { value: "Polos", icon: IconShirtSport, color: "#E8930C", bg: "#FCEED3" },
+      { value: "Jerseys", icon: IconShirtFilled, color: "#2F6FD0", bg: "#DCEAFB" },
+    ],
   },
   {
     title: "Sleeves",
     facet: "sleeve",
-    options: ["Long", "Short", "Halter"],
-  },
-  {
-    title: "Fit",
-    facet: "sizes",
-    options: ["Oversized", "Extra Large", "Large", "Medium", "Small", "Extra Small"],
+    options: [
+      { value: "Long", icon: IconShirt, color: "#8B4A2F", bg: "#F6E3DA" },
+      { value: "Short", icon: IconShirtSport, color: "#7A9B1E", bg: "#F1F6D8" },
+      { value: "Halter", icon: IconHanger, color: "#2A8FB0", bg: "#DFF0F6" },
+    ],
   },
 ];
 
-// Pills are tracked as "facet::label" so one flat set spans every section.
-const keyOf = (facet: FacetKey, label: string) => `${facet}::${label}`;
+/** Colour swatch circles; `hex` is the swatch fill, not a UI accent. */
+const colorOptions: { value: string; hex: string }[] = [
+  { value: "Black", hex: "#222222" },
+  { value: "Red", hex: "#C0392B" },
+  { value: "Orange", hex: "#F28C28" },
+  { value: "Blue", hex: "#5B9BD5" },
+  { value: "White", hex: "#FFFFFF" },
+  { value: "Yellow", hex: "#E6B422" },
+];
 
-/** Group the flat pill set back into `{ facet: [labels] }`. */
+/** Fit pills show abbreviations; `value` stays the stored long form. */
+const fitOptions: { value: string; label: string }[] = [
+  { value: "Extra Small", label: "XS" },
+  { value: "Small", label: "S" },
+  { value: "Medium", label: "M" },
+  { value: "Large", label: "L" },
+  { value: "Extra Large", label: "XL" },
+  { value: "Oversized", label: "O" },
+];
+
+// Pills are tracked as "facet::value" so one flat set spans every section.
+const keyOf = (facet: FacetKey, value: string) => `${facet}::${value}`;
+
+/** Group the flat pill set back into `{ facet: [values] }`. */
 function selectionsOf(selected: Set<string>): FacetSelections {
   const sel: FacetSelections = {};
   for (const k of selected) {
-    const [facet, label] = k.split("::") as [FacetKey, string];
-    (sel[facet] ??= []).push(label);
+    const [facet, value] = k.split("::") as [FacetKey, string];
+    (sel[facet] ??= []).push(value);
   }
   return sel;
 }
+
+/** Counts render zero-padded to two digits — "(05)", "(101)". */
+const fmtCount = (n: number) => String(n).padStart(2, "0");
 
 const sortOptions = [
   "Featured",
@@ -67,15 +119,16 @@ const sortOptions = [
 ];
 
 const PRICE_MAX = 5000;
+const PRICE_STEP = 100;
 
 export default function FilterPanel({
   products,
   open,
   onClose,
 }: {
-  /** The current page's products (from Payload via the page) — counts are
-   *  scoped to these: "all" sees the whole catalog, a category page sees only
-   *  its own products. */
+  /** The current page's products (from Payload via the page) — the live counts
+   *  are scoped to these: "all" sees the whole catalog, a category page sees
+   *  only its own products. */
   products: Product[];
   open: boolean;
   onClose: () => void;
@@ -84,9 +137,10 @@ export default function FilterPanel({
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  // A flat set of "facet::label" keys tracks every selected pill across groups.
+  // A flat set of "facet::value" keys tracks every selected pill across groups.
   const [selected, setSelected] = useState<Set<string>>(new Set());
-  const [price, setPrice] = useState(PRICE_MAX);
+  const [priceMin, setPriceMin] = useState(0);
+  const [priceMax, setPriceMax] = useState(PRICE_MAX);
   const [sort, setSort] = useState(sortOptions[0]);
 
   // When the panel opens, seed the controls from the URL so it reflects the
@@ -100,11 +154,13 @@ export default function FilterPanel({
       const sel = paramsToSelections(searchParams as unknown as URLSearchParams);
       const next = new Set<string>();
       for (const facet of Object.keys(sel) as FacetKey[]) {
-        for (const label of sel[facet] ?? []) next.add(keyOf(facet, label));
+        for (const value of sel[facet] ?? []) next.add(keyOf(facet, value));
       }
       setSelected(next);
-      const mp = searchParams.get("maxPrice");
-      setPrice(mp ? Number(mp) : PRICE_MAX);
+      const minP = searchParams.get("minPrice");
+      setPriceMin(minP ? Number(minP) : 0);
+      const maxP = searchParams.get("maxPrice");
+      setPriceMax(maxP ? Number(maxP) : PRICE_MAX);
     }
   }
 
@@ -138,7 +194,8 @@ export default function FilterPanel({
 
   const removeAll = () => {
     setSelected(new Set());
-    setPrice(PRICE_MAX);
+    setPriceMin(0);
+    setPriceMax(PRICE_MAX);
     setSort(sortOptions[0]);
   };
 
@@ -147,10 +204,11 @@ export default function FilterPanel({
     const sel = selectionsOf(selected);
     const qs = new URLSearchParams();
     for (const facet of Object.keys(FACET_PARAM) as FacetKey[]) {
-      const labels = sel[facet];
-      if (labels?.length) qs.set(FACET_PARAM[facet], labels.join(","));
+      const values = sel[facet];
+      if (values?.length) qs.set(FACET_PARAM[facet], values.join(","));
     }
-    if (price < PRICE_MAX) qs.set("maxPrice", String(price));
+    if (priceMin > 0) qs.set("minPrice", String(priceMin));
+    if (priceMax < PRICE_MAX) qs.set("maxPrice", String(priceMax));
     const query = qs.toString();
     router.push(query ? `${pathname}?${query}` : pathname, { scroll: false });
     onClose();
@@ -167,164 +225,244 @@ export default function FilterPanel({
         aria-hidden="true"
       />
 
-      <aside
-        role="dialog"
-        aria-modal="true"
-        aria-label="Filters"
-        className={`fixed right-0 top-0 z-[120] flex h-full w-full max-w-[440px] flex-col bg-white shadow-xl transition-transform duration-300 ease-out ${
-          open ? "translate-x-0" : "translate-x-full"
+      <div
+        className={`fixed inset-0 z-[120] flex items-center justify-center p-4 ${
+          open ? "" : "pointer-events-none"
         }`}
       >
-        {/* Header */}
-        <div className="flex items-center justify-between px-7 pt-6 pb-4">
-          <h2 className="text-[22px] font-semibold tracking-[-0.5px] text-black">
-            Filters
-          </h2>
-          <div className="flex items-center gap-4">
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Filters"
+          className={`flex max-h-[92vh] w-full max-w-[620px] flex-col rounded-2xl bg-white shadow-2xl transition-all duration-300 ease-out ${
+            open ? "scale-100 opacity-100" : "scale-95 opacity-0"
+          }`}
+        >
+          {/* Header */}
+          <div className="border-b border-[#ececec] px-7 pb-4 pt-6">
+            <h2 className="text-[22px] font-semibold tracking-[-0.5px] text-black">
+              Filters
+            </h2>
+          </div>
+
+          {/* Scrollable body */}
+          <div className="scrollbar-hide flex-1 divide-y divide-[#ececec] overflow-y-auto px-7">
+            {/* Price Range + Sort By */}
+            <div className="grid grid-cols-2 gap-8 py-5 max-[520px]:grid-cols-1">
+              <div>
+                <h3 className="text-[15px] font-bold text-black">Price Range</h3>
+                <p className="mt-1.5 text-[14px] font-medium text-black">
+                  {priceMin} - {priceMax} INR
+                </p>
+                <div className="relative mt-3 h-4">
+                  <div className="absolute inset-x-0 top-1/2 h-[3px] -translate-y-1/2 rounded-full bg-[#e5e5e5]" />
+                  <div
+                    className="absolute top-1/2 h-[3px] -translate-y-1/2 rounded-full bg-[#f1571f]"
+                    style={{
+                      left: `${(priceMin / PRICE_MAX) * 100}%`,
+                      right: `${100 - (priceMax / PRICE_MAX) * 100}%`,
+                    }}
+                  />
+                  <input
+                    type="range"
+                    min={0}
+                    max={PRICE_MAX}
+                    step={PRICE_STEP}
+                    value={priceMin}
+                    onChange={(e) =>
+                      setPriceMin(
+                        Math.min(Number(e.target.value), priceMax - PRICE_STEP),
+                      )
+                    }
+                    aria-label="Minimum price"
+                    className="range-dual z-10"
+                  />
+                  <input
+                    type="range"
+                    min={0}
+                    max={PRICE_MAX}
+                    step={PRICE_STEP}
+                    value={priceMax}
+                    onChange={(e) =>
+                      setPriceMax(
+                        Math.max(Number(e.target.value), priceMin + PRICE_STEP),
+                      )
+                    }
+                    aria-label="Maximum price"
+                    className="range-dual z-20"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <h3 className="text-[15px] font-bold text-black">Sort By</h3>
+                <div className="relative mt-2.5">
+                  <select
+                    value={sort}
+                    onChange={(e) => setSort(e.target.value)}
+                    aria-label="Sort by"
+                    className="w-full appearance-none rounded-xl bg-[#f1f1f1] px-4 py-3 text-[14px] font-medium text-black outline-none"
+                  >
+                    {sortOptions.map((o) => (
+                      <option key={o}>{o}</option>
+                    ))}
+                  </select>
+                  <ChevronIcon className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-black" />
+                </div>
+              </div>
+            </div>
+
+            {/* Theme + Category */}
+            {pillSections.slice(0, 2).map((section) => (
+              <PillSectionBlock
+                key={section.title}
+                section={section}
+                counts={counts[section.facet].counts}
+                selected={selected}
+                toggle={toggle}
+              />
+            ))}
+
+            {/* Colors — swatch circles with a count badge. */}
+            <div className="py-5">
+              <h3 className="mb-4 text-[15px] font-bold text-black">Colors</h3>
+              <div className="flex flex-wrap gap-4">
+                {colorOptions.map((c) => {
+                  const key = keyOf("colors", c.value);
+                  const isOn = selected.has(key);
+                  const count = counts.colors.counts[c.value] ?? 0;
+                  return (
+                    <button
+                      key={key}
+                      type="button"
+                      onClick={() => toggle(key)}
+                      aria-label={`${c.value} (${count})`}
+                      aria-pressed={isOn}
+                      className={`relative h-11 w-11 rounded-full transition-shadow ${
+                        isOn ? "ring-2 ring-black ring-offset-2" : ""
+                      }`}
+                      style={{
+                        backgroundColor: c.hex,
+                        border: c.value === "White" ? "1px solid #ddd" : undefined,
+                      }}
+                    >
+                      <span className="absolute -bottom-1 -right-1 rounded-full border border-[#eee] bg-white px-1 py-px text-[10px] font-semibold leading-none text-black">
+                        {fmtCount(count)}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Sleeves */}
+            <PillSectionBlock
+              section={pillSections[2]}
+              counts={counts.sleeve.counts}
+              selected={selected}
+              toggle={toggle}
+            />
+
+            {/* Fit — plain outline pills with abbreviated labels. */}
+            <div className="py-5">
+              <h3 className="mb-3.5 text-[15px] font-bold text-black">Fit</h3>
+              <div className="flex flex-wrap gap-2.5">
+                {fitOptions.map((o) => {
+                  const key = keyOf("sizes", o.value);
+                  const isOn = selected.has(key);
+                  const count = counts.sizes.counts[o.value] ?? 0;
+                  return (
+                    <button
+                      key={key}
+                      type="button"
+                      onClick={() => toggle(key)}
+                      className={`flex items-center gap-1 rounded-full border px-4 py-2 text-[13px] font-medium transition-colors duration-200 ${
+                        isOn
+                          ? "border-black bg-black text-white"
+                          : "border-[#d9d9d9] bg-white text-black hover:border-black"
+                      }`}
+                    >
+                      {o.label}
+                      <span
+                        className={`text-[11px] ${isOn ? "text-white/70" : "text-[#9a9a9a]"}`}
+                      >
+                        ({fmtCount(count)})
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+
+          {/* Footer actions */}
+          <div className="flex items-center justify-between gap-4 px-7 py-5">
             <button
               type="button"
               onClick={removeAll}
-              aria-label="Reset filters"
-              className="text-black transition-opacity hover:opacity-60"
+              className="rounded-full border border-[#d9d9d9] bg-white px-6 py-3 text-[13px] font-semibold tracking-[0.5px] text-black transition-colors hover:border-black"
             >
-              <IconRestore size={21} stroke={1.8} aria-hidden="true" />
+              REMOVE ALL
             </button>
             <button
               type="button"
-              onClick={onClose}
-              aria-label="Close filters"
-              className="text-black transition-opacity hover:opacity-60"
+              onClick={apply}
+              className="rounded-full bg-[#f1571f] px-12 py-3 text-[13px] font-semibold tracking-[0.5px] text-white transition-opacity hover:opacity-90"
             >
-              <CloseIcon />
+              APPLY
             </button>
           </div>
         </div>
-
-        {/* Scrollable body */}
-        <div className="scrollbar-hide flex-1 overflow-y-auto px-7">
-          {sections.map((section) => {
-            const { total, counts: facetCounts } = counts[section.facet];
-
-            // Keep an option if it has matches now, or is already selected (so a
-            // chosen pill never disappears out from under the user).
-            const visible = section.options.filter((label) => {
-              const key = keyOf(section.facet, label);
-              return (facetCounts[label] ?? 0) > 0 || selected.has(key);
-            });
-            if (visible.length === 0) return null;
-
-            // Hide a facet that can't narrow anything: every visible option
-            // covers the whole scope (e.g. "Theme" on a page that's all IPL).
-            const canNarrow = visible.some(
-              (label) => (facetCounts[label] ?? 0) < total,
-            );
-            if (!canNarrow) return null;
-
-            return (
-              <div
-                key={section.title}
-                className="border-t border-[#ececec] py-5 first:border-t-0 first:pt-0"
-              >
-                <h3 className="mb-3.5 text-[15px] font-bold text-black">
-                  {section.title}
-                </h3>
-                <div className="flex flex-wrap gap-2.5">
-                  {visible.map((label) => {
-                    const key = keyOf(section.facet, label);
-                    const isOn = selected.has(key);
-                    const count = facetCounts[label] ?? 0;
-                    return (
-                      <button
-                        key={key}
-                        type="button"
-                        onClick={() => toggle(key)}
-                        className={`flex items-center gap-1.5 rounded-full border px-4 py-2 text-[13px] transition-colors duration-200 ${
-                          isOn
-                            ? "border-black bg-black text-white"
-                            : "border-transparent bg-[#f1f1f1] text-black hover:border-[#cfcfcf]"
-                        }`}
-                      >
-                        <span className="font-medium">{label}</span>
-                        <span
-                          className={isOn ? "text-white/70" : "text-[#9a9a9a]"}
-                        >
-                          ({count})
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            );
-          })}
-
-          {/* Price Range */}
-          <div className="border-t border-[#ececec] py-5">
-            <div className="mb-2 flex items-center justify-between">
-              <h3 className="text-[15px] font-bold text-black">Price Range</h3>
-              <span className="text-[14px] font-medium text-black">
-                0 - {price} INR
-              </span>
-            </div>
-            <p className="mb-3 text-[12px] text-[#9a9a9a]">Select Price Range</p>
-            <input
-              type="range"
-              min={0}
-              max={PRICE_MAX}
-              step={100}
-              value={price}
-              onChange={(e) => setPrice(Number(e.target.value))}
-              aria-label="Maximum price"
-              className="price-slider w-full"
-              style={{ ["--pct" as string]: `${(price / PRICE_MAX) * 100}%` }}
-            />
-          </div>
-
-          {/* Sort By */}
-          <div className="border-t border-[#ececec] py-5">
-            <h3 className="mb-1 text-[15px] font-bold text-black">Sort By</h3>
-            <p className="mb-3 text-[12px] text-[#9a9a9a]">Select Sort Order</p>
-            <div className="relative">
-              <select
-                value={sort}
-                onChange={(e) => setSort(e.target.value)}
-                aria-label="Sort by"
-                className="w-full appearance-none rounded-lg bg-[#f1f1f1] px-4 py-3 text-[14px] font-medium text-black outline-none"
-              >
-                {sortOptions.map((o) => (
-                  <option key={o}>{o}</option>
-                ))}
-              </select>
-              <ChevronIcon className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-black" />
-            </div>
-          </div>
-        </div>
-
-        {/* Footer actions */}
-        <div className="px-7 py-5">
-          <button
-            type="button"
-            onClick={apply}
-            className="w-full rounded-full bg-[#f1571f] px-6 py-3 text-[13px] font-semibold tracking-[0.5px] text-white transition-opacity hover:opacity-90"
-          >
-            APPLY
-          </button>
-        </div>
-      </aside>
+      </div>
     </>
   );
 }
 
-function CloseIcon() {
+/** One facet section of tinted icon pills (Theme / Category / Sleeves). */
+function PillSectionBlock({
+  section,
+  counts,
+  selected,
+  toggle,
+}: {
+  section: { title: string; facet: FacetKey; options: PillOption[] };
+  counts: Record<string, number>;
+  selected: Set<string>;
+  toggle: (key: string) => void;
+}) {
   return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path
-        d="M6 6l12 12M18 6L6 18"
-        stroke="currentColor"
-        strokeWidth="1.8"
-        strokeLinecap="round"
-      />
-    </svg>
+    <div className="py-5">
+      <h3 className="mb-3.5 text-[15px] font-bold text-black">{section.title}</h3>
+      <div className="flex flex-wrap gap-2.5">
+        {section.options.map((opt) => {
+          const key = keyOf(section.facet, opt.value);
+          const isOn = selected.has(key);
+          const count = counts[opt.value] ?? 0;
+          const Icon = opt.icon;
+          return (
+            <button
+              key={key}
+              type="button"
+              onClick={() => toggle(key)}
+              aria-pressed={isOn}
+              className="flex items-center gap-1.5 rounded-full px-4 py-2 text-[13px] transition-colors duration-200"
+              style={{
+                backgroundColor: opt.bg,
+                border: `1.5px solid ${isOn ? opt.color : "transparent"}`,
+              }}
+            >
+              <Icon size={16} stroke={2} style={{ color: opt.color }} />
+              <span className="font-medium text-black">
+                {opt.label ?? opt.value}
+              </span>
+              <span className="text-[11px] text-[#6b6b6b]">
+                ({fmtCount(count)})
+              </span>
+            </button>
+          );
+        })}
+      </div>
+    </div>
   );
 }
 

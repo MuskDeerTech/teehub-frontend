@@ -18,7 +18,9 @@ export default function FilterableGrid({ products }: { products: Product[] }) {
     const sel = paramsToSelections(params as unknown as URLSearchParams);
     const maxPriceRaw = params.get("maxPrice");
     const maxPrice = maxPriceRaw ? Number(maxPriceRaw) : undefined;
-    return filterProducts(products, sel, maxPrice);
+    const minPriceRaw = params.get("minPrice");
+    const minPrice = minPriceRaw ? Number(minPriceRaw) : undefined;
+    return filterProducts(products, sel, maxPrice, minPrice);
   }, [params, products]);
 
   if (filtered.length === 0) {

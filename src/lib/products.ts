@@ -410,6 +410,7 @@ export function filterProducts(
   products: Product[],
   sel: FacetSelections,
   maxPrice?: number,
+  minPrice?: number,
 ): Product[] {
   return products.filter((p) => {
     for (const key of Object.keys(sel) as FacetKey[]) {
@@ -418,7 +419,9 @@ export function filterProducts(
       const vals = facetValues(p, key);
       if (!chosen.some((c) => vals.includes(c))) return false;
     }
+    // A product stays when its price range overlaps the selected range.
     if (maxPrice != null && p.priceMin > maxPrice) return false;
+    if (minPrice != null && (p.priceMax ?? p.priceMin) < minPrice) return false;
     return true;
   });
 }
