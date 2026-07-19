@@ -8,6 +8,7 @@ import type {
   WooLineItem,
   WooOrder,
   WooProduct,
+  WooVariation,
 } from "./types";
 
 type Doc = Record<string, unknown> & { id: string | number };
@@ -184,12 +185,15 @@ export async function syncProduct(
     categoryId,
     imageIds,
     cache,
+    variations,
     slugOverride,
     matchExistingBySkuOrSlug = true,
   }: {
     categoryId: string | number;
     imageIds: Array<string | number>;
     cache?: WooSyncCache;
+    /** A variable product's variations — the source of its true price range. */
+    variations?: WooVariation[];
     slugOverride?: string;
     matchExistingBySkuOrSlug?: boolean;
   },
@@ -198,6 +202,20 @@ export async function syncProduct(
     product.price || product.sale_price || product.regular_price,
   );
   const regularPrice = numberOrZero(product.regular_price || product.price);
+  // For variable products WooCommerce's top-level `price` is just the cheapest
+  // variation, so the catalog range (₹899 – ₹1,399) must be recovered from the
+  // variation prices themselves.
+  const variationPrices = (variations ?? [])
+    .map((v) => numberOrZero(v.price || v.sale_price || v.regular_price))
+    .filter((value) => value > 0);
+  const priceMin = variationPrices.length
+    ? Math.min(...variationPrices)
+    : price;
+  const priceMax = variationPrices.length
+    ? Math.max(...variationPrices)
+    : regularPrice > price
+      ? regularPrice
+      : price;
   const slug =
     slugOverride || product.slug || `woocommerce-product-${product.id}`;
   const existing = cache
@@ -233,14 +251,17 @@ export async function syncProduct(
       cardImage: imageIds[0],
       images: imageIds,
       bg: "#f1f1f1",
-      priceMin: price,
-      priceMax: regularPrice > price ? regularPrice : price,
+      priceMin,
+      priceMax,
       price,
-      originalPrice: regularPrice || undefined,
+      // Only a strictly higher MRP is worth striking through on the page.
+      // `null`, not undefined: an undefined field is skipped by Payload's
+      // update, which would leave a stale MRP from an earlier sync in place.
+      originalPrice: regularPrice > price ? regularPrice : null,
       discountPercent:
         regularPrice > price && regularPrice > 0
           ? Math.round(((regularPrice - price) / regularPrice) * 100)
-          : undefined,
+          : null,
       isPublished: product.status === "publish",
       allowCustomName: detectCustomName(product),
       sortOrder: product.menu_order ?? 0,

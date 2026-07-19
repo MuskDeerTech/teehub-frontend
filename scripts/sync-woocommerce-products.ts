@@ -76,6 +76,7 @@ async function run() {
         categoryId,
         imageIds: [...new Set(imageIds)],
         cache,
+        variations,
       });
       report[result.action] += 1;
     } catch (error) {

@@ -8,10 +8,11 @@ import FilterButton from "./FilterButton";
  */
 export default function NewInFilter({
   categories,
-  products,
+  catalogProducts,
 }: {
   categories: Category[];
-  products: Product[];
+  /** The full published catalog — the filter panel is catalog-wide. */
+  catalogProducts: Product[];
 }) {
   const pills = [
     { href: "/category/all", label: "VIEW ALL" },
@@ -35,7 +36,7 @@ export default function NewInFilter({
         ))}
       </div>
 
-      <FilterButton products={products} />
+      <FilterButton products={catalogProducts} />
     </div>
   );
 }

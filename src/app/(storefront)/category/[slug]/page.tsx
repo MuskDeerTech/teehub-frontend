@@ -47,6 +47,10 @@ export default async function CategoryPage({
     getCategories(),
     getProductsByCategory(slug),
   ]);
+  // The filter panel is catalog-wide (counts and price bounds cover every
+  // published product), so scoped category pages fetch the full list too.
+  const catalogProducts =
+    slug === "all" ? products : await getProductsByCategory("all");
 
   // A known category with no products yet still renders a full grid, but of
   // blank placeholder cards rather than the "no products" message.
@@ -64,7 +68,11 @@ export default async function CategoryPage({
           via useSearchParams, which Next requires to be wrapped to keep the
           rest of the page statically renderable. */}
       <Suspense fallback={null}>
-        <CategoryFilter active={slug} categories={categories} products={products} />
+        <CategoryFilter
+          active={slug}
+          categories={categories}
+          catalogProducts={catalogProducts}
+        />
       </Suspense>
 
       {products.length > 0 ? (

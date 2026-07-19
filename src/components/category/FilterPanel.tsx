@@ -1,16 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState, type CSSProperties, type ComponentType } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import {
-  IconBallBaseball,
-  IconBallFootball,
-  IconCricket,
-  IconHanger,
-  IconShirt,
-  IconShirtFilled,
-  IconShirtSport,
-} from "@tabler/icons-react";
 import {
   FACET_PARAM,
   getFacetCounts,
@@ -20,22 +11,16 @@ import {
   type Product,
 } from "@/lib/products";
 
-type PillIcon = ComponentType<{
-  size?: number;
-  stroke?: number;
-  className?: string;
-  style?: CSSProperties;
-}>;
-
 /**
  * One pill in a facet section. `value` is what's stored on the product (and in
- * the URL); `label` is what the pill shows (defaults to `value`). `color` tints
- * the icon and draws the selected border; `bg` is the pill's pastel fill.
+ * the URL); `label` is what the pill shows (defaults to `value`). `icon` is a
+ * multi-colour SVG exported from Figma (public/svg/filters); `color` draws the
+ * selected border; `bg` is the pill's pastel fill.
  */
 type PillOption = {
   value: string;
   label?: string;
-  icon: PillIcon;
+  icon: string;
   color: string;
   bg: string;
 };
@@ -50,27 +35,26 @@ const pillSections: { title: string; facet: FacetKey; options: PillOption[] }[] 
     title: "Theme",
     facet: "themes",
     options: [
-      { value: "Cricket", icon: IconCricket, color: "#5B4FC7", bg: "#E7E3FA" },
-      { value: "IPL", icon: IconBallBaseball, color: "#2E9E4F", bg: "#DFF3E1" },
-      { value: "Football", icon: IconBallFootball, color: "#E2492F", bg: "#FBE3D8" },
+      { value: "Cricket", icon: "/svg/filters/cricket.svg", color: "#5B4FC7", bg: "#E7E3FA" },
+      { value: "IPL", icon: "/svg/filters/ipl.svg", color: "#2E9E4F", bg: "#DFF3E1" },
+      { value: "Football", icon: "/svg/filters/football.svg", color: "#E2492F", bg: "#FBE3D8" },
     ],
   },
   {
     title: "Category",
     facet: "type",
     options: [
-      { value: "T-Shirts", icon: IconShirt, color: "#C426A9", bg: "#FBDFF0" },
-      { value: "Polos", icon: IconShirtSport, color: "#E8930C", bg: "#FCEED3" },
-      { value: "Jerseys", icon: IconShirtFilled, color: "#2F6FD0", bg: "#DCEAFB" },
+      { value: "T-Shirts", icon: "/svg/filters/tshirt.svg", color: "#C426A9", bg: "#FBDFF0" },
+      { value: "Polos", icon: "/svg/filters/polo.svg", color: "#E8930C", bg: "#FCEED3" },
+      { value: "Jerseys", icon: "/svg/filters/jersey.svg", color: "#2F6FD0", bg: "#DCEAFB" },
     ],
   },
   {
     title: "Sleeves",
     facet: "sleeve",
     options: [
-      { value: "Long", icon: IconShirt, color: "#8B4A2F", bg: "#F6E3DA" },
-      { value: "Short", icon: IconShirtSport, color: "#7A9B1E", bg: "#F1F6D8" },
-      { value: "Halter", icon: IconHanger, color: "#2A8FB0", bg: "#DFF0F6" },
+      { value: "Long", icon: "/svg/filters/long.svg", color: "#8B4A2F", bg: "#F6E3DA" },
+      { value: "Short", icon: "/svg/filters/short.svg", color: "#7A9B1E", bg: "#F1F6D8" },
     ],
   },
 ];
@@ -118,17 +102,17 @@ const sortOptions = [
   "Best Selling",
 ];
 
-const PRICE_MAX = 5000;
 const PRICE_STEP = 100;
+/** Slider bounds when the catalog is empty (nothing real to derive them from). */
+const FALLBACK_PRICE_MAX = 5000;
 
 export default function FilterPanel({
   products,
   open,
   onClose,
 }: {
-  /** The current page's products (from Payload via the page) — the live counts
-   *  are scoped to these: "all" sees the whole catalog, a category page sees
-   *  only its own products. */
+  /** The full published catalog (fetched by the page) — facet counts and the
+   *  price bounds are catalog-wide no matter which page opened the panel. */
   products: Product[];
   open: boolean;
   onClose: () => void;
@@ -137,10 +121,25 @@ export default function FilterPanel({
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
+  // Slider bounds from the real catalog: cheapest priceMin to dearest priceMax,
+  // rounded outward to the step so every product stays inside the range.
+  const bounds = useMemo(() => {
+    if (!products.length) return { min: 0, max: FALLBACK_PRICE_MAX };
+    let lo = Infinity;
+    let hi = 0;
+    for (const p of products) {
+      lo = Math.min(lo, p.priceMin);
+      hi = Math.max(hi, p.priceMax ?? p.priceMin);
+    }
+    const min = Math.floor(lo / PRICE_STEP) * PRICE_STEP;
+    const max = Math.max(Math.ceil(hi / PRICE_STEP) * PRICE_STEP, min + PRICE_STEP);
+    return { min, max };
+  }, [products]);
+
   // A flat set of "facet::value" keys tracks every selected pill across groups.
   const [selected, setSelected] = useState<Set<string>>(new Set());
-  const [priceMin, setPriceMin] = useState(0);
-  const [priceMax, setPriceMax] = useState(PRICE_MAX);
+  const [priceMin, setPriceMin] = useState(bounds.min);
+  const [priceMax, setPriceMax] = useState(bounds.max);
   const [sort, setSort] = useState(sortOptions[0]);
 
   // When the panel opens, seed the controls from the URL so it reflects the
@@ -158,9 +157,9 @@ export default function FilterPanel({
       }
       setSelected(next);
       const minP = searchParams.get("minPrice");
-      setPriceMin(minP ? Number(minP) : 0);
+      setPriceMin(minP ? Number(minP) : bounds.min);
       const maxP = searchParams.get("maxPrice");
-      setPriceMax(maxP ? Number(maxP) : PRICE_MAX);
+      setPriceMax(maxP ? Number(maxP) : bounds.max);
     }
   }
 
@@ -194,12 +193,15 @@ export default function FilterPanel({
 
   const removeAll = () => {
     setSelected(new Set());
-    setPriceMin(0);
-    setPriceMax(PRICE_MAX);
+    setPriceMin(bounds.min);
+    setPriceMax(bounds.max);
     setSort(sortOptions[0]);
   };
 
   // Commit the current selections to the URL; the grid reads them and filters.
+  // The panel is catalog-wide, but a /category/<slug> page only renders its own
+  // products — so applying filters there lands on /category/all, where the grid
+  // spans the whole catalog and can honour every count the panel promised.
   const apply = () => {
     const sel = selectionsOf(selected);
     const qs = new URLSearchParams();
@@ -207,10 +209,13 @@ export default function FilterPanel({
       const values = sel[facet];
       if (values?.length) qs.set(FACET_PARAM[facet], values.join(","));
     }
-    if (priceMin > 0) qs.set("minPrice", String(priceMin));
-    if (priceMax < PRICE_MAX) qs.set("maxPrice", String(priceMax));
+    if (priceMin > bounds.min) qs.set("minPrice", String(priceMin));
+    if (priceMax < bounds.max) qs.set("maxPrice", String(priceMax));
     const query = qs.toString();
-    router.push(query ? `${pathname}?${query}` : pathname, { scroll: false });
+    const isScopedCategory =
+      pathname.startsWith("/category/") && pathname !== "/category/all";
+    const target = query && isScopedCategory ? "/category/all" : pathname;
+    router.push(query ? `${target}?${query}` : pathname, { scroll: false });
     onClose();
   };
 
@@ -238,9 +243,10 @@ export default function FilterPanel({
             open ? "scale-100 opacity-100" : "scale-95 opacity-0"
           }`}
         >
-          {/* Header */}
-          <div className="border-b border-[#ececec] px-7 pb-4 pt-6">
-            <h2 className="text-[22px] font-semibold tracking-[-0.5px] text-black">
+          {/* Header — divider is inset to match the section dividers below,
+              just slightly thicker. */}
+          <div className="px-7 pt-6">
+            <h2 className="border-b-2 border-[#ececec] pb-4 text-[22px] font-semibold tracking-[-0.5px] text-black">
               Filters
             </h2>
           </div>
@@ -259,14 +265,14 @@ export default function FilterPanel({
                   <div
                     className="absolute top-1/2 h-[3px] -translate-y-1/2 rounded-full bg-[#f1571f]"
                     style={{
-                      left: `${(priceMin / PRICE_MAX) * 100}%`,
-                      right: `${100 - (priceMax / PRICE_MAX) * 100}%`,
+                      left: `${((priceMin - bounds.min) / (bounds.max - bounds.min)) * 100}%`,
+                      right: `${100 - ((priceMax - bounds.min) / (bounds.max - bounds.min)) * 100}%`,
                     }}
                   />
                   <input
                     type="range"
-                    min={0}
-                    max={PRICE_MAX}
+                    min={bounds.min}
+                    max={bounds.max}
                     step={PRICE_STEP}
                     value={priceMin}
                     onChange={(e) =>
@@ -279,8 +285,8 @@ export default function FilterPanel({
                   />
                   <input
                     type="range"
-                    min={0}
-                    max={PRICE_MAX}
+                    min={bounds.min}
+                    max={bounds.max}
                     step={PRICE_STEP}
                     value={priceMax}
                     onChange={(e) =>
@@ -301,7 +307,7 @@ export default function FilterPanel({
                     value={sort}
                     onChange={(e) => setSort(e.target.value)}
                     aria-label="Sort by"
-                    className="w-full appearance-none rounded-xl bg-[#f1f1f1] px-4 py-3 text-[14px] font-medium text-black outline-none"
+                    className="w-full appearance-none rounded-2xl bg-[#f1f1f1] px-4 py-3 text-[14px] font-medium text-black outline-none"
                   >
                     {sortOptions.map((o) => (
                       <option key={o}>{o}</option>
@@ -395,8 +401,8 @@ export default function FilterPanel({
             </div>
           </div>
 
-          {/* Footer actions */}
-          <div className="flex items-center justify-between gap-4 px-7 py-5">
+          {/* Footer actions — top divider inset to match the section dividers. */}
+          <div className="mx-7 flex items-center justify-between gap-4 border-t border-[#ececec] py-5">
             <button
               type="button"
               onClick={removeAll}
@@ -438,7 +444,6 @@ function PillSectionBlock({
           const key = keyOf(section.facet, opt.value);
           const isOn = selected.has(key);
           const count = counts[opt.value] ?? 0;
-          const Icon = opt.icon;
           return (
             <button
               key={key}
@@ -451,7 +456,7 @@ function PillSectionBlock({
                 border: `1.5px solid ${isOn ? opt.color : "transparent"}`,
               }}
             >
-              <Icon size={16} stroke={2} style={{ color: opt.color }} />
+              <img src={opt.icon} alt="" width={16} height={16} aria-hidden="true" />
               <span className="font-medium text-black">
                 {opt.label ?? opt.value}
               </span>

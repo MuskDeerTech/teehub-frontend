@@ -31,7 +31,9 @@ export default async function NewInPage() {
       </div>
 
       <Suspense fallback={null}>
-        <NewInFilter categories={categories} products={products} />
+        {/* getLatestProducts returns the whole published catalog (date-sorted),
+            so it doubles as the panel's catalog-wide product list. */}
+        <NewInFilter categories={categories} catalogProducts={products} />
       </Suspense>
 
       {products.length > 0 ? (

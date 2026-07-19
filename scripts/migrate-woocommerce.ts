@@ -275,6 +275,7 @@ async function run() {
               categoryId,
               imageIds,
               cache,
+              variations: variationsByProduct.get(product.id),
             }),
           );
           completed += 1;

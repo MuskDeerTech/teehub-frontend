@@ -13,11 +13,12 @@ import FilterButton from "./FilterButton";
 export default function CategoryFilter({
   active,
   categories,
-  products,
+  catalogProducts,
 }: {
   active: string;
   categories: Category[];
-  products: Product[];
+  /** The full published catalog — the filter panel is catalog-wide. */
+  catalogProducts: Product[];
 }) {
   const pills = [{ slug: "all", label: "VIEW ALL" }, ...categories];
 
@@ -42,7 +43,7 @@ export default function CategoryFilter({
         })}
       </div>
 
-      <FilterButton products={products} />
+      <FilterButton products={catalogProducts} />
     </div>
   );
 }

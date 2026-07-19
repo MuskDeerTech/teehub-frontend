@@ -306,13 +306,17 @@ export default function ProductDetails({ product }: { product: Product }) {
     };
   }, []);
 
-  // The detail page shows a single sale price with the struck-through MRP +
-  // discount when `price` is set; otherwise it falls back to the catalog range.
-  const hasSalePrice = product.price != null;
-  const savedAmount =
-    product.originalPrice != null && product.price != null
-      ? product.originalPrice - product.price
-      : null;
+  // A genuine discount shows the sale price with the struck-through MRP +
+  // badge. Otherwise the catalog range renders instead — for variable products
+  // that spans the customization options (e.g. ₹999 – ₹1,399), not just the
+  // cheapest one.
+  const hasSale =
+    product.price != null &&
+    product.originalPrice != null &&
+    product.originalPrice > product.price;
+  const savedAmount = hasSale
+    ? (product.originalPrice as number) - (product.price as number)
+    : null;
 
   return (
     <div
@@ -417,18 +421,18 @@ export default function ProductDetails({ product }: { product: Product }) {
 
             <div className="mt-3 flex flex-wrap items-center gap-2">
               <span className="text-[25px] font-bold leading-none text-[#f97316]">
-                {hasSalePrice
+                {hasSale
                   ? inr(product.price as number)
                   : formatPriceRange(product)}
               </span>
 
-              {product.originalPrice != null && (
+              {hasSale && product.originalPrice != null && (
                 <span className="text-base font-medium text-gray-400 line-through">
                   {inr(product.originalPrice)}
                 </span>
               )}
 
-              {product.discountPercent != null && (
+              {hasSale && product.discountPercent != null && (
                 <span className="rounded bg-[#f97316] px-1.5 py-0.5 text-[11px] font-semibold text-white">
                   -{product.discountPercent}%
                 </span>
