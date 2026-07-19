@@ -230,19 +230,16 @@ export default function FilterPanel({
         aria-hidden="true"
       />
 
+      {/* Slide-in drawer from the right — same content/layout as the Figma
+          card, just docked to the edge instead of centered. */}
       <div
-        className={`fixed inset-0 z-[120] flex items-center justify-center p-4 ${
-          open ? "" : "pointer-events-none"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Filters"
+        className={`fixed right-0 top-0 z-[120] flex h-full w-full max-w-[620px] flex-col bg-white shadow-2xl transition-transform duration-300 ease-out ${
+          open ? "translate-x-0" : "translate-x-full"
         }`}
       >
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-label="Filters"
-          className={`flex max-h-[92vh] w-full max-w-[620px] flex-col rounded-2xl bg-white shadow-2xl transition-all duration-300 ease-out ${
-            open ? "scale-100 opacity-100" : "scale-95 opacity-0"
-          }`}
-        >
           {/* Header — divider is inset to match the section dividers below,
               just slightly thicker. */}
           <div className="px-7 pt-6">
@@ -418,7 +415,6 @@ export default function FilterPanel({
               APPLY
             </button>
           </div>
-        </div>
       </div>
     </>
   );
