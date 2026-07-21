@@ -4,14 +4,15 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import type { Category } from "@/lib/products";
 import {
-  IconUser,
-  IconSearch,
-  IconMapPin,
-  IconShoppingBag,
-  IconBrandInstagram,
-} from "@tabler/icons-react";
-import { navLinks, type Category } from "@/lib/products";
+  BookmarkIcon,
+  CartIcon,
+  LocationIcon,
+  ProfileIcon,
+  ReviewIcon,
+  SearchIcon,
+} from "@/components/ui/icons";
 import MegaMenu from "@/components/layout/MegaMenu";
 import CollectionsDropdown from "@/components/layout/CollectionsDropdown";
 import SearchOverlay from "@/components/layout/SearchOverlay";
@@ -73,6 +74,14 @@ export default function Navbar() {
   const mobileDockIconClass = isHomePage
     ? "text-white hover:bg-white/15"
     : "text-black hover:bg-black/5";
+
+  // "Deliver To" block: real name/pincode for signed-in customers, the
+  // design's placeholder copy otherwise.
+  const deliverToName = user?.fullName?.trim().split(/\s+/)[0] || "Username";
+  const defaultAddress =
+    user?.addresses?.find((address) => address.isDefault) ??
+    user?.addresses?.[0];
+  const deliverToPincode = defaultAddress?.pincode || "Pincode";
 
   const ensureCategories = () => {
     if (!categoriesLoaded && !categoriesLoading) setCategoriesLoading(true);
@@ -144,57 +153,35 @@ export default function Navbar() {
       className="sticky top-0 z-[100] relative"
       onMouseLeave={() => setCollectionsOpen(false)}
     >
-      <nav className="flex h-[72px] w-full items-center justify-between border-b border-[#e7e7e7] bg-[#f8f8f8] px-[42px] max-[1024px]:h-[76px] max-[1024px]:px-6 max-[480px]:px-4">
-      <div className="flex items-center gap-[34px] max-[1024px]:hidden">
-        {navLinks.map((link) => {
-          if (link === "NEW IN") {
-            return (
-              <Link
-                key={link}
-                href="/new-in"
-                onMouseEnter={() => setCollectionsOpen(false)}
-                className="text-[13px] font-bold tracking-[1px] text-black transition-colors duration-200 hover:text-[#ff5b1f]"
-              >
-                {link}
-              </Link>
-            );
-          }
-
-          if (link === "COLLECTIONS") {
-            return (
-              <span
-                key={link}
-                onMouseEnter={openCollections}
-                className="cursor-pointer text-[13px] font-bold tracking-[1px] text-black transition-colors duration-200 hover:text-[#ff5b1f]"
-              >
-                {link}
-              </span>
-            );
-          }
-
-          if (link === "TRACK ORDER") {
-            return (
-              <Link
-                key={link}
-                href="/track-order"
-                onMouseEnter={() => setCollectionsOpen(false)}
-                className="text-[13px] font-bold tracking-[1px] text-black transition-colors duration-200 hover:text-[#ff5b1f]"
-              >
-                {link}
-              </Link>
-            );
-          }
-
-          return (
-            <span
-              key={link}
-              onMouseEnter={() => setCollectionsOpen(false)}
-              className="cursor-pointer text-[13px] font-bold tracking-[1px] text-black transition-colors duration-200 hover:text-[#ff5b1f]"
-            >
-              {link}
-            </span>
-          );
-        })}
+      <nav className="font-navbar flex h-[72px] w-full items-center justify-between bg-white px-[42px] max-[1024px]:h-[76px] max-[1024px]:px-6 max-[480px]:px-4">
+      <div className="flex items-center gap-8 max-[1024px]:hidden">
+        <Link
+          href="/new-in"
+          onMouseEnter={() => setCollectionsOpen(false)}
+          className="text-[15px] font-medium text-black transition-colors duration-200 hover:text-[#f36d43]"
+        >
+          New in
+        </Link>
+        <span
+          onMouseEnter={openCollections}
+          className="cursor-pointer text-[15px] font-medium text-black transition-colors duration-200 hover:text-[#f36d43]"
+        >
+          Collections
+        </span>
+        <Link
+          href="/track-order"
+          onMouseEnter={() => setCollectionsOpen(false)}
+          className="text-[15px] font-medium text-black transition-colors duration-200 hover:text-[#f36d43]"
+        >
+          Track Order
+        </Link>
+        <span
+          onMouseEnter={() => setCollectionsOpen(false)}
+          className="flex cursor-pointer items-center gap-1.5 rounded-full border border-[#f36d43] px-4 py-1.5 text-[14px] font-medium text-[#f36d43] transition-colors duration-200 hover:bg-[#f36d43]/5"
+        >
+          <ReviewIcon className="h-[15px] w-[15px]" />
+          Review
+        </span>
       </div>
 
       {/* LOGO */}
@@ -215,8 +202,27 @@ export default function Navbar() {
       </Link>
 
       {/* ICONS */}
-      <div className="flex items-center gap-7">
-        {/* LOCATION */}
+      <div className="flex items-center gap-8">
+        {/* INSTAGRAM */}
+        <a
+          href="https://www.instagram.com/tee_hub_shop/"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="TeeHub on Instagram"
+          title="Follow us on Instagram"
+          onMouseEnter={() => setCollectionsOpen(false)}
+          className="flex h-6 w-6 cursor-pointer items-center justify-center transition-opacity hover:opacity-80 max-[1024px]:hidden"
+        >
+          <Image
+            src="/svg/icons/instagram.svg"
+            alt=""
+            width={24}
+            height={24}
+            className="h-6 w-6"
+          />
+        </a>
+
+        {/* DELIVER TO / LOCATION */}
         <a
           href="https://maps.app.goo.gl/c6Nf1VdPwNkn75qV7"
           target="_blank"
@@ -224,29 +230,46 @@ export default function Navbar() {
           aria-label="Find our store on Google Maps"
           title="Visit our store — VOC Street, Kumar Nagar, Tiruppur"
           onMouseEnter={() => setCollectionsOpen(false)}
-          className="flex h-7 w-7 cursor-pointer items-center justify-center max-[1024px]:hidden"
+          className="flex cursor-pointer items-center gap-1 max-[1024px]:hidden"
         >
-          <IconMapPin size={26} stroke={1.5} className="text-black" />
+          <span className="flex flex-col text-left leading-[1.25]">
+            <span className="text-[11px] font-medium text-black">
+              Deliver To {deliverToName}
+            </span>
+            <span className="text-[11px] font-semibold text-black">
+              Location {deliverToPincode}
+            </span>
+          </span>
+          <LocationIcon className="h-6 w-6 text-[#6E6E6E]" />
         </a>
 
-        {/* SEARCH */}
+        {/* BOOKMARKS — saved-items page not built yet, so this is a no-op for now */}
         <button
           type="button"
-          aria-label="Search"
-          aria-expanded={searchOpen}
-          onClick={() => {
-            setCollectionsOpen(false);
-            setMenuOpen(false);
-            setSearchOpen((v) => !v);
-          }}
+          aria-label="Saved items"
+          title="Saved items"
           onMouseEnter={() => setCollectionsOpen(false)}
           className="flex h-7 w-7 cursor-pointer items-center justify-center max-[1024px]:hidden"
         >
-          <IconSearch
-            size={26}
-            stroke={1.5}
-            className={`transition-colors ${searchOpen ? "text-[#f36d43]" : "text-black"}`}
+          <BookmarkIcon className="h-6 w-6 text-[#6E6E6E]" />
+        </button>
+
+        {/* CART */}
+        <button
+          type="button"
+          aria-label={`Open cart (${totalCount} items)`}
+          onClick={openCart}
+          onMouseEnter={() => setCollectionsOpen(false)}
+          className="relative flex h-7 w-7 cursor-pointer items-center justify-center max-[1024px]:hidden"
+        >
+          <CartIcon
+            className={`h-6 w-6 transition-colors ${cartOpen ? "text-[#f36d43]" : "text-[#6E6E6E]"}`}
           />
+          {totalCount > 0 && (
+            <span className="absolute -right-1.5 -top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-[#f36d43] text-[9px] font-bold text-white">
+              {totalCount > 99 ? "99+" : totalCount}
+            </span>
+          )}
         </button>
 
         {/* PROFILE */}
@@ -257,44 +280,9 @@ export default function Navbar() {
           onMouseEnter={() => setCollectionsOpen(false)}
           className="relative flex h-7 w-7 cursor-pointer items-center justify-center max-[1024px]:hidden"
         >
-          <IconUser
-            size={26}
-            stroke={1.5}
-            className={user ? "text-[#f36d43]" : "text-black"}
+          <ProfileIcon
+            className={`h-6 w-6 ${user ? "text-[#f36d43]" : "text-[#6E6E6E]"}`}
           />
-        </button>
-
-        {/* INSTAGRAM */}
-        <a
-          href="https://www.instagram.com/tee_hub_shop/"
-          target="_blank"
-          rel="noopener noreferrer"
-          aria-label="TeeHub on Instagram"
-          title="Follow us on Instagram"
-          onMouseEnter={() => setCollectionsOpen(false)}
-          className="flex h-7 w-7 cursor-pointer items-center justify-center max-[1024px]:hidden"
-        >
-          <IconBrandInstagram size={26} stroke={1.5} className="text-black " />
-        </a>
-
-        {/* BAG */}
-        <button
-          type="button"
-          aria-label={`Open cart (${totalCount} items)`}
-          onClick={openCart}
-          onMouseEnter={() => setCollectionsOpen(false)}
-          className="relative flex h-7 w-7 cursor-pointer items-center justify-center max-[1024px]:hidden"
-        >
-          <IconShoppingBag
-            size={26}
-            stroke={1.5}
-            className={`transition-colors ${cartOpen ? "text-[#f36d43]" : "text-black"}`}
-          />
-          {totalCount > 0 && (
-            <span className="absolute -right-1.5 -top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-[#f36d43] text-[9px] font-bold text-white">
-              {totalCount > 99 ? "99+" : totalCount}
-            </span>
-          )}
         </button>
 
         <button
@@ -303,7 +291,7 @@ export default function Navbar() {
           aria-expanded={menuOpen}
           onClick={toggleMenu}
           onMouseEnter={() => setCollectionsOpen(false)}
-          className="flex h-9 w-11 cursor-pointer items-center justify-center max-[1024px]:h-10 max-[1024px]:w-14 max-[1024px]:rounded-full max-[1024px]:bg-[#efefef] max-[480px]:h-10 max-[480px]:w-12"
+          className="hidden h-9 w-11 cursor-pointer items-center justify-center max-[1024px]:flex max-[1024px]:h-10 max-[1024px]:w-14 max-[1024px]:rounded-full max-[1024px]:bg-[#efefef] max-[480px]:h-10 max-[480px]:w-12"
         >
           <Image
             src="/svg/icons/hamburg.svg"
@@ -335,7 +323,7 @@ export default function Navbar() {
           aria-label="Find our store on Google Maps"
           className={`flex h-12 w-12 items-center justify-center rounded-full transition-colors ${mobileDockIconClass}`}
         >
-          <IconMapPin size={27} stroke={1.7} />
+          <LocationIcon className="h-7 w-7" />
         </a>
 
         <button
@@ -349,7 +337,7 @@ export default function Navbar() {
           }}
           className={`flex h-12 w-12 cursor-pointer items-center justify-center rounded-full transition-colors ${mobileDockIconClass}`}
         >
-          <IconSearch size={28} stroke={1.7} />
+          <SearchIcon className="h-7 w-7" />
         </button>
 
         <button
@@ -358,7 +346,7 @@ export default function Navbar() {
           onClick={() => (user ? router.push("/account") : setAuthOpen(true))}
           className={`flex h-12 w-12 cursor-pointer items-center justify-center rounded-full transition-colors ${mobileDockIconClass}`}
         >
-          <IconUser size={28} stroke={1.7} />
+          <ProfileIcon className="h-7 w-7" />
         </button>
 
         <button
@@ -367,7 +355,7 @@ export default function Navbar() {
           onClick={openCart}
           className={`relative flex h-12 w-12 cursor-pointer items-center justify-center rounded-full transition-colors ${mobileDockIconClass}`}
         >
-          <IconShoppingBag size={28} stroke={1.7} />
+          <CartIcon className="h-7 w-7" />
           {totalCount > 0 && (
             <span className="absolute right-1 top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#ff5b1f] px-1 text-[9px] font-bold text-white">
               {totalCount > 99 ? "99+" : totalCount}

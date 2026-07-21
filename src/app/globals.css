@@ -1,9 +1,14 @@
+/* SF Pro Display — navbar only. Swap for self-hosted files via next/font/local
+   if the CDN ever becomes a problem. */
+@import url("https://fonts.cdnfonts.com/css/sf-pro-display");
 @import "tailwindcss";
 
 @theme inline {
   /* Map the project font CSS variables to Tailwind's font utilities. */
   --font-sans: var(--font-inter);
   --font-display: var(--font-anton);
+  --font-navbar: "SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
 }
 
 /* Hide scrollbars on the horizontal sliders/carousels (Tailwind has no

@@ -5,10 +5,12 @@ import {
   buildWooSyncCache,
   ensureFallbackCategory,
   getCategorySlugMap,
+  syncMedia,
   syncProduct,
 } from "../src/lib/woocommerce/sync";
 import type {
   SyncReport,
+  WooImage,
   WooProduct,
   WooVariation,
 } from "../src/lib/woocommerce/types";
@@ -43,6 +45,16 @@ function destinationSlug(sourceSlug?: string) {
   return normalized ? (CATEGORY_ALIASES[normalized] ?? normalized) : undefined;
 }
 
+function uniqueImages(images: WooImage[]) {
+  return [
+    ...new Map(
+      images
+        .filter((image) => image.id && image.src)
+        .map((image) => [image.id, image]),
+    ).values(),
+  ];
+}
+
 async function run() {
   const payload = await getPayload({ config });
   activePayload = payload;
@@ -57,12 +69,29 @@ async function run() {
     try {
       const variations: WooVariation[] =
         product.type === "variable" ? await woo.getVariations(product.id) : [];
-      const imageIds = [
+      const images = uniqueImages([
         ...(product.images ?? []),
         ...variations.flatMap((variation) =>
           variation.image ? [variation.image] : [],
         ),
-      ]
+      ]);
+      // Download any images Payload doesn't have yet (products added to
+      // WooCommerce after the full migration). A failed download logs an
+      // error but still lets the product sync with the images that worked.
+      for (const image of images) {
+        if (cache.mediaByWooId.has(image.id)) continue;
+        try {
+          await syncMedia(payload, image, cache);
+        } catch (error) {
+          report.failed += 1;
+          report.errors.push({
+            type: "media",
+            woocommerceId: image.id,
+            message: error instanceof Error ? error.message : String(error),
+          });
+        }
+      }
+      const imageIds = images
         .map((image) => cache.mediaByWooId.get(image.id)?.id)
         .filter((id): id is string | number => id !== undefined);
       const categorySlug =
