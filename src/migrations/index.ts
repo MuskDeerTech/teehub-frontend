@@ -2,6 +2,7 @@ import * as migration_password_reset_codes from './password_reset_codes';
 import * as migration_watch_and_buy_items from './watch_and_buy_items';
 import * as migration_seo_meta_fields from './seo_meta_fields';
 import * as migration_childrens_corner from './childrens_corner';
+import * as migration_search_global from './search_global';
 
 export const migrations = [
   {
@@ -23,5 +24,10 @@ export const migrations = [
     up: migration_childrens_corner.up,
     down: migration_childrens_corner.down,
     name: 'childrens_corner'
+  },
+  {
+    up: migration_search_global.up,
+    down: migration_search_global.down,
+    name: 'search_global'
   },
 ];

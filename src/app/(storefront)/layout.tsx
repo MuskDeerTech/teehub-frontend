@@ -10,6 +10,7 @@ import { CartProvider } from "@/components/cart/CartContext";
 import { AuthProvider } from "@/components/auth/AuthContext";
 import CartRoot from "@/components/cart/CartRoot";
 import { SITE_URL } from "@/lib/seo";
+import { getPopularSearches } from "@/lib/search";
 
 const inter = Inter({ variable: "--font-inter", subsets: ["latin"] });
 const anton = Anton_SC({ variable: "--font-anton", weight: "400", subsets: ["latin"] });
@@ -21,14 +22,16 @@ export const metadata: Metadata = {
   description: "Shop IPL jerseys, football hoodies, jackets and polo t-shirts at TeeHub.",
 };
 
-export default function StorefrontLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+export default async function StorefrontLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+  const popularSearches = await getPopularSearches();
+
   return (
     <html lang="en" className={`${inter.variable} ${anton.variable} h-full antialiased`}>
       <body className="min-h-full font-sans" suppressHydrationWarning>
         <AuthProvider>
           <BookmarksProvider>
             <CartProvider>
-              <SearchProvider>
+              <SearchProvider popularSearches={popularSearches}>
                 <div className="w-full min-h-screen overflow-x-clip">
                   <Navbar />
                   {children}

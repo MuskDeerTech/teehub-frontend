@@ -1398,6 +1398,43 @@ const WebhookEvents: CollectionConfig = {
 // the purely editorial imagery/copy. Category pills come from the Categories
 // collection, so they're intentionally not duplicated here. World-readable so
 // the homepage can render it; only staff can edit.
+/**
+ * Site-wide search settings. Separate from `homepage` because the search
+ * overlay opens on every page, not just the homepage.
+ */
+const Search: GlobalConfig = {
+  slug: "search",
+  label: "Search",
+  access: {
+    read: () => true,
+    update: isAdmin,
+  },
+  admin: {
+    description:
+      "Controls the suggestions shown in the search panel before the shopper types.",
+  },
+  fields: [
+    {
+      name: "popularSearches",
+      label: "Popular Searches",
+      type: "array",
+      maxRows: 8,
+      admin: {
+        description:
+          "Chips shown under “Popular Searches”. Each one runs as a search term.",
+      },
+      fields: [
+        {
+          name: "term",
+          label: "Search term",
+          type: "text",
+          required: true,
+        },
+      ],
+    },
+  ],
+};
+
 const HomePage: GlobalConfig = {
   slug: "homepage",
   access: {
@@ -1860,7 +1897,7 @@ export default buildConfig({
     Pages,
     Media,
   ],
-  globals: [HomePage],
+  globals: [HomePage, Search],
   db: postgresAdapter({
     pool: {
       connectionString: process.env.DATABASE_URI || "",

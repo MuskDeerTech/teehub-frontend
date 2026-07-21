@@ -102,9 +102,11 @@ export interface Config {
   fallbackLocale: null;
   globals: {
     homepage: Homepage;
+    search: Search;
   };
   globalsSelect: {
     homepage: HomepageSelect<false> | HomepageSelect<true>;
+    search: SearchSelect<false> | SearchSelect<true>;
   };
   locale: null;
   widgets: {
@@ -1150,6 +1152,26 @@ export interface Homepage {
   createdAt?: string | null;
 }
 /**
+ * Controls the suggestions shown in the search panel before the shopper types.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "search".
+ */
+export interface Search {
+  id: number;
+  /**
+   * Chips shown under “Popular Searches”. Each one runs as a search term.
+   */
+  popularSearches?:
+    | {
+        term: string;
+        id?: string | null;
+      }[]
+    | null;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "homepage_select".
  */
@@ -1230,6 +1252,21 @@ export interface HomepageSelect<T extends boolean = true> {
         title?: T;
         description?: T;
         canonicalURL?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "search_select".
+ */
+export interface SearchSelect<T extends boolean = true> {
+  popularSearches?:
+    | T
+    | {
+        term?: T;
+        id?: T;
       };
   updatedAt?: T;
   createdAt?: T;
