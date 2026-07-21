@@ -5,6 +5,7 @@ import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import BottomBanner from "@/components/layout/BottomBanner";
 import { BookmarksProvider } from "@/components/providers/BookmarksProvider";
+import { SearchProvider } from "@/components/providers/SearchProvider";
 import { CartProvider } from "@/components/cart/CartContext";
 import { AuthProvider } from "@/components/auth/AuthContext";
 import CartRoot from "@/components/cart/CartRoot";
@@ -27,13 +28,15 @@ export default function StorefrontLayout({ children }: Readonly<{ children: Reac
         <AuthProvider>
           <BookmarksProvider>
             <CartProvider>
-              <div className="w-full min-h-screen overflow-x-clip">
-                <Navbar />
-                {children}
-                <Footer />
-                <BottomBanner />
-                <CartRoot />
-              </div>
+              <SearchProvider>
+                <div className="w-full min-h-screen overflow-x-clip">
+                  <Navbar />
+                  {children}
+                  <Footer />
+                  <BottomBanner />
+                  <CartRoot />
+                </div>
+              </SearchProvider>
             </CartProvider>
           </BookmarksProvider>
         </AuthProvider>

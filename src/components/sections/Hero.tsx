@@ -4,10 +4,16 @@ import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 import Dots from "@/components/ui/Dots";
+import { SearchIcon } from "@/components/ui/icons";
+import { useSearch } from "@/components/providers/SearchProvider";
 import type { HomepageHero } from "@/lib/homepage";
 import { categoryList, teamBanner } from "@/lib/products";
 
 const SLIDE_MS = 600;
+
+// Shared style for the hero's "View all" + category pills.
+const PILL_CLASS =
+  "cursor-pointer whitespace-nowrap rounded-full border border-white/40 bg-transparent px-5 py-2.5 text-[12px] font-bold tracking-[1px] text-white backdrop-blur-[10px] transition-colors duration-200 hover:bg-white hover:text-black";
 
 // Which slide an animating layer is and where it's heading, mapped to the
 // keyframes defined in globals.css.
@@ -17,6 +23,7 @@ const SLIDE_ANIM: Record<"forward" | "backward", { in: string; out: string }> = 
 };
 
 export default function Hero({ hero }: { hero: HomepageHero }) {
+  const { openSearch } = useSearch();
   // Default to RCB so the initial window shows MI · RCB · CSK.
   const [activeIndex, setActiveIndex] = useState(1);
   // While set, the background is mid-slide: `from` leaves, `to` enters.
@@ -157,17 +164,34 @@ export default function Hero({ hero }: { hero: HomepageHero }) {
         )}
       </div>
 
-      {/* CATEGORY */}
-      <div className="scrollbar-hide absolute left-6 right-6 top-6 z-10 flex gap-3 overflow-x-auto">
-        {categoryList.map((cat) => (
-          <Link
-            key={cat.slug}
-            href={`/category/${cat.slug}`}
-            className="cursor-pointer whitespace-nowrap rounded-full border border-white/40 bg-transparent px-5 py-2.5 text-[12px] font-bold tracking-[1px] text-white backdrop-blur-[10px] transition-colors duration-200 hover:bg-white hover:text-black"
-          >
-            {cat.label}
+      {/* CATEGORY + SEARCH */}
+      <div className="absolute left-6 right-6 top-6 z-10 flex items-center gap-6">
+        <div className="scrollbar-hide flex min-w-0 flex-1 gap-3 overflow-x-auto">
+          <Link href="/category/all" className={PILL_CLASS}>
+            View all
           </Link>
-        ))}
+          {categoryList.map((cat) => (
+            <Link
+              key={cat.slug}
+              href={`/category/${cat.slug}`}
+              className={PILL_CLASS}
+            >
+              {cat.label}
+            </Link>
+          ))}
+        </div>
+
+        {/* Opens the shared SearchOverlay (live previews) rather than doing its
+            own search, so the hero and the mobile dock behave identically. */}
+        <button
+          type="button"
+          onClick={openSearch}
+          aria-label="Search products"
+          className="flex w-[260px] shrink-0 cursor-pointer items-center gap-3 border-b border-white/70 pb-2.5 text-left transition-colors hover:border-white"
+        >
+          <SearchIcon className="h-[22px] w-[22px] shrink-0 text-white" />
+          <span className="text-[19px] text-white/90">Search</span>
+        </button>
       </div>
 
       {/* TEE / HUB overlay text (fixed above the moving background). */}

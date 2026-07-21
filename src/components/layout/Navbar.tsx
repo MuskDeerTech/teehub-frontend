@@ -19,6 +19,7 @@ import SearchOverlay from "@/components/layout/SearchOverlay";
 import AuthForm from "@/components/auth/AuthForm";
 import { useAuth } from "@/components/auth/AuthContext";
 import { useCart } from "@/components/cart/CartContext";
+import { useSearch } from "@/components/providers/SearchProvider";
 
 type PayloadMedia = { url?: string | null; alt?: string | null };
 type PayloadCategory = {
@@ -63,7 +64,7 @@ export default function Navbar() {
 
   const [menuOpen, setMenuOpen] = useState(false);
   const [collectionsOpen, setCollectionsOpen] = useState(false);
-  const [searchOpen, setSearchOpen] = useState(false);
+  const { searchOpen, openSearch, closeSearch } = useSearch();
   const [authOpen, setAuthOpen] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
   const [categoriesLoaded, setCategoriesLoaded] = useState(false);
@@ -333,7 +334,7 @@ export default function Navbar() {
           onClick={() => {
             setMenuOpen(false);
             setCollectionsOpen(false);
-            setSearchOpen(true);
+            openSearch();
           }}
           className={`flex h-12 w-12 cursor-pointer items-center justify-center rounded-full transition-colors ${mobileDockIconClass}`}
         >
@@ -364,7 +365,7 @@ export default function Navbar() {
         </button>
       </div>
 
-      <SearchOverlay open={searchOpen} onClose={() => setSearchOpen(false)} />
+      <SearchOverlay open={searchOpen} onClose={closeSearch} />
 
       <CollectionsDropdown
         open={collectionsOpen}
