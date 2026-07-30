@@ -1109,6 +1109,32 @@ export interface Homepage {
    * Legacy Banner 3 image field kept to avoid schema data loss.
    */
   playBoldImage?: (number | null) | Media;
+  topCollectionsTitle?: string | null;
+  /**
+   * Where the DISCOVER MORE button links.
+   */
+  topCollectionsHref?: string | null;
+  /**
+   * Drag rows to reorder cards. Untick Active to hide a card without deleting it.
+   */
+  topCollectionsItems?:
+    | {
+        /**
+         * Where the card links, and the caption shown under it.
+         */
+        category: number | Category;
+        /**
+         * Portrait lifestyle shot for the card. The card is skipped until this is uploaded.
+         */
+        image?: (number | null) | Media;
+        /**
+         * Optional. Leave empty to caption the card with the category name.
+         */
+        labelOverride?: string | null;
+        isActive?: boolean | null;
+        id?: string | null;
+      }[]
+    | null;
   childrensCornerTitle?: string | null;
   /**
    * Where the DISCOVER MORE button links.
@@ -1233,6 +1259,17 @@ export interface HomepageSelect<T extends boolean = true> {
         ctaHref?: T;
       };
   playBoldImage?: T;
+  topCollectionsTitle?: T;
+  topCollectionsHref?: T;
+  topCollectionsItems?:
+    | T
+    | {
+        category?: T;
+        image?: T;
+        labelOverride?: T;
+        isActive?: T;
+        id?: T;
+      };
   childrensCornerTitle?: T;
   childrensCornerHref?: T;
   childrensCornerItems?:

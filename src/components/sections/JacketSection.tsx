@@ -19,7 +19,10 @@ export default function JacketSection({ banner }: { banner: HomepageBanner }) {
       <div className="absolute inset-0 z-10 flex items-end justify-center bg-black/20 px-4 pb-8 sm:pb-12 lg:pb-[60px]">
         <div className="flex flex-col items-center gap-3 text-center sm:gap-4">
           {banner.heading && (
-            <h2 className="max-w-[280px] text-[22px] font-normal uppercase leading-[1.1] tracking-[0.01em] text-white sm:max-w-[400px] sm:text-[34px] lg:max-w-[500px] lg:text-[48px]">
+            // Figma: Bold 40 / 46.2 line-height / +1% tracking, on one line.
+            // The clamp scales that 40px down on narrow viewports so
+            // `whitespace-nowrap` can't overflow the section.
+            <h2 className="whitespace-nowrap text-[clamp(18px,4.6vw,40px)] font-bold uppercase leading-[1.155] tracking-[0.01em] text-white">
               {banner.heading}
             </h2>
           )}

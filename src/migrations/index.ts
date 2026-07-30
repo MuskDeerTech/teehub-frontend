@@ -3,6 +3,7 @@ import * as migration_watch_and_buy_items from './watch_and_buy_items';
 import * as migration_seo_meta_fields from './seo_meta_fields';
 import * as migration_childrens_corner from './childrens_corner';
 import * as migration_search_global from './search_global';
+import * as migration_top_collections from './top_collections';
 
 export const migrations = [
   {
@@ -29,5 +30,10 @@ export const migrations = [
     up: migration_search_global.up,
     down: migration_search_global.down,
     name: 'search_global'
+  },
+  {
+    up: migration_top_collections.up,
+    down: migration_top_collections.down,
+    name: 'top_collections'
   },
 ];

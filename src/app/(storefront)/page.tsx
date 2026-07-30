@@ -3,6 +3,7 @@ import LatestDrops from "@/components/sections/LatestDrops";
 import WatchAndBuy from "@/components/sections/WatchAndBuy";
 import HoodiesBanner from "@/components/sections/HoodiesBanner";
 import JacketSection from "@/components/sections/JacketSection";
+import TopCollections from "@/components/sections/TopCollections";
 import FootballHoodies from "@/components/sections/FootballHoodies";
 import PlayBoldBanner from "@/components/sections/PlayBoldBanner";
 import PoloShirts from "@/components/sections/PoloShirts";
@@ -47,8 +48,11 @@ export default async function Home() {
       <Hero hero={hero} />
       <LatestDrops />
       <WatchAndBuy />
-      <HoodiesBanner banner={banner1} />
+      {/* Banner 2 (jackets) now leads, then Top Collections, then Banner 1 —
+          Banner 1 keeps its CMS slot but holds the new artwork. */}
       <JacketSection banner={banner2} />
+      <TopCollections />
+      <HoodiesBanner banner={banner1} />
       <FootballHoodies category={categorySectionOne} />
       <PlayBoldBanner banner={banner3} />
       <PoloShirts category={categorySectionTwo} />

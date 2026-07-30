@@ -37,6 +37,18 @@ export type HomepageWatchAndBuyItem = {
   video: string;
 };
 
+export type HomepageTopCollectionItem = {
+  label: string;
+  href: string;
+  image: string;
+};
+
+export type HomepageTopCollections = {
+  title: string;
+  discoverHref: string;
+  items: HomepageTopCollectionItem[];
+};
+
 export type HomepageChildrensCornerItem = {
   name: string;
   href: string;
@@ -235,6 +247,51 @@ export async function getHomepageBanners(): Promise<
       image: mediaUrl(homepage.banner3?.image) ?? mediaUrl(homepage.playBoldImage),
     },
   ];
+}
+
+export async function getHomepageTopCollections(): Promise<HomepageTopCollections> {
+  const payload = await getPayload({ config });
+  const homepage = (await payload.findGlobal({
+    slug: "homepage",
+    depth: 1,
+  })) as {
+    topCollectionsTitle?: string | null;
+    topCollectionsHref?: string | null;
+    topCollectionsItems?:
+      | {
+          category?: number | CategoryDoc | null;
+          image?: number | Media | null;
+          labelOverride?: string | null;
+          isActive?: boolean | null;
+        }[]
+      | null;
+  };
+
+  const items = (homepage.topCollectionsItems ?? [])
+    .filter((item) => item.isActive !== false)
+    .map((item): HomepageTopCollectionItem | null => {
+      const image = mediaUrl(item.image);
+      const category =
+        typeof item.category === "object" && item.category !== null
+          ? item.category
+          : null;
+      // A card with no artwork or no resolvable category has nothing to show,
+      // so it's dropped rather than rendered as an empty tile.
+      if (!image || !category) return null;
+
+      return {
+        label: textOr(item.labelOverride, category.name),
+        href: `/category/${category.slug}`,
+        image,
+      };
+    })
+    .filter((item): item is HomepageTopCollectionItem => Boolean(item));
+
+  return {
+    title: textOr(homepage.topCollectionsTitle, "Top Collections"),
+    discoverHref: textOr(homepage.topCollectionsHref, "/all/"),
+    items,
+  };
 }
 
 export async function getHomepageChildrensCorner(): Promise<HomepageChildrensCorner> {

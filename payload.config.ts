@@ -1730,6 +1730,75 @@ const HomePage: GlobalConfig = {
           ],
         },
         {
+          label: "Top Collections",
+          description:
+            "Category cards shown between Banner 2 and Banner 1. The section is hidden while there are no active cards.",
+          fields: [
+            {
+              name: "topCollectionsTitle",
+              label: "Section Title",
+              type: "text",
+              defaultValue: "Top Collections",
+            },
+            {
+              name: "topCollectionsHref",
+              label: "Discover More Link",
+              type: "text",
+              defaultValue: "/all/",
+              admin: {
+                description: "Where the DISCOVER MORE button links.",
+              },
+            },
+            {
+              name: "topCollectionsItems",
+              label: "Collection Cards",
+              type: "array",
+              labels: { singular: "Collection Card", plural: "Collection Cards" },
+              admin: {
+                description:
+                  "Drag rows to reorder cards. Untick Active to hide a card without deleting it.",
+              },
+              fields: [
+                {
+                  name: "category",
+                  type: "relationship",
+                  relationTo: "categories",
+                  required: true,
+                  admin: {
+                    description:
+                      "Where the card links, and the caption shown under it.",
+                  },
+                },
+                {
+                  name: "image",
+                  label: "Card Image",
+                  type: "upload",
+                  relationTo: "media",
+                  admin: {
+                    description:
+                      "Portrait lifestyle shot for the card. The card is skipped until this is uploaded.",
+                  },
+                },
+                {
+                  name: "labelOverride",
+                  label: "Label Override",
+                  type: "text",
+                  admin: {
+                    description:
+                      "Optional. Leave empty to caption the card with the category name.",
+                  },
+                },
+                {
+                  name: "isActive",
+                  label: "Active",
+                  type: "checkbox",
+                  defaultValue: true,
+                },
+              ],
+            },
+          ],
+        },
+        {
           label: "Children's Corner",
           description:
             "Character category cards shown at the bottom of the homepage. The section is hidden while there are no active cards.",
