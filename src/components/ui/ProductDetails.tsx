@@ -372,14 +372,24 @@ export default function ProductDetails({
       ),
     },
     // Product copy wins; otherwise the store-wide default from the CMS.
+    // `whitespace-pre-line` keeps the line breaks the admin typed into the
+    // textarea — without it HTML collapses them into one run-on paragraph.
     {
       title: "Wash care",
-      body: <p>{product.washCare ?? settings.washCare}</p>,
+      body: (
+        <p className="whitespace-pre-line">
+          {product.washCare ?? settings.washCare}
+        </p>
+      ),
       skip: !product.washCare && !settings.washCare,
     },
     {
       title: "Shipping",
-      body: <p>{product.shippingInfo ?? settings.shipping}</p>,
+      body: (
+        <p className="whitespace-pre-line">
+          {product.shippingInfo ?? settings.shipping}
+        </p>
+      ),
       skip: !product.shippingInfo && !settings.shipping,
     },
   ]
@@ -394,7 +404,9 @@ export default function ProductDetails({
         zIndex: cartOpen ? -1 : "auto",
       }}
     >
-      <div className="mx-auto grid w-full grid-cols-1 gap-3 px-3 py-4 lg:items-start lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(420px,420px)] lg:py-3 lg:px-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(650px,650px)]">
+      {/* Gallery columns run 1.55:1 — the design's big lead image beside a
+          narrower stack, measured off the Figma frame. */}
+      <div className="mx-auto grid w-full grid-cols-1 gap-3 px-3 py-4 lg:items-start lg:grid-cols-[minmax(0,1.55fr)_minmax(0,1fr)_minmax(420px,420px)] lg:py-3 lg:px-4 xl:grid-cols-[minmax(0,1.55fr)_minmax(0,1fr)_minmax(650px,650px)]">
         {/* Mobile/tablet gallery — horizontal swipe before the product info. */}
         {gallery.length > 0 && (
           <div className="lg:hidden">
