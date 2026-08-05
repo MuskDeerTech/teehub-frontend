@@ -316,7 +316,7 @@ export default function CheckoutPaymentPage() {
           >
             <div className="flex items-center gap-3">
               <Image
-                src="/images/card-logo/rupay-logo.png"
+                src="/images/card-logo/Rupay-logo.svg"
                 alt="RuPay"
                 width={32}
                 height={22}
@@ -405,15 +405,15 @@ export default function CheckoutPaymentPage() {
                       {[
                         {
                           name: "PhonePe",
-                          logo: "/images/card-logo/phonepay-logo.png",
+                          logo: "/images/card-logo/phonepe-logo.svg",
                         },
                         {
                           name: "RuPay",
-                          logo: "/images/card-logo/rupay-logo.png",
+                          logo: "/images/card-logo/Rupay-logo.svg",
                         },
                         {
                           name: "GPay",
-                          logo: "/images/card-logo/gpay-logo.png",
+                          logo: "/images/card-logo/google.svg",
                         },
                       ].map((app) => (
                         <div

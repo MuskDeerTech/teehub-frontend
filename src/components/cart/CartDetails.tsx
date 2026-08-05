@@ -26,19 +26,22 @@ export const POLICY_ITEMS = [
   { Icon: IconBolt, label: "Fast\nDelivery" },
 ];
 
+// Filenames here must match `/public/images/card-logo/` exactly — note the
+// capital R in `Rupay-logo.svg` and that Google Pay's mark is `google.svg`.
+// Case matters on the Linux host even though Windows dev is forgiving.
 export const PAYMENT_METHODS = [
-  { name: "Visa", src: "/images/card-logo/visa-logo.png", scale: 0.95 },
-  { name: "RuPay", src: "/images/card-logo/rupay-logo.png", scale: 1 },
+  { name: "Visa", src: "/images/card-logo/visa-logo.svg", scale: 0.95 },
+  { name: "RuPay", src: "/images/card-logo/Rupay-logo.svg", scale: 1 },
   {
     name: "Mastercard",
-    src: "/images/card-logo/mastercard-logo.webp",
+    src: "/images/card-logo/mastercard-logo.svg",
     scale: 0.95,
   },
-  { name: "GPay", src: "/images/card-logo/gpay-logo.png", scale: 1.12 },
-  { name: "Paytm", src: "/images/card-logo/paytm-logo.jpg", scale: 1.12 },
+  { name: "GPay", src: "/images/card-logo/google.svg", scale: 1.12 },
+  { name: "Paytm", src: "/images/card-logo/paytm-logo.svg", scale: 1.12 },
   {
     name: "PhonePe",
-    src: "/images/card-logo/phonepay-logo.png",
+    src: "/images/card-logo/phonepe-logo.svg",
     scale: 0.9,
   },
 ];
