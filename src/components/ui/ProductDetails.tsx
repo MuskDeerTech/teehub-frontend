@@ -1,32 +1,46 @@
 "use client";
 
 import Image from "next/image";
-import BookmarkButton from "@/components/ui/BookmarkButton";
-import SizeGuideModal from "@/components/ui/SizeGuideModal";
-import { productBookmarkId } from "@/lib/bookmarks";
-import { useCart } from "@/components/cart/CartContext";
-import type { ImageFit, Product } from "@/lib/products";
-import { fitTransform, formatPriceRange } from "@/lib/products";
+import { useRouter } from "next/navigation";
 import {
+  useEffect,
   useMemo,
   useState,
-  useRef,
-  useEffect,
   useSyncExternalStore,
+  type ReactNode,
 } from "react";
 import { createPortal } from "react-dom";
 import {
-  IconShare3,
   IconBrandWhatsapp,
-  IconBrandInstagram,
-  IconBrandFacebook,
-  IconLink,
+  IconRuler2,
+  IconStarFilled,
+  IconTruckDelivery,
 } from "@tabler/icons-react";
+import BookmarkButton from "@/components/ui/BookmarkButton";
+import SizeGuideModal from "@/components/ui/SizeGuideModal";
+import QuickAddModal from "@/components/ui/QuickAddModal";
+import OffersCard from "@/components/product/OffersCard";
+import ProductAccordion from "@/components/product/ProductAccordion";
+import { PrepaidBox, SocialProofChips } from "@/components/product/SocialProof";
+import { productBookmarkId } from "@/lib/bookmarks";
+import { useCart } from "@/components/cart/CartContext";
+import type { ImageFit, Product } from "@/lib/products";
+import {
+  defaultSize,
+  fitTransform,
+  formatPriceRange,
+  isSizeAvailable,
+  resolveDetailSizes,
+} from "@/lib/products";
+import type { ProductPageSettings } from "@/lib/productPage";
 
-const fallbackSizes = ["XS", "S", "M", "L", "XL", "XXL", "XXXL"];
-const tabs = ["details & description", "washcare", "shipping"] as const;
+/** Prices render with Indian grouping everywhere (₹1,200), matching the cart
+ *  and quick-add popup. */
+const inr = (n: number) => `₹${n.toLocaleString("en-IN")}`;
 
-type ProductTab = (typeof tabs)[number];
+const subscribeNoop = () => () => {};
+const getClientSnapshot = () => true;
+const getServerSnapshot = () => false;
 
 function getGallery(product: Product) {
   // CMS products carry their own gallery (uploaded in the Payload admin);
@@ -67,27 +81,27 @@ function getGallery(product: Product) {
   return [];
 }
 
-const inr = (n: number) => `₹${n}`;
+type GalleryEntry = { src: string; alt: string; fit?: ImageFit };
 
 // Shared viewport height for frozen left/right panels on desktop.
 const panelHeightClass = "lg:h-[calc(100dvh-94px)]";
 const stickyPanelClass = `lg:sticky lg:top-[84px] lg:self-start relative z-0 ${panelHeightClass}`;
-const subscribeNoop = () => () => {};
-const getClientSnapshot = () => true;
-const getServerSnapshot = () => false;
 
 function GalleryImage({
   image,
   product,
   priority = false,
   fill = false,
+  badge,
   onPreview,
 }: {
-  image: { src: string; alt: string; fit?: ImageFit };
+  image: GalleryEntry;
   product: Product;
   priority?: boolean;
   /** Full viewport-height card on desktop (frozen side panels + middle scroll steps). */
   fill?: boolean;
+  /** Social-proof overlay, only ever on the lead image. */
+  badge?: string;
   onPreview?: () => void;
 }) {
   return (
@@ -106,11 +120,11 @@ function GalleryImage({
             }
           : undefined
       }
-      className={
+      className={`relative ${
         fill
           ? `aspect-[3/4] max-h-[650px] overflow-hidden rounded-lg lg:aspect-auto lg:max-h-none lg:w-full ${panelHeightClass}${onPreview ? " cursor-pointer transition-opacity hover:opacity-95" : ""}`
           : `aspect-[3/4] max-h-[650px] overflow-hidden rounded-lg${onPreview ? " cursor-pointer transition-opacity hover:opacity-95" : ""}`
-      }
+      }`}
       style={{ backgroundColor: product.bg }}
     >
       <Image
@@ -122,6 +136,12 @@ function GalleryImage({
         className="pointer-events-none h-full w-full origin-center object-cover"
         style={fitTransform(image.fit)}
       />
+
+      {badge && (
+        <span className="pointer-events-none absolute left-3 top-3 flex items-center gap-1.5 rounded-md bg-black/75 px-2.5 py-1.5 text-[10px] font-semibold text-white backdrop-blur-sm">
+          {badge}
+        </span>
+      )}
     </div>
   );
 }
@@ -133,7 +153,7 @@ function ImageLightbox({
   onClose,
   onChangeIndex,
 }: {
-  images: { src: string; alt: string; fit?: ImageFit }[];
+  images: GalleryEntry[];
   index: number;
   product: Product;
   onClose: () => void;
@@ -244,67 +264,42 @@ function ImageLightbox({
   );
 }
 
-export default function ProductDetails({ product }: { product: Product }) {
-  const { addItem, cartOpen } = useCart();
-  const productSizes = product.detailSizes?.length
-    ? product.detailSizes
-    : fallbackSizes;
+export default function ProductDetails({
+  product,
+  settings,
+  deliveryDate,
+  reviews,
+}: {
+  product: Product;
+  settings: ProductPageSettings;
+  /** Pre-formatted on the server so the estimate can't shift with the client clock. */
+  deliveryDate: string;
+  /** Server-rendered Ratings & Reviews block, slotted under the gallery. */
+  reviews?: ReactNode;
+}) {
+  const router = useRouter();
+  const { addItem, closeCart, cartOpen } = useCart();
+
+  const sizes = useMemo(() => resolveDetailSizes(product), [product]);
+  const [selectedSize, setSelectedSize] = useState(() => defaultSize(sizes));
   const [quantity, setQuantity] = useState(1);
-  const [selectedSize, setSelectedSize] = useState(productSizes[0]);
-  const [nameValue, setNameValue] = useState("MRUDULA");
-  const [numberValue, setNumberValue] = useState("07");
   const [showGuide, setShowGuide] = useState(false);
-  const [copied, setCopied] = useState(false);
-  const [showShare, setShowShare] = useState(false);
-  const shareRef = useRef<HTMLDivElement>(null);
-  const mobileGalleryRef = useRef<HTMLDivElement>(null);
-  const shareUrl = typeof window !== "undefined" ? window.location.href : "";
-
-  const copyLink = async () => {
-    try {
-      await navigator.clipboard.writeText(shareUrl);
-
-      setCopied(true);
-      setShowShare(false);
-
-      setTimeout(() => {
-        setCopied(false);
-      }, 2500);
-    } catch (error) {
-      console.error(error);
-    }
-  };
-
-  const [activeTab, setActiveTab] = useState<ProductTab>(
-    "details & description",
-  );
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const [mobileGalleryIndex, setMobileGalleryIndex] = useState(0);
+  // Which button opened the Name & Number popup — Buy Now carries on to
+  // checkout once the customisation is captured, Add to Cart just closes.
+  const [nameIntent, setNameIntent] = useState<"cart" | "buy" | null>(null);
 
   const gallery = useMemo(() => getGallery(product), [product]);
   const openPreview = (index: number) => setLightboxIndex(index);
-  const handleMobileGalleryScroll = () => {
-    const el = mobileGalleryRef.current;
-    if (!el) return;
+
+  const handleMobileGalleryScroll = (
+    event: React.UIEvent<HTMLDivElement>,
+  ) => {
+    const el = event.currentTarget;
     const nextIndex = Math.round(el.scrollLeft / el.clientWidth);
     setMobileGalleryIndex(Math.min(Math.max(nextIndex, 0), gallery.length - 1));
   };
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        shareRef.current &&
-        !shareRef.current.contains(event.target as Node)
-      ) {
-        setShowShare(false);
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, []);
 
   // A genuine discount shows the sale price with the struck-through MRP +
   // badge. Otherwise the catalog range renders instead — for variable products
@@ -314,9 +309,82 @@ export default function ProductDetails({ product }: { product: Product }) {
     product.price != null &&
     product.originalPrice != null &&
     product.originalPrice > product.price;
-  const savedAmount = hasSale
-    ? (product.originalPrice as number) - (product.price as number)
-    : null;
+
+  const unitPrice = product.price ?? product.priceMin;
+  const unitMrp = product.originalPrice ?? product.price ?? product.priceMin;
+  const selectedInStock = sizes.some(
+    (size) => size.label === selectedSize && isSizeAvailable(size),
+  );
+
+  const goToCheckout = () => {
+    // addItem opens the drawer; Buy Now skips it and heads straight to the
+    // address step instead.
+    closeCart();
+    router.push("/checkout/address");
+  };
+
+  /** Add to Cart / Buy Now. Jerseys detour through the popup first so the name
+   *  and number are captured before the line is created. */
+  const handlePurchase = (intent: "cart" | "buy") => {
+    if (product.allowCustomName) {
+      setNameIntent(intent);
+      return;
+    }
+
+    addItem({
+      id: product.slug,
+      name: product.title,
+      image: product.image ?? gallery[0]?.src ?? "",
+      size: selectedSize,
+      availableSizes: sizes.filter(isSizeAvailable).map((size) => size.label),
+      quantity,
+      price: unitPrice,
+      mrp: unitMrp,
+    });
+
+    if (intent === "buy") goToCheckout();
+  };
+
+  const accordionSections = [
+    {
+      title: "Details & Description",
+      body: (
+        <>
+          <p className="font-medium text-[#111]">Details</p>
+          {(product.details?.length
+            ? product.details
+            : [
+                product.type ?? "Premium apparel",
+                product.sleeve ? `${product.sleeve} sleeve` : "Comfort fit",
+                product.colors?.length
+                  ? `Colours: ${product.colors.join(", ")}`
+                  : "Designed for everyday wear",
+              ]
+          ).map((line) => (
+            <p key={line}>{line}</p>
+          ))}
+          <p className="mt-3 font-medium text-[#111]">Description</p>
+          <p>
+            {product.description ??
+              `${product.title} is built for a clean TeeHub fit with a sharp finish and comfortable daily wear.`}
+          </p>
+        </>
+      ),
+    },
+    // Product copy wins; otherwise the store-wide default from the CMS.
+    {
+      title: "Wash care",
+      body: <p>{product.washCare ?? settings.washCare}</p>,
+      skip: !product.washCare && !settings.washCare,
+    },
+    {
+      title: "Shipping",
+      body: <p>{product.shippingInfo ?? settings.shipping}</p>,
+      skip: !product.shippingInfo && !settings.shipping,
+    },
+  ]
+    .filter((section) => !section.skip)
+    .map(({ title, body }) => ({ title, body }));
 
   return (
     <div
@@ -327,21 +395,24 @@ export default function ProductDetails({ product }: { product: Product }) {
       }}
     >
       <div className="mx-auto grid w-full grid-cols-1 gap-3 px-3 py-4 lg:items-start lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(420px,420px)] lg:py-3 lg:px-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(650px,650px)]">
-        {/* Mobile/tablet gallery — horizontal swipe before product info. */}
+        {/* Mobile/tablet gallery — horizontal swipe before the product info. */}
         {gallery.length > 0 && (
           <div className="lg:hidden">
             <div
-              ref={mobileGalleryRef}
               onScroll={handleMobileGalleryScroll}
               className="scrollbar-hide flex snap-x snap-mandatory overflow-x-auto"
             >
               {gallery.map((image, index) => (
-                <div key={`${image.src}-${index}`} className="w-full shrink-0 snap-center">
+                <div
+                  key={`${image.src}-${index}`}
+                  className="w-full shrink-0 snap-center"
+                >
                   <div className="relative">
                     <GalleryImage
                       image={image}
                       product={product}
                       priority={index === 0}
+                      badge={index === 0 ? product.conversionsBadge : undefined}
                       onPreview={() => openPreview(index)}
                     />
                     {gallery.length > 1 && (
@@ -364,6 +435,7 @@ export default function ProductDetails({ product }: { product: Product }) {
               product={product}
               priority
               fill
+              badge={product.conversionsBadge}
               onPreview={() => openPreview(0)}
             />
           )}
@@ -383,35 +455,51 @@ export default function ProductDetails({ product }: { product: Product }) {
           ))}
         </div>
 
-        {/* Frozen right — product info */}
-        <div
-          className={`flex min-h-0 min-w-0 flex-col gap-2 pb-2 lg:overflow-hidden lg:pb-0 ${stickyPanelClass}`}
-        >
-          <div className="shrink-0 rounded-lg border border-[#d8d8d8] bg-white p-4">
+        {/* Info panel — pinned opposite. Capped to the viewport with its own
+            hidden-bar scroll, because the offers card and accordions make it
+            taller than the old panel; without the cap its lower half would be
+            unreachable once it pins. */}
+        <div className="flex min-w-0 flex-col gap-3 lg:sticky lg:top-[84px] lg:max-h-[calc(100dvh-100px)] lg:self-start lg:overflow-y-auto lg:[scrollbar-width:none] lg:[&::-webkit-scrollbar]:hidden">
+          <div className="rounded-xl border border-[#e2e2e2] bg-white p-4">
             <div className="flex items-start justify-between gap-3">
-              <div className="flex min-w-0 flex-1 items-center gap-2">
-                <h1 className="text-[24px] font-medium leading-tight text-black">
-                  {product.title}
-                </h1>
-                <BookmarkButton
-                  id={productBookmarkId(product.slug)}
-                  className="shrink-0 text-[#111] transition-transform duration-200 hover:scale-110"
-                />
-              </div>
+              <h1 className="min-w-0 text-[20px] font-semibold leading-snug text-black">
+                {product.title}
+              </h1>
+              <BookmarkButton
+                id={productBookmarkId(product.slug)}
+                className="mt-1 shrink-0 text-[#111] transition-transform duration-200 hover:scale-110"
+              />
+            </div>
+
+            <div className="mt-2 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+              <span className="flex flex-wrap items-baseline gap-2">
+                <span className="text-[26px] font-bold leading-none text-[#111]">
+                  {hasSale ? inr(unitPrice) : formatPriceRange(product)}
+                </span>
+
+                {hasSale && product.originalPrice != null && (
+                  <span className="text-[14px] font-medium text-[#9a9a9a] line-through">
+                    {inr(product.originalPrice)}
+                  </span>
+                )}
+
+                {hasSale && product.discountPercent != null && (
+                  <span className="text-[12px] font-semibold text-[#6b6b6b]">
+                    -{product.discountPercent}%
+                  </span>
+                )}
+              </span>
 
               {product.rating != null && (
-                <span className="flex shrink-0 items-center gap-1 text-[20px] text-black">
-                  <svg
-                    viewBox="0 0 20 20"
-                    fill="#f5b301"
-                    className="h-7 w-3.5"
+                <span className="flex shrink-0 items-center gap-1 text-[13px] text-[#111]">
+                  <IconStarFilled
+                    size={14}
                     aria-hidden="true"
-                  >
-                    <path d="M10 1.5l2.6 5.27 5.82.85-4.21 4.1.99 5.8L10 14.77l-5.2 2.75.99-5.8L1.58 7.62l5.82-.85L10 1.5z" />
-                  </svg>
-                  <span className="font-medium">{product.rating}</span>
+                    className="text-[#f5b301]"
+                  />
+                  <span className="font-semibold">{product.rating}</span>
                   {product.reviewCount != null && (
-                    <span className="text-gray-500">
+                    <span className="text-[#8a8a8a]">
                       ({product.reviewCount})
                     </span>
                   )}
@@ -419,345 +507,166 @@ export default function ProductDetails({ product }: { product: Product }) {
               )}
             </div>
 
-            <div className="mt-3 flex flex-wrap items-center gap-2">
-              <span className="text-[25px] font-bold leading-none text-[#f97316]">
-                {hasSale
-                  ? inr(product.price as number)
-                  : formatPriceRange(product)}
-              </span>
-
-              {hasSale && product.originalPrice != null && (
-                <span className="text-base font-medium text-gray-400 line-through">
-                  {inr(product.originalPrice)}
-                </span>
-              )}
-
-              {hasSale && product.discountPercent != null && (
-                <span className="rounded bg-[#f97316] px-1.5 py-0.5 text-[11px] font-semibold text-white">
-                  -{product.discountPercent}%
-                </span>
-              )}
+            <div className="mt-1 flex items-center justify-between gap-3 text-[10px] text-[#9a9a9a]">
+              <span>{settings.taxNote}</span>
+              {product.sku && <span>SKU: {product.sku}</span>}
             </div>
 
-            {savedAmount != null && savedAmount > 0 && (
-              <p className="mt-0.5 text-[12px] text-green-600">
-                You saved {inr(savedAmount)}
-              </p>
-            )}
+            <SocialProofChips chips={product.socialProof ?? []} />
 
-            <div className="mt-5">
-              <div className="mb-2 flex w-full justify-start">
+            <PrepaidBox
+              price={product.prepaidPrice}
+              note={product.prepaidNote}
+              badge={product.prepaidBadge}
+            />
+
+            {/* Size */}
+            <div className="mt-4">
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-[13px] font-medium text-[#111]">Size</span>
                 <button
                   type="button"
                   onClick={() => setShowGuide(true)}
-                  className="rounded bg-[#e9e9e9] px-3 py-1.5 text-[13px] font-medium text-black transition-colors hover:bg-[#dedede]"
+                  className="flex cursor-pointer items-center gap-1 text-[11px] font-medium text-[#111] underline underline-offset-2 hover:text-[#f36d43]"
                 >
+                  <IconRuler2 size={14} stroke={1.8} aria-hidden="true" />
                   Size Guide
                 </button>
               </div>
 
-              <div className="grid grid-cols-4 gap-2 sm:grid-cols-5 lg:grid-cols-7">
-                {productSizes.map((size) => (
-                  <button
-                    key={size}
-                    type="button"
-                    onClick={() => setSelectedSize(size)}
-                    className={`min-h-[30px] rounded-full border px-2 py-1 text-[11px] transition ${
-                      selectedSize === size
-                        ? "border-black bg-black text-white"
-                        : "border-[#d6d6d6] bg-white text-black hover:border-black"
-                    }`}
-                  >
-                    {size}
-                  </button>
-                ))}
+              <div className="mt-2 flex flex-wrap gap-2">
+                {sizes.map((size) => {
+                  const available = isSizeAvailable(size);
+                  const active = selectedSize === size.label;
+                  return (
+                    <button
+                      key={size.label}
+                      type="button"
+                      disabled={!available}
+                      aria-label={
+                        available ? size.label : `${size.label} — out of stock`
+                      }
+                      onClick={() => setSelectedSize(size.label)}
+                      className={`min-w-[42px] rounded-md border px-3 py-2 text-[12px] font-medium transition ${
+                        !available
+                          ? "cursor-not-allowed border-[#ececec] bg-[#f4f4f4] text-[#bdbdbd]"
+                          : active
+                            ? "border-black bg-black text-white"
+                            : "cursor-pointer border-[#d6d6d6] bg-white text-black hover:border-black"
+                      }`}
+                    >
+                      {size.label}
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
-            <div
-              className={`mt-3 grid gap-5 max-[480px]:gap-2.5 ${
-                product.allowCustomName ? "grid-cols-2" : "grid-cols-1"
-              }`}
-            >
-              <div>
-                <div className="mb-2 flex h-[22px] items-center justify-center rounded bg-[#d9d9d9] px-2 text-center text-[10px] leading-none text-black max-[480px]:text-[9px]">
-                  Quantity
-                </div>
+            {/* Quantity + delivery estimate + save/WhatsApp */}
+            <div className="mt-4">
+              <span className="text-[13px] font-medium text-[#111]">
+                Quantity
+              </span>
 
-                <div className="flex h-[26px] items-center justify-between rounded bg-white px-2 ring-1 ring-[#e5e5e5]">
+              <div className="mt-2 flex items-center gap-2.5">
+                <div className="flex h-11 shrink-0 items-center gap-3 rounded-md border border-[#d6d6d6] px-3">
                   <button
                     type="button"
                     onClick={() => setQuantity((prev) => Math.max(1, prev - 1))}
                     aria-label="Decrease quantity"
-                    className="flex h-4 w-4 items-center justify-center rounded-full bg-[#5a5555] text-[14px] leading-none text-white"
+                    className="cursor-pointer text-[18px] leading-none text-[#555] hover:text-black"
                   >
-                    -
+                    −
                   </button>
-
-                  <span className="text-[18px] font-medium leading-none text-black">
+                  <span className="min-w-4 text-center text-[15px] font-semibold text-black">
                     {quantity}
                   </span>
-
                   <button
                     type="button"
                     onClick={() => setQuantity((prev) => prev + 1)}
                     aria-label="Increase quantity"
-                    className="flex h-4 w-4 items-center justify-center rounded-sm bg-[#5a5555] text-[16px] font-light leading-none text-white"
+                    className="cursor-pointer text-[18px] leading-none text-[#555] hover:text-black"
                   >
                     +
                   </button>
                 </div>
-              </div>
 
-              {product.allowCustomName && (
-                <div>
-                  <div className="mb-2 flex h-[22px] items-center justify-center whitespace-nowrap rounded bg-[#d9d9d9] px-2 text-center text-[10px] leading-none text-black max-[480px]:text-[9px]">
-                    Name and T-shirt Number
-                  </div>
-
-                  <div className="flex h-[26px] gap-2 max-[480px]:gap-1.5">
-                    <input
-                      type="text"
-                      placeholder="NAME"
-                      value={nameValue}
-                      onChange={(e) => setNameValue(e.target.value)}
-                      className="h-full min-w-0 flex-1 rounded bg-white px-2 text-center text-[12px] uppercase leading-none text-black outline-none ring-1 ring-[#e5e5e5] focus:ring-black max-[480px]:px-1.5 max-[480px]:text-[11px]"
+                <div className="flex min-w-0 flex-1 flex-col leading-tight">
+                  <span className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-[0.3px] text-[#0f7a45]">
+                    {settings.deliveryLabel}
+                    <IconTruckDelivery
+                      size={14}
+                      stroke={1.8}
+                      aria-hidden="true"
                     />
-
-                    <input
-                      type="text"
-                      inputMode="numeric"
-                      placeholder="07"
-                      value={numberValue}
-                      onChange={(e) => setNumberValue(e.target.value)}
-                      className="h-full w-[46px] shrink-0 rounded bg-white text-center text-[12px] leading-none text-black outline-none ring-1 ring-[#e5e5e5] focus:ring-black max-[480px]:w-[38px] max-[480px]:text-[11px]"
-                    />
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <div className="mt-4 flex h-[58px] gap-3 max-[480px]:mt-4 max-[480px]:h-[54px] max-[480px]:gap-2">
-              <button
-                type="button"
-                onClick={() =>
-                  addItem({
-                    id: product.slug,
-                    name: product.title,
-                    image: product.image ?? gallery[0]?.src ?? "",
-                    size: selectedSize,
-                    quantity,
-                    price: product.price ?? product.priceMin,
-                    mrp:
-                      product.originalPrice ??
-                      product.price ??
-                      product.priceMin,
-                    customName:
-                      product.allowCustomName && (nameValue || numberValue)
-                        ? `${nameValue.trim()} ${numberValue.trim()}`.trim()
-                        : undefined,
-                  })
-                }
-                className="flex min-w-0 flex-1 items-center justify-center gap-3 rounded-[10px] bg-[#f36d43] px-4 text-white transition-opacity hover:opacity-90 max-[480px]:gap-2 max-[480px]:px-3"
-              >
-                <span className="flex min-w-0 flex-col items-start leading-none">
-                  <span className="whitespace-nowrap text-[13px] font-semibold uppercase tracking-[1px] max-[480px]:text-[11px]">
-                    ADD TO CART
                   </span>
+                  <span className="truncate text-[10px] text-[#8a8a8a]">
+                    Get it by {deliveryDate}
+                  </span>
+                </div>
 
-                  {product.freeShippingRemaining != null && (
-                    <span className="mt-1.5 whitespace-nowrap text-[10px] font-normal max-[480px]:text-[9px]">
-                      {inr(product.freeShippingRemaining)} to free shipping
-                    </span>
-                  )}
-                </span>
+                <BookmarkButton
+                  id={productBookmarkId(product.slug)}
+                  variant="heart"
+                  className="flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-md border border-[#d6d6d6] text-[#111] transition-colors hover:border-black"
+                />
 
-                <svg
-                  viewBox="0 0 64 64"
-                  fill="currentColor"
-                  className="h-9 w-9 shrink-0 max-[480px]:h-8 max-[480px]:w-8"
-                  aria-hidden="true"
-                >
-                  <path d="M6 8h9.5l5.9 29.5a6 6 0 0 0 5.9 4.8h22.3a6 6 0 0 0 5.7-4.1L62 18H20.2l-1.4-7A4 4 0 0 0 14.9 8H6z" />
-                  <circle cx="28" cy="53" r="5.5" />
-                  <circle cx="49" cy="53" r="5.5" />
-                </svg>
-              </button>
-
-              <div ref={shareRef} className="relative">
-                <button
-                  type="button"
-                  onClick={() => setShowShare((prev) => !prev)}
-                  aria-label="Share Product"
-                  className="flex h-full w-[46px] shrink-0 items-center justify-center rounded-[10px] border border-[#c8c8c8] bg-[#f4f4f4] text-black transition-colors hover:border-black max-[480px]:w-[42px]"
-                >
-                  <IconShare3 size={22} stroke={1.8} />
-                </button>
-
-                {showShare && (
-                  <div className="absolute right-0 top-[64px] z-50 overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl">
-                    <a
-                      href={`https://wa.me/?text=${encodeURIComponent(shareUrl)}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      onClick={() => setShowShare(false)}
-                      className="flex items-center gap-2 px-4 py-3 text-sm font-medium transition-colors hover:bg-[#f6f6f6]"
-                    >
-                      <span className="flex h-7 w-8 items-center justify-center rounded-full bg-green-100">
-                        <IconBrandWhatsapp
-                          size={18}
-                          className="text-green-600"
-                        />
-                      </span>
-
-                      <span>WhatsApp</span>
-                    </a>
-
-                    <a
-                      href="https://instagram.com/teehubstore"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      onClick={() => setShowShare(false)}
-                      className="flex items-center gap-2 px-4 py-3 text-sm font-medium transition-colors hover:bg-[#f6f6f6]"
-                    >
-                      <span className="flex h-7 w-8 items-center justify-center rounded-full bg-pink-100">
-                        <IconBrandInstagram
-                          size={18}
-                          className="text-pink-600"
-                        />
-                      </span>
-
-                      <span>Instagram</span>
-                    </a>
-
-                    <a
-                      href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(
-                        shareUrl,
-                      )}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-2 px-4 py-3 text-sm font-medium transition-all hover:bg-[#f6f6f6]"
-                    >
-                      <span className="flex h-7 w-8 items-center justify-center rounded-full bg-blue-100">
-                        <IconBrandFacebook
-                          size={18}
-                          className="text-blue-600"
-                        />
-                      </span>
-
-                      <span>Facebook</span>
-                    </a>
-
-                    <button
-                      type="button"
-                      onClick={copyLink}
-                      className="flex items-center cursor-pointer gap-2 px-4 py-3 text-sm font-medium transition-colors hover:bg-[#f6f6f6]"
-                    >
-                      <span className="flex h-7 w-8 items-center justify-center rounded-full bg-black-100">
-                        <IconLink size={18} className="text-orange-600" />
-                      </span>
-
-                      <span>Copy Link</span>
-                    </button>
-                  </div>
+                {settings.whatsappNumber && (
+                  <a
+                    href={`https://wa.me/${settings.whatsappNumber}?text=${encodeURIComponent(
+                      `Hi! I'd like to know more about ${product.title}.`,
+                    )}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label="Ask about this product on WhatsApp"
+                    className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md bg-[#25d366] text-white transition-opacity hover:opacity-90"
+                  >
+                    <IconBrandWhatsapp size={22} stroke={1.9} />
+                  </a>
                 )}
               </div>
             </div>
-            <div className="mt-2 space-y-1.5 text-[12px] leading-5 text-black">
-              <p>
-                <strong>Highly stretchable fabric.</strong> Order by your{" "}
-                <button
-                  type="button"
-                  onClick={() => setShowGuide(true)}
-                  className="font-medium text-blue-600 underline"
-                >
-                  waist size
-                </button>{" "}
-                it&apos;ll hug right.
-              </p>
 
-              {product.fitPercent != null && (
-                <p className="flex flex-wrap items-center gap-1">
-                  <strong>Real-buyer size fit:</strong>{" "}
-                  <span className="rounded-full bg-[#dff4eb] px-2 py-1 text-[11px] font-medium text-[#008c45]">
-                    All sizes {product.fitPercent}% fit
-                    {product.fitReviews != null && (
-                      <span> ({product.fitReviews} reviews)</span>
-                    )}
-                  </span>
-                </p>
-              )}
+            {/* CTAs */}
+            <div className="mt-4 grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                disabled={!selectedInStock}
+                onClick={() => handlePurchase("cart")}
+                className="flex h-12 items-center justify-center rounded-md bg-black text-[13px] font-semibold uppercase tracking-[0.5px] text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:bg-[#c9c9c9]"
+              >
+                {selectedInStock ? "Add to Cart" : "Out of Stock"}
+              </button>
 
-              <p className="text-gray-600">
-                Every piece is hygiene-sealed. COD all India{" "}
-                <span className="font-medium text-black">
-                  pay only when it reaches you.
-                </span>
-              </p>
-
-              {product.prepaidPromo && (
-                <p className="font-medium text-green-600">
-                  {product.prepaidPromo}
-                </p>
-              )}
+              <button
+                type="button"
+                disabled={!selectedInStock}
+                onClick={() => handlePurchase("buy")}
+                className="flex h-12 items-center justify-center rounded-md border border-black bg-white text-[13px] font-semibold uppercase tracking-[0.5px] text-black transition-colors hover:bg-[#f6f6f6] disabled:cursor-not-allowed disabled:border-[#d6d6d6] disabled:text-[#bdbdbd]"
+              >
+                Buy Now
+              </button>
             </div>
           </div>
 
-          <div className="flex min-h-0 flex-col overflow-hidden rounded-lg border border-[#d8d8d8] bg-white lg:flex-1">
-            <div className="grid shrink-0 grid-cols-3 border-b">
-              {tabs.map((tab) => (
-                <button
-                  key={tab}
-                  type="button"
-                  onClick={() => setActiveTab(tab)}
-                  className={`min-h-[36px] px-2 py-2 text-center text-[11px] capitalize ${
-                    activeTab === tab
-                      ? "border-b-2 border-black font-medium"
-                      : ""
-                  }`}
-                >
-                  {tab}
-                </button>
-              ))}
-            </div>
+          <OffersCard
+            title={settings.offersTitle}
+            offers={settings.offers}
+            trustBadges={settings.trustBadges}
+          />
 
-            <div className="max-h-[145px] overflow-y-auto overscroll-contain px-3 pt-3 pb-2 text-[11px] leading-normal text-gray-600 lg:max-h-none lg:flex-1">
-              {activeTab === "details & description" && (
-                <>
-                  <p className="font-medium text-black">Details</p>
-                  {(product.details?.length
-                    ? product.details
-                    : [
-                        product.type ?? "Premium apparel",
-                        product.sleeve
-                          ? `${product.sleeve} sleeve`
-                          : "Comfort fit",
-                        product.colors?.length
-                          ? `Colours: ${product.colors.join(", ")}`
-                          : "Designed for everyday wear",
-                      ]
-                  ).map((line) => (
-                    <p key={line}>{line}</p>
-                  ))}
-                  <p className="mt-3 font-medium text-black">Description</p>
-                  <p>
-                    {product.description ??
-                      `${product.title} is built for a clean TeeHub fit with a sharp finish and comfortable daily wear.`}
-                  </p>
-                </>
-              )}
-
-              {activeTab === "washcare" && (
-                <p>Machine wash cold. Do not bleach.</p>
-              )}
-
-              {activeTab === "shipping" && (
-                <p>Standard delivery within 5-7 business days.</p>
-              )}
-            </div>
-          </div>
+          <ProductAccordion sections={accordionSections} />
         </div>
       </div>
+
+      {/* Ratings & Reviews — full width, outside the grid. Keeping it out of the
+          gallery column is what lets the middle column scroll freely: inside it,
+          the reviews would sit below a stack of viewport-tall images. */}
+      {reviews && (
+        <div className="mx-auto w-full max-w-[1600px] px-3 pb-4 lg:px-6">
+          {reviews}
+        </div>
+      )}
 
       {lightboxIndex !== null && (
         <ImageLightbox
@@ -771,11 +680,18 @@ export default function ProductDetails({ product }: { product: Product }) {
 
       {showGuide && <SizeGuideModal onClose={() => setShowGuide(false)} />}
 
-      
-        {copied && (
-        <div className="fixed bottom-6 left-1/2 z-[100] -translate-x-1/2 rounded-full bg-black px-4 py-2 text-sm font-medium text-white shadow-lg">
-          Link copied successfully ✓
-        </div>
+      {/* Name & Number is a popup now, the same one the listing cards use. */}
+      {nameIntent && (
+        <QuickAddModal
+          product={product}
+          unitPrice={unitPrice}
+          unitMrp={unitMrp}
+          lockedSize={selectedSize}
+          quantity={quantity}
+          ctaLabel={nameIntent === "buy" ? "Buy Now" : "Add to Cart"}
+          onAdded={nameIntent === "buy" ? goToCheckout : undefined}
+          onClose={() => setNameIntent(null)}
+        />
       )}
     </div>
   );

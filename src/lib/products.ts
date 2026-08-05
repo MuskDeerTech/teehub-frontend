@@ -233,6 +233,47 @@ export const poloShirts: ApparelProduct[] = [
 ];
 
 /**
+ * One size pill on the product page. `stock` of 0 renders the pill disabled —
+ * the shopper can see the size exists but can't pick it.
+ */
+export type DetailSize = {
+  label: string;
+  stock?: number;
+};
+
+/** A size is orderable unless the CMS explicitly says it's out of stock.
+ *  Sizes with no stock figure at all are treated as available, so a product
+ *  that was never stock-managed behaves exactly as it did before. */
+export function isSizeAvailable(size: DetailSize): boolean {
+  return size.stock == null || size.stock > 0;
+}
+
+/** Size pills shown when a product has none of its own. */
+export const FALLBACK_SIZES = ["XS", "S", "M", "L", "XL", "XXL", "XXXL"];
+
+/** A product's size pills, normalised. Shared by the detail page and the
+ *  quick-add popup so the two can never offer different sizes. */
+export function resolveDetailSizes(product: Product): DetailSize[] {
+  return product.detailSizes?.length
+    ? product.detailSizes
+    : FALLBACK_SIZES.map((label) => ({ label }));
+}
+
+/** The size to preselect: the first one actually in stock, falling back to the
+ *  first pill so there's always a selection even if everything is sold out. */
+export function defaultSize(sizes: DetailSize[]): string {
+  return (sizes.find(isSizeAvailable) ?? sizes[0])?.label ?? "";
+}
+
+/** Small pill under the price ("54 Jerseys Sold Today"). Editorial copy — see
+ *  the field notes in payload.config.ts for why it isn't computed. */
+export type SocialProofChip = {
+  icon: "fire" | "instagram" | "parcel" | "star";
+  text: string;
+  href?: string;
+};
+
+/**
  * Catalog product shown on a category listing page (the grid of cards).
  */
 export type Product = {
@@ -272,11 +313,19 @@ export type Product = {
   fitPercent?: number; // "All sizes 96% fit"
   fitReviews?: number; // "(50 reviews)"
   freeShippingRemaining?: number; // ₹ left to unlock free shipping, e.g. 330
-  detailSizes?: string[]; // size pills on the detail page (defaults to XS–XXXL)
+  detailSizes?: DetailSize[]; // size pills on the detail page (defaults to XS–XXXL)
   details?: string[]; // bullet lines under the "Details" heading
   description?: string; // long marketing paragraph under "Description"
   prepaidPromo?: string; // green prepaid-incentive line under the fit copy
-  allowCustomName?: boolean; // show the Name & Number input (mainly jerseys)
+  allowCustomName?: boolean; // show the Name & Number popup (mainly jerseys)
+  sku?: string; // shown beside the price on the detail page
+  conversionsBadge?: string; // overlay on the main gallery image
+  socialProof?: SocialProofChip[]; // pill row under the price
+  prepaidPrice?: number; // "Get it @ ₹522" — hides the green box when absent
+  prepaidNote?: string; // small line inside the prepaid box
+  prepaidBadge?: string; // pill on the right of the prepaid box
+  washCare?: string; // Wash care accordion (falls back to the store default)
+  shippingInfo?: string; // Shipping accordion (falls back to the store default)
   seo?: Seo; // CMS-editable SEO overrides for the product page
 };
 
@@ -308,7 +357,8 @@ export const iplJerseys: Product[] = [
     fitPercent: 96,
     fitReviews: 50,
     freeShippingRemaining: 330,
-    detailSizes: ["XS", "S", "M", "L", "XL", "XXL", "XXXL"],
+    // No detailSizes: this static sample wants exactly FALLBACK_SIZES, which
+    // resolveDetailSizes() already supplies when the field is absent.
     details: ["100% cotton pique", "weight - 330 gsm", "embroidery (front & back)"],
     description:
       "make a powerful style statement with the bottle green saddle league polo t-shirt, crafted for those who appreciate bold design and premium quality. made from 100% cotton with a solid 330 gsm weight, this green cotton polo t-shirt offers a structured feel with everyday comfort. the detailed saddle league embroidery adds depth and character, giving this red embroidered polo t-shirt a refined yet striking look. designed to elevate your streetwear rotation, this bottle green saddle league polo t-shirt pairs effortlessly with loose fit cargos for a relaxed vibe or with streetwear jeans for a sharper urban finish. easy to maintain with a machine reverse wash, it's a standout essential built for confident styling.",

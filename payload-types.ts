@@ -72,6 +72,7 @@ export interface Config {
     customers: Customer;
     categories: Category;
     products: Product;
+    reviews: Review;
     orders: Order;
     'webhook-events': WebhookEvent;
     pages: Page;
@@ -87,6 +88,7 @@ export interface Config {
     customers: CustomersSelect<false> | CustomersSelect<true>;
     categories: CategoriesSelect<false> | CategoriesSelect<true>;
     products: ProductsSelect<false> | ProductsSelect<true>;
+    reviews: ReviewsSelect<false> | ReviewsSelect<true>;
     orders: OrdersSelect<false> | OrdersSelect<true>;
     'webhook-events': WebhookEventsSelect<false> | WebhookEventsSelect<true>;
     pages: PagesSelect<false> | PagesSelect<true>;
@@ -103,10 +105,12 @@ export interface Config {
   globals: {
     homepage: Homepage;
     search: Search;
+    'product-page': ProductPage;
   };
   globalsSelect: {
     homepage: HomepageSelect<false> | HomepageSelect<true>;
     search: SearchSelect<false> | SearchSelect<true>;
+    'product-page': ProductPageSelect<false> | ProductPageSelect<true>;
   };
   locale: null;
   widgets: {
@@ -416,6 +420,47 @@ export interface Product {
    * Green prepaid-incentive line under the fit copy.
    */
   prepaidPromo?: string | null;
+  /**
+   * Overlay on the main image, e.g. "6 Conversions this week". Leave blank to hide it.
+   */
+  conversionsBadge?: string | null;
+  /**
+   * The small pill row under the price. Three fit across the panel; more will wrap.
+   */
+  socialProof?:
+    | {
+        icon: 'fire' | 'instagram' | 'parcel' | 'star';
+        /**
+         * e.g. "54 Jerseys Sold Today".
+         */
+        text: string;
+        /**
+         * When set, the chip becomes a link and shows a › arrow.
+         */
+        href?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Shown as "Get it @ ₹522". Leave blank to hide the whole green prepaid box.
+   */
+  prepaidPrice?: number | null;
+  /**
+   * Small line under the prepaid price.
+   */
+  prepaidNote?: string | null;
+  /**
+   * Pill on the right of the prepaid box, e.g. "Upto ₹350 OFF + 5 OFF on prepaid".
+   */
+  prepaidBadge?: string | null;
+  /**
+   * Wash care accordion. Blank uses the store default.
+   */
+  washCare?: string | null;
+  /**
+   * Shipping accordion. Blank uses the store default.
+   */
+  shippingInfo?: string | null;
   themes?: ('Cricket' | 'IPL' | 'Football' | 'Movie')[] | null;
   /**
    * Garment type — the filter panel's "Category" section.
@@ -432,6 +477,51 @@ export interface Product {
     description?: string | null;
     canonicalURL?: string | null;
   };
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Reviews shown in the Ratings and Reviews section of the product page.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "reviews".
+ */
+export interface Review {
+  id: number;
+  product: number | Product;
+  /**
+   * Set automatically when a signed-in customer submits.
+   */
+  customer?: (number | null) | Customer;
+  /**
+   * Unpublished reviews never appear on the storefront.
+   */
+  isPublished?: boolean | null;
+  authorName: string;
+  /**
+   * Shows the green tick beside the name and counts toward the “verified buyers” total under the heading.
+   */
+  isVerifiedBuyer?: boolean | null;
+  /**
+   * Whole or half stars, 1–5. Drives the score histogram.
+   */
+  rating: number;
+  body: string;
+  /**
+   * Thumbnails under the review. Videos get a play overlay automatically.
+   */
+  media?: (number | Media)[] | null;
+  /**
+   * Counted across all published reviews to rank the chips above the list.
+   */
+  featureTags?: ('Color' | 'Comfort' | 'Quality' | 'Fit')[] | null;
+  /**
+   * Shown in the footer line, e.g. "Size Bought L".
+   */
+  sizeBought?: string | null;
+  purchasedAt?: string | null;
+  helpfulCount?: number | null;
+  notHelpfulCount?: number | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -636,6 +726,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'products';
         value: number | Product;
+      } | null)
+    | ({
+        relationTo: 'reviews';
+        value: number | Review;
       } | null)
     | ({
         relationTo: 'orders';
@@ -867,6 +961,20 @@ export interface ProductsSelect<T extends boolean = true> {
   fitReviews?: T;
   freeShippingRemaining?: T;
   prepaidPromo?: T;
+  conversionsBadge?: T;
+  socialProof?:
+    | T
+    | {
+        icon?: T;
+        text?: T;
+        href?: T;
+        id?: T;
+      };
+  prepaidPrice?: T;
+  prepaidNote?: T;
+  prepaidBadge?: T;
+  washCare?: T;
+  shippingInfo?: T;
   themes?: T;
   type?: T;
   colors?: T;
@@ -879,6 +987,27 @@ export interface ProductsSelect<T extends boolean = true> {
         description?: T;
         canonicalURL?: T;
       };
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "reviews_select".
+ */
+export interface ReviewsSelect<T extends boolean = true> {
+  product?: T;
+  customer?: T;
+  isPublished?: T;
+  authorName?: T;
+  isVerifiedBuyer?: T;
+  rating?: T;
+  body?: T;
+  media?: T;
+  featureTags?: T;
+  sizeBought?: T;
+  purchasedAt?: T;
+  helpfulCount?: T;
+  notHelpfulCount?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -1198,6 +1327,65 @@ export interface Search {
   createdAt?: string | null;
 }
 /**
+ * Offers, trust badges and delivery estimate shown on every product page.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "product-page".
+ */
+export interface ProductPage {
+  id: number;
+  offersTitle?: string | null;
+  /**
+   * Renders as "Get ₹350 OFF / on purchase of ₹2499". Uncheck Active to hide one without deleting it.
+   */
+  offers?:
+    | {
+        amountOff: number;
+        minSpend: number;
+        isActive?: boolean | null;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * The green strip under the offers — returns, delivery, COD.
+   */
+  trustBadges?:
+    | {
+        icon: 'return' | 'delivery' | 'cod' | 'shield';
+        title: string;
+        subtitle?: string | null;
+        isActive?: boolean | null;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Heading above the estimated delivery date.
+   */
+  deliveryLabel?: string | null;
+  /**
+   * The page renders today + this many days as "Get it by <date>", so the estimate never goes stale.
+   */
+  deliveryLeadDays?: number | null;
+  /**
+   * Small print under the price.
+   */
+  taxNote?: string | null;
+  /**
+   * Digits only, with country code (e.g. 919876543210). Powers the green WhatsApp button. Leave blank to hide the button.
+   */
+  whatsappNumber?: string | null;
+  /**
+   * Used when a product doesn't set its own wash care copy.
+   */
+  washCare?: string | null;
+  /**
+   * Used when a product doesn't set its own shipping copy.
+   */
+  shipping?: string | null;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "homepage_select".
  */
@@ -1305,6 +1493,39 @@ export interface SearchSelect<T extends boolean = true> {
         term?: T;
         id?: T;
       };
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "product-page_select".
+ */
+export interface ProductPageSelect<T extends boolean = true> {
+  offersTitle?: T;
+  offers?:
+    | T
+    | {
+        amountOff?: T;
+        minSpend?: T;
+        isActive?: T;
+        id?: T;
+      };
+  trustBadges?:
+    | T
+    | {
+        icon?: T;
+        title?: T;
+        subtitle?: T;
+        isActive?: T;
+        id?: T;
+      };
+  deliveryLabel?: T;
+  deliveryLeadDays?: T;
+  taxNote?: T;
+  whatsappNumber?: T;
+  washCare?: T;
+  shipping?: T;
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;

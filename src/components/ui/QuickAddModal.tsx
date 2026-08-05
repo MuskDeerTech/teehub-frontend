@@ -5,9 +5,8 @@ import { useEffect, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 import { useCart } from "@/components/cart/CartContext";
 import type { Product } from "@/lib/products";
+import { defaultSize, isSizeAvailable, resolveDetailSizes } from "@/lib/products";
 import SizeGuideModal from "@/components/ui/SizeGuideModal";
-
-const fallbackSizes = ["XS", "S", "M", "L", "XL", "XXL", "XXXL"];
 
 // Client-only mount flag without a setState-in-effect (see ProductDetails).
 const subscribeNoop = () => () => {};
@@ -19,21 +18,39 @@ const getServerSnapshot = () => false;
  * product allows a custom name (jerseys): the customer picks a size and enters
  * a Name & Number before the item lands in the cart. Adding closes this popup
  * and opens the cart drawer (addItem flips `cartOpen`).
+ *
+ * The product page reuses it purely for the Name & Number step: it passes
+ * `lockedSize` and `quantity` because the shopper already chose both there, and
+ * the size grid hides itself rather than asking twice.
  */
 export default function QuickAddModal({
   product,
   unitPrice,
   unitMrp,
+  lockedSize,
+  quantity = 1,
+  ctaLabel = "Add to Cart",
+  onAdded,
   onClose,
 }: {
   product: Product;
   unitPrice: number;
   unitMrp: number;
+  /** Skip the size step and use this size (the product page's selection). */
+  lockedSize?: string;
+  /** Quantity to add; the listing cards always add one. */
+  quantity?: number;
+  /** Button text — "Buy Now" routes onward instead of just adding. */
+  ctaLabel?: string;
+  /** Fired once the item is in the cart, before `onClose`. Lets Buy Now carry
+   *  on to checkout after the Name & Number step. */
+  onAdded?: () => void;
   onClose: () => void;
 }) {
   const { addItem } = useCart();
-  const sizes = product.detailSizes?.length ? product.detailSizes : fallbackSizes;
-  const [selectedSize, setSelectedSize] = useState(sizes[0]);
+  const sizes = resolveDetailSizes(product);
+  const [pickedSize, setPickedSize] = useState(() => defaultSize(sizes));
+  const selectedSize = lockedSize ?? pickedSize;
   const [nameValue, setNameValue] = useState("");
   const [numberValue, setNumberValue] = useState("");
   const [showValidation, setShowValidation] = useState(false);
@@ -66,14 +83,17 @@ export default function QuickAddModal({
       name: product.title,
       image: product.image ?? "",
       size: selectedSize,
-      availableSizes: sizes,
-      quantity: 1,
+      // Only in-stock sizes, so the cart's size switcher can't move the line
+      // onto something sold out.
+      availableSizes: sizes.filter(isSizeAvailable).map((size) => size.label),
+      quantity,
       price: unitPrice,
       mrp: unitMrp,
       customName: product.allowCustomName
         ? `${customName} ${customNumber}`
         : undefined,
     });
+    onAdded?.();
     onClose();
   }
 
@@ -128,33 +148,55 @@ export default function QuickAddModal({
         </div>
 
         <div className="p-4">
-          {/* Size */}
-          <div className="mb-2 flex items-center justify-between">
-            <span className="text-sm font-medium text-black">Select Size</span>
-            <button
-              type="button"
-              onClick={() => setShowGuide(true)}
-              className="text-xs font-medium text-blue-600 underline underline-offset-2"
-            >
-              Size Guide
-            </button>
-          </div>
-          <div className="grid grid-cols-4 gap-2 sm:grid-cols-7">
-            {sizes.map((size) => (
-              <button
-                key={size}
-                type="button"
-                onClick={() => setSelectedSize(size)}
-                className={`min-h-[34px] rounded-full border px-2 text-xs transition ${
-                  selectedSize === size
-                    ? "border-black bg-black text-white"
-                    : "border-[#d6d6d6] bg-white text-black hover:border-black"
-                }`}
-              >
-                {size}
-              </button>
-            ))}
-          </div>
+          {/* Size — hidden when the caller already has a selection to honour. */}
+          {lockedSize ? (
+            <p className="text-sm text-black">
+              Size <span className="font-semibold">{lockedSize}</span>
+              {quantity > 1 && (
+                <span className="text-gray-500"> · Qty {quantity}</span>
+              )}
+            </p>
+          ) : (
+            <>
+              <div className="mb-2 flex items-center justify-between">
+                <span className="text-sm font-medium text-black">
+                  Select Size
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setShowGuide(true)}
+                  className="text-xs font-medium text-blue-600 underline underline-offset-2"
+                >
+                  Size Guide
+                </button>
+              </div>
+              <div className="grid grid-cols-4 gap-2 sm:grid-cols-7">
+                {sizes.map((size) => {
+                  const available = isSizeAvailable(size);
+                  return (
+                    <button
+                      key={size.label}
+                      type="button"
+                      disabled={!available}
+                      aria-label={
+                        available ? size.label : `${size.label} — out of stock`
+                      }
+                      onClick={() => setPickedSize(size.label)}
+                      className={`min-h-[34px] rounded-full border px-2 text-xs transition ${
+                        !available
+                          ? "cursor-not-allowed border-[#ececec] bg-[#f4f4f4] text-[#bdbdbd] line-through"
+                          : selectedSize === size.label
+                            ? "border-black bg-black text-white"
+                            : "border-[#d6d6d6] bg-white text-black hover:border-black"
+                      }`}
+                    >
+                      {size.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </>
+          )}
 
           {/* Name & Number */}
           {product.allowCustomName && (
@@ -204,7 +246,7 @@ export default function QuickAddModal({
             onClick={handleAdd}
             className="mt-5 w-full rounded-xl bg-[#f36d43] py-3 text-sm font-semibold uppercase tracking-wide text-white transition-opacity hover:opacity-90"
           >
-            Add to Cart
+            {ctaLabel}
           </button>
         </div>
       </div>

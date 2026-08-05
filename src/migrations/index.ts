@@ -4,7 +4,10 @@ import * as migration_seo_meta_fields from './seo_meta_fields';
 import * as migration_childrens_corner from './childrens_corner';
 import * as migration_search_global from './search_global';
 import * as migration_top_collections from './top_collections';
+import * as migration_product_page_and_reviews from './product_page_and_reviews';
 
+// Order matters: Payload runs anything not yet recorded in `payload_migrations`
+// top to bottom, so new migrations are appended rather than sorted in.
 export const migrations = [
   {
     up: migration_password_reset_codes.up,
@@ -35,5 +38,10 @@ export const migrations = [
     up: migration_top_collections.up,
     down: migration_top_collections.down,
     name: 'top_collections'
+  },
+  {
+    up: migration_product_page_and_reviews.up,
+    down: migration_product_page_and_reviews.down,
+    name: 'product_page_and_reviews'
   },
 ];

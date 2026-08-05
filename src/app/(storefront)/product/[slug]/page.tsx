@@ -2,8 +2,11 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import CategoryMarquee from "@/components/layout/CategoryMarquee";
 import ProductDetails from "@/components/ui/ProductDetails";
+import ReviewsSection from "@/components/product/ReviewsSection";
 import LatestDrops from "@/components/sections/LatestDrops";
 import { getProductBySlug } from "@/lib/catalog";
+import { deliveryDateLabel, getProductPageSettings } from "@/lib/productPage";
+import { getProductReviews } from "@/lib/reviews";
 import { buildMetadata } from "@/lib/seo";
 
 type Params = { slug: string };
@@ -36,15 +39,29 @@ export default async function ProductPage({
   params: Promise<Params>;
 }) {
   const { slug } = await params;
-  const product = await getProductBySlug(slug);
+
+  // The product gates the page, but the settings and reviews don't depend on
+  // it, so all three go out together rather than in series.
+  const [product, settings, { reviews, summary }] = await Promise.all([
+    getProductBySlug(slug),
+    getProductPageSettings(),
+    getProductReviews(slug),
+  ]);
 
   if (!product) notFound();
 
   return (
     <>
       <CategoryMarquee />
-      <ProductDetails product={product} />
-    
+      <ProductDetails
+        product={product}
+        settings={settings}
+        // Resolved here so the estimate comes from the server clock, not the
+        // visitor's — two people in different timezones see the same date.
+        deliveryDate={deliveryDateLabel(settings.deliveryLeadDays)}
+        reviews={<ReviewsSection reviews={reviews} summary={summary} />}
+      />
+
       <LatestDrops
         productPage
         excludeSlug={product.slug}

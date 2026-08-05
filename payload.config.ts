@@ -708,6 +708,110 @@ const Products: CollectionConfig = {
                 description: "Green prepaid-incentive line under the fit copy.",
               },
             },
+            // Scarcity/social-proof copy. Deliberately typed rather than
+            // computed: figures like Instagram features have no source in this
+            // system, and the sold/viewing counts are merchandising claims that
+            // staff need to be able to word themselves.
+            {
+              name: "conversionsBadge",
+              label: "Gallery badge",
+              type: "text",
+              admin: {
+                description:
+                  'Overlay on the main image, e.g. "6 Conversions this week". '
+                  + "Leave blank to hide it.",
+              },
+            },
+            {
+              name: "socialProof",
+              label: "Social proof chips",
+              type: "array",
+              maxRows: 3,
+              admin: {
+                description:
+                  "The small pill row under the price. Three fit across the "
+                  + "panel; more will wrap.",
+              },
+              fields: [
+                {
+                  name: "icon",
+                  type: "select",
+                  required: true,
+                  defaultValue: "fire",
+                  options: [
+                    { label: "Flame (sold today)", value: "fire" },
+                    { label: "Instagram", value: "instagram" },
+                    { label: "Parcel (delivering to)", value: "parcel" },
+                    { label: "Star", value: "star" },
+                  ],
+                },
+                {
+                  name: "text",
+                  type: "text",
+                  required: true,
+                  admin: {
+                    description: 'e.g. "54 Jerseys Sold Today".',
+                  },
+                },
+                {
+                  name: "href",
+                  label: "Link (optional)",
+                  type: "text",
+                  admin: {
+                    description:
+                      "When set, the chip becomes a link and shows a › arrow.",
+                  },
+                },
+              ],
+            },
+            // The green prepaid box. `prepaidPrice` is the headline "Get it @
+            // ₹522" figure — typed, because the real prepaid maths depends on
+            // coupons the storefront doesn't model yet.
+            {
+              name: "prepaidPrice",
+              label: "Prepaid price",
+              type: "number",
+              min: 0,
+              admin: {
+                description:
+                  'Shown as "Get it @ ₹522". Leave blank to hide the whole '
+                  + "green prepaid box.",
+              },
+            },
+            {
+              name: "prepaidNote",
+              type: "text",
+              defaultValue: "Use best price on prepaid Orders",
+              admin: { description: "Small line under the prepaid price." },
+            },
+            {
+              name: "prepaidBadge",
+              type: "text",
+              admin: {
+                description:
+                  'Pill on the right of the prepaid box, e.g. "Upto ₹350 OFF + '
+                  + '5 OFF on prepaid".',
+              },
+            },
+            // Accordion bodies. Blank falls back to the store-wide defaults on
+            // the Product Page global.
+            {
+              name: "washCare",
+              type: "textarea",
+              admin: {
+                description:
+                  "Wash care accordion. Blank uses the store default.",
+              },
+            },
+            {
+              name: "shippingInfo",
+              label: "Shipping",
+              type: "textarea",
+              admin: {
+                description:
+                  "Shipping accordion. Blank uses the store default.",
+              },
+            },
           ],
         },
         {
@@ -1391,6 +1495,155 @@ const WebhookEvents: CollectionConfig = {
   ],
 };
 
+/** The aspects a reviewer can call out — drives the "Features customers liked"
+ *  chips above the review list. Kept as a shared const so the collection and the
+ *  storefront chip row can never drift apart. */
+const REVIEW_FEATURE_TAGS = ["Color", "Comfort", "Quality", "Fit"] as const;
+
+/**
+ * Customer product reviews. Admin-entered for now; the customer-facing review
+ * page will write into this same shape later, which is why the fields cover
+ * everything a shopper submits (photos/video, size bought, purchase date) rather
+ * than only what today's admin form fills in.
+ *
+ * `isPublished` is the moderation gate — the storefront only ever reads
+ * published rows, so a submitted review stays invisible until staff approve it.
+ */
+const Reviews: CollectionConfig = {
+  slug: "reviews",
+  access: {
+    // Moderation is enforced in the query layer (src/lib/reviews.ts), which only
+    // ever asks for published rows. Kept world-readable so the product page can
+    // render without an authenticated session.
+    read: () => true,
+    create: isAdmin,
+    update: isAdmin,
+    delete: isAdmin,
+  },
+  admin: {
+    useAsTitle: "authorName",
+    defaultColumns: [
+      "authorName",
+      "product",
+      "rating",
+      "isPublished",
+      "purchasedAt",
+    ],
+    description:
+      "Reviews shown in the Ratings and Reviews section of the product page.",
+  },
+  fields: [
+    {
+      name: "product",
+      type: "relationship",
+      relationTo: "products",
+      required: true,
+      index: true,
+    },
+    // Set when the review comes from a signed-in shopper via the review page.
+    // Blank for reviews staff enter by hand.
+    {
+      name: "customer",
+      type: "relationship",
+      relationTo: "customers",
+      admin: {
+        position: "sidebar",
+        description: "Set automatically when a signed-in customer submits.",
+      },
+    },
+    {
+      name: "isPublished",
+      type: "checkbox",
+      defaultValue: false,
+      index: true,
+      admin: {
+        position: "sidebar",
+        description: "Unpublished reviews never appear on the storefront.",
+      },
+    },
+    {
+      name: "authorName",
+      label: "Reviewer name",
+      type: "text",
+      required: true,
+    },
+    {
+      name: "isVerifiedBuyer",
+      label: "Verified buyer",
+      type: "checkbox",
+      defaultValue: false,
+      admin: {
+        description: "Shows the green tick beside the name and counts toward "
+          + "the “verified buyers” total under the heading.",
+      },
+    },
+    {
+      name: "rating",
+      type: "number",
+      required: true,
+      min: 1,
+      max: 5,
+      admin: {
+        description: "Whole or half stars, 1–5. Drives the score histogram.",
+      },
+    },
+    {
+      name: "body",
+      label: "Review",
+      type: "textarea",
+      required: true,
+    },
+    {
+      name: "media",
+      label: "Photos & video",
+      type: "upload",
+      relationTo: "media",
+      hasMany: true,
+      admin: {
+        description:
+          "Thumbnails under the review. Videos get a play overlay automatically.",
+      },
+    },
+    {
+      name: "featureTags",
+      label: "Features liked",
+      type: "select",
+      hasMany: true,
+      options: [...REVIEW_FEATURE_TAGS],
+      admin: {
+        description:
+          "Counted across all published reviews to rank the chips above the list.",
+      },
+    },
+    {
+      name: "sizeBought",
+      type: "text",
+      admin: { description: 'Shown in the footer line, e.g. "Size Bought L".' },
+    },
+    {
+      name: "purchasedAt",
+      label: "Purchased on",
+      type: "date",
+    },
+    // Vote tallies. Stored as plain counters so the eventual vote endpoint can
+    // increment them without a per-visitor join table.
+    {
+      name: "helpfulCount",
+      type: "number",
+      defaultValue: 0,
+      min: 0,
+      admin: { position: "sidebar" },
+    },
+    {
+      name: "notHelpfulCount",
+      type: "number",
+      defaultValue: 0,
+      min: 0,
+      admin: { position: "sidebar" },
+    },
+  ],
+};
+
 // Editable homepage content — a single global (one record, not a list) that
 // replaces the hardcoded arrays in src/lib/products.ts. The product sections
 // (Latest Drops / Football Hoodies / Polo Shirts) pick from the real Products
@@ -1431,6 +1684,139 @@ const Search: GlobalConfig = {
           required: true,
         },
       ],
+    },
+  ],
+};
+
+/**
+ * Store-wide product-page furniture: the coupon tiles, the return/delivery/COD
+ * badge row, and the delivery-estimate lead time. These are identical on every
+ * product, so they live here rather than being re-entered per product.
+ *
+ * Wash care and shipping copy are the store defaults — a product can override
+ * either one on its own "Product Page" tab when it genuinely differs.
+ */
+const ProductPage: GlobalConfig = {
+  slug: "product-page",
+  label: "Product Page",
+  access: {
+    read: () => true,
+    update: isAdmin,
+  },
+  admin: {
+    description:
+      "Offers, trust badges and delivery estimate shown on every product page.",
+  },
+  fields: [
+    {
+      name: "offersTitle",
+      type: "text",
+      defaultValue: "Available Offers",
+    },
+    {
+      name: "offers",
+      label: "Offer tiles",
+      type: "array",
+      maxRows: 4,
+      admin: {
+        description:
+          'Renders as "Get ₹350 OFF / on purchase of ₹2499". Uncheck Active to '
+          + "hide one without deleting it.",
+      },
+      fields: [
+        {
+          name: "amountOff",
+          label: "₹ off",
+          type: "number",
+          required: true,
+          min: 0,
+        },
+        {
+          name: "minSpend",
+          label: "On purchase of ₹",
+          type: "number",
+          required: true,
+          min: 0,
+        },
+        { name: "isActive", type: "checkbox", defaultValue: true },
+      ],
+    },
+    {
+      name: "trustBadges",
+      label: "Trust badges",
+      type: "array",
+      maxRows: 4,
+      admin: {
+        description:
+          "The green strip under the offers — returns, delivery, COD.",
+      },
+      fields: [
+        {
+          name: "icon",
+          type: "select",
+          required: true,
+          defaultValue: "return",
+          options: [
+            { label: "Return arrow", value: "return" },
+            { label: "Delivery truck", value: "delivery" },
+            { label: "Cash on delivery", value: "cod" },
+            { label: "Shield", value: "shield" },
+          ],
+        },
+        { name: "title", type: "text", required: true },
+        { name: "subtitle", type: "text" },
+        { name: "isActive", type: "checkbox", defaultValue: true },
+      ],
+    },
+    {
+      name: "deliveryLabel",
+      type: "text",
+      defaultValue: "FAST DELIVERY",
+      admin: { description: "Heading above the estimated delivery date." },
+    },
+    {
+      name: "deliveryLeadDays",
+      label: "Delivery lead time (days)",
+      type: "number",
+      defaultValue: 7,
+      min: 0,
+      max: 60,
+      admin: {
+        description:
+          'The page renders today + this many days as "Get it by <date>", so '
+          + "the estimate never goes stale.",
+      },
+    },
+    {
+      name: "taxNote",
+      type: "text",
+      defaultValue: "Inclusive of all taxes",
+      admin: { description: "Small print under the price." },
+    },
+    {
+      name: "whatsappNumber",
+      type: "text",
+      admin: {
+        description:
+          "Digits only, with country code (e.g. 919876543210). Powers the green "
+          + "WhatsApp button. Leave blank to hide the button.",
+      },
+    },
+    {
+      name: "washCare",
+      label: "Wash care (default)",
+      type: "textarea",
+      admin: {
+        description: "Used when a product doesn't set its own wash care copy.",
+      },
+    },
+    {
+      name: "shipping",
+      label: "Shipping (default)",
+      type: "textarea",
+      admin: {
+        description: "Used when a product doesn't set its own shipping copy.",
+      },
     },
   ],
 };
@@ -1961,12 +2347,13 @@ export default buildConfig({
     Customers,
     Categories,
     Products,
+    Reviews,
     Orders,
     WebhookEvents,
     Pages,
     Media,
   ],
-  globals: [HomePage, Search],
+  globals: [HomePage, Search, ProductPage],
   db: postgresAdapter({
     pool: {
       connectionString: process.env.DATABASE_URI || "",

@@ -1,13 +1,21 @@
 "use client";
 
+import { IconHeart, IconHeartFilled } from "@tabler/icons-react";
 import { useBookmarks } from "@/components/providers/BookmarksProvider";
 
 type BookmarkButtonProps = {
   id: string;
   className?: string;
+  /** Which glyph to draw. Both toggle the same saved state — the product page
+   *  shows a bookmark beside the title and a heart on the quantity row. */
+  variant?: "bookmark" | "heart";
 };
 
-export default function BookmarkButton({ id, className }: BookmarkButtonProps) {
+export default function BookmarkButton({
+  id,
+  className,
+  variant = "bookmark",
+}: BookmarkButtonProps) {
   const { isBookmarked, toggle } = useBookmarks();
   const saved = isBookmarked(id);
 
@@ -23,7 +31,15 @@ export default function BookmarkButton({ id, className }: BookmarkButtonProps) {
       aria-pressed={saved}
       className={className}
     >
-      <BookmarkIcon filled={saved} />
+      {variant === "heart" ? (
+        saved ? (
+          <IconHeartFilled size={20} aria-hidden="true" />
+        ) : (
+          <IconHeart size={20} stroke={1.7} aria-hidden="true" />
+        )
+      ) : (
+        <BookmarkIcon filled={saved} />
+      )}
     </button>
   );
 }

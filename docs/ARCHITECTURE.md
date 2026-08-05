@@ -38,12 +38,19 @@ This single file defines the whole backend: every collection (database table), i
 | `customers` | Shopper accounts: auth, verification/reset code fields, saved addresses, a synced cart, order stats. |
 | `categories` | Shop categories — name, slug, menu thumbnail, display order. |
 | `products` | The catalog. Card image and detail gallery are separate; includes pricing, sizes, filter facets, and per-image "fit" (crop/zoom) data. |
+| `reviews` | Customer product reviews shown on the product page. `isPublished` is the moderation gate — the storefront only ever reads published rows. |
 | `orders` | Orders with line items **snapshotted at purchase time**, so later product edits never rewrite order history. |
 | `webhook-events` | Log of WooCommerce webhook deliveries, used for idempotency and debugging. |
 | `pages` | Rich-text policy/static pages rendered at `/policies/<slug>`. |
 | `media` | Uploads (S3 or local disk). |
 
-Plus one **global** (a single record, not a list): `homepage`, which holds all editorial homepage content — hero teams, banners, category rows, Watch & Buy cards, Children's Corner.
+Plus three **globals** (a single record each, not a list):
+
+| Global | What it holds |
+| --- | --- |
+| `homepage` | All editorial homepage content — hero teams, banners, category rows, Watch & Buy cards, Children's Corner. |
+| `search` | Popular-search chips shown in the search overlay. |
+| `product-page` | Store-wide product-page furniture: offer tiles, the return/delivery/COD badge strip, delivery lead time, and default wash-care/shipping copy. Identical on every product, so it lives here instead of being re-entered per product. |
 
 Access control convention: catalog collections (`products`, `categories`, `pages`, `media`, `homepage`) are world-readable; anything with personal data (`customers`, `orders`) is restricted to admins or the owning customer. Order creation is locked to server-side code — the public REST API cannot forge orders.
 
@@ -82,6 +89,8 @@ If you're looking for "the services layer", this is it.
 | `products.ts` | The frontend's domain types (`Product`, `Category`, `ImageFit`, `Seo`) plus static fallback data (nav links, IPL team logos). |
 | `catalog.ts` | Fetches categories/products from Payload (Local API) and maps CMS documents to the frontend types. |
 | `homepage.ts` | Same, for the homepage global (hero, banners, sections). |
+| `productPage.ts` | Same, for the `product-page` global, plus `deliveryDateLabel()` — the "Get it by 29th July" estimate, computed from a CMS lead time so it never goes stale. |
+| `reviews.ts` | Published reviews for a product and the derived summary (histogram, mean, verified count, ranked feature chips). Aggregates are computed, never stored, so they can't drift from the rows. |
 | `pages.ts` | Same, for policy pages. |
 | `seo.ts` | `buildMetadata()` — every public page builds its metadata through this so titles, canonicals, and social tags stay consistent. CMS overrides win; sensible defaults otherwise. |
 | `bookmarks.ts` | Bookmark/wishlist helpers. |
@@ -98,6 +107,7 @@ Grouped by area rather than by component type:
 | Folder | Contents |
 | --- | --- |
 | `sections/` | Homepage sections (Hero, LatestDrops, WatchAndBuy, banners, ChildrensCorner, …). |
+| `product/` | Product-detail pieces: the offers/trust card, social-proof chips and prepaid box, the details accordion, and the Ratings & Reviews block. `ui/ProductDetails.tsx` composes them. |
 | `category/` | Category page pieces, including the FilterPanel. Its filter option lists must stay in sync with the facet select options in `payload.config.ts`. |
 | `cart/` | `CartContext` (state, localStorage persistence, account sync), the cart overlay, and the multi-step checkout flow. |
 | `auth/` | `AuthContext` and login/register UI. |
@@ -111,6 +121,10 @@ A convention worth knowing: **image fits**. Admins position images inside their 
 ## `src/migrations/` and `scripts/`
 
 - `src/migrations/` — versioned Postgres migrations. The database adapter has `push: false`, so schema changes **only** happen through migrations: change `payload.config.ts` → `npm run payload:migrate:create` → `npm run payload:migrate` → `npm run generate:types`.
+
+  **Caveat on `migrate:create`.** This project's base schema was created by `push` in early dev, before migrations were tracked, so there is no migration that builds the tables from nothing. The generator diffs against migration *history*, not the live database — it therefore emits the **entire** schema (`CREATE TABLE "admins"`, …) rather than just your change, and that output will fail against the real database because the tables already exist.
+
+  Use it as a source of correct DDL, not as the migration itself: run it, copy out only the statements for the objects you added, make them idempotent (`IF NOT EXISTS`, `pg_constraint` guards), and delete the generated file. `product_page_and_reviews.ts` is the worked example. It also rewrites `index.ts` alphabetically — restore chronological order and append yours at the end, since Payload runs the array top to bottom.
 - `scripts/` — standalone CLI entry points for the WooCommerce migration (`migrate-woocommerce.ts`, per-entity sync scripts, `repair`, `verify`, tests). They're bundled with esbuild and run with Node reading `.env` directly — see [WOOCOMMERCE.md](WOOCOMMERCE.md) for usage. The actual sync logic lives in `src/lib/woocommerce/sync.ts` so scripts and the webhook share one implementation.
 
 ## Where conventional names map to

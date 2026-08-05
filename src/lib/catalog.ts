@@ -107,11 +107,30 @@ export function toProduct(doc: ProductDoc): Product {
     fitPercent: doc.fitPercent ?? undefined,
     fitReviews: doc.fitReviews ?? undefined,
     freeShippingRemaining: doc.freeShippingRemaining ?? undefined,
-    detailSizes: doc.detailSizes?.map((s) => s.label),
+    // Stock rides along with the label so the detail page can disable a size
+    // that's sold out instead of letting it be added to the cart.
+    detailSizes: doc.detailSizes?.map((s) => ({
+      label: s.label,
+      stock: s.stock ?? undefined,
+    })),
     details: doc.details?.map((d) => d.text),
     description: doc.description ?? undefined,
     prepaidPromo: doc.prepaidPromo ?? undefined,
     allowCustomName: doc.allowCustomName ?? undefined,
+    sku: doc.sku ?? undefined,
+    conversionsBadge: doc.conversionsBadge ?? undefined,
+    socialProof: doc.socialProof?.length
+      ? doc.socialProof.map((chip) => ({
+          icon: chip.icon,
+          text: chip.text,
+          href: chip.href ?? undefined,
+        }))
+      : undefined,
+    prepaidPrice: doc.prepaidPrice ?? undefined,
+    prepaidNote: doc.prepaidNote ?? undefined,
+    prepaidBadge: doc.prepaidBadge ?? undefined,
+    washCare: doc.washCare ?? undefined,
+    shippingInfo: doc.shippingInfo ?? undefined,
     seo: toSeo(doc.meta),
   };
 }
