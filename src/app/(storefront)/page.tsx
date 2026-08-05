@@ -1,3 +1,4 @@
+import CategoryMarquee from "@/components/layout/CategoryMarquee";
 import Hero from "@/components/sections/Hero";
 import LatestDrops from "@/components/sections/LatestDrops";
 import WatchAndBuy from "@/components/sections/WatchAndBuy";
@@ -45,6 +46,7 @@ export default async function Home() {
 
   return (
     <>
+      <CategoryMarquee />
       <Hero hero={hero} />
       <LatestDrops />
       <WatchAndBuy />

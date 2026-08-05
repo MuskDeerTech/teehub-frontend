@@ -71,6 +71,30 @@
   }
 }
 
+/* Navy category strip under the navbar. Two identical copies of the item list
+   sit side by side inside the track; sliding the track exactly one copy's
+   width (-50%) lands the second copy where the first started, so the loop
+   restarts with no visible jump. Duration comes from the component so the
+   speed stays tunable in one place. */
+@keyframes marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.marquee-track {
+  animation: marquee var(--marquee-duration, 30s) linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .marquee-track {
+    animation: none;
+  }
+}
+
 html,
 body {
   width: 100%;

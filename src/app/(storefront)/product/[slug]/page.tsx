@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import CategoryMarquee from "@/components/layout/CategoryMarquee";
 import ProductDetails from "@/components/ui/ProductDetails";
 import LatestDrops from "@/components/sections/LatestDrops";
 import { getProductBySlug } from "@/lib/catalog";
@@ -41,6 +42,7 @@ export default async function ProductPage({
 
   return (
     <>
+      <CategoryMarquee />
       <ProductDetails product={product} />
     
       <LatestDrops
