@@ -71,17 +71,16 @@
   }
 }
 
-/* Navy category strip under the navbar. Two identical copies of the item list
-   sit side by side inside the track; sliding the track exactly one copy's
-   width (-50%) lands the second copy where the first started, so the loop
-   restarts with no visible jump. Duration comes from the component so the
-   speed stays tunable in one place. */
+/* Navy category strip under the navbar. Identical content-width copies sit
+   side by side inside the track. The component supplies the percentage for
+   exactly one copy, so the loop resets without a jump while the extra copies
+   prevent wide viewports from exposing the track's trailing edge. */
 @keyframes marquee {
   from {
     transform: translateX(0);
   }
   to {
-    transform: translateX(-50%);
+    transform: translateX(var(--marquee-shift, -25%));
   }
 }
 

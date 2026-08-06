@@ -16,7 +16,7 @@ const config = {
   iconSize: 24,
   /** Space between an icon and its own label, in px. */
   iconGap: 6,
-  /** Space between items. Also used as the gap between the two copies, so the
+  /** Space between items. Also used at every copy seam, so the
    *  seam is spaced identically to everything else and the loop is invisible. */
   itemGap: 28,
   /** Seconds for one full copy of the list to pass. Higher = slower. */
@@ -48,13 +48,17 @@ const items: MarqueeItem[] = [
   { label: "MADE IN INDIA" },
 ];
 
-/** One copy of the list. The second copy is presentational — `duplicate` hides
- *  it from screen readers so the items aren't announced twice. */
+/** Extra copies keep the track wider than large desktop viewports throughout
+ * the animation. The track still advances by exactly one copy per cycle. */
+const MARQUEE_COPIES = 4;
+
+/** One copy of the list. Repeated copies are presentational so screen readers
+ * announce the strip only once. */
 function MarqueeRow({ duplicate = false }: { duplicate?: boolean }) {
   return (
     <ul
       aria-hidden={duplicate || undefined}
-      className="flex shrink-0 items-center"
+      className="flex w-max shrink-0 items-center"
       style={{ gap: config.itemGap, paddingRight: config.itemGap }}
     >
       {items.map((item) => (
@@ -95,15 +99,21 @@ export default function CategoryMarquee() {
       className="w-full overflow-hidden"
       style={{ background: config.bg, height: config.height }}
     >
-      {/* Two identical copies scroll as a single track. Shifting the track by
-          exactly -50% lands copy 2 where copy 1 started, so the loop restarts
-          invisibly — no JS, no measuring. */}
+      {/* The copies scroll as one track. The animation advances by exactly one
+          copy, while the extras keep wide viewports covered throughout the
+          cycle. */}
       <div
         className="marquee-track flex h-full w-max"
-        style={{ "--marquee-duration": `${config.durationSec}s` } as React.CSSProperties}
+        style={
+          {
+            "--marquee-duration": `${config.durationSec}s`,
+            "--marquee-shift": `${-100 / MARQUEE_COPIES}%`,
+          } as React.CSSProperties
+        }
       >
-        <MarqueeRow />
-        <MarqueeRow duplicate />
+        {Array.from({ length: MARQUEE_COPIES }, (_, index) => (
+          <MarqueeRow key={index} duplicate={index > 0} />
+        ))}
       </div>
     </div>
   );
