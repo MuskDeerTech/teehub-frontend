@@ -473,10 +473,11 @@ export default function ProductDetails({
           </div>
         </div>
 
-        {/* This panel is sticky only inside the gallery grid. The containing
-            grid ends with the final image, so Reviews never extend its sticky
-            range. */}
-        <div className="flex min-w-0 flex-col gap-3 lg:sticky lg:top-[84px] lg:col-start-3 lg:row-start-1 lg:self-start">
+        {/* The purchase stack stays beside the complete product region,
+            including Reviews, then releases when that region ends. Because it
+            is sticky rather than fixed, the recommendations and footer scroll
+            normally once this parent grid has passed. */}
+        <div className="flex min-w-0 flex-col gap-3 lg:sticky lg:top-[84px] lg:col-start-3 lg:row-span-2 lg:row-start-1 lg:self-start">
           <div className="rounded-xl border border-[#e2e2e2] bg-white p-4">
             <div className="flex items-start justify-between gap-3">
               <h1 className="min-w-0 text-[20px] font-semibold leading-snug text-black">
@@ -674,15 +675,13 @@ export default function ProductDetails({
 
           <ProductAccordion sections={accordionSections} />
         </div>
-        </div>
 
         {reviews && (
-          <div className="grid w-full grid-cols-1 gap-3 lg:grid-cols-[minmax(0,1.55fr)_minmax(0,1fr)_minmax(420px,420px)] xl:grid-cols-[minmax(0,1.55fr)_minmax(0,1fr)_minmax(650px,650px)]">
-            <div className="min-w-0 lg:col-span-2">
-              {reviews}
-            </div>
+          <div className="min-w-0 lg:col-span-2">
+            {reviews}
           </div>
         )}
+        </div>
       </div>
 
       {lightboxIndex !== null && (
