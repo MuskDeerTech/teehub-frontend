@@ -5,8 +5,8 @@ import ProductDetails from "@/components/ui/ProductDetails";
 import ReviewsSection from "@/components/product/ReviewsSection";
 import LatestDrops from "@/components/sections/LatestDrops";
 import { getProductBySlug } from "@/lib/catalog";
+import { demoProductReviews } from "@/lib/demoReviews";
 import { deliveryDateLabel, getProductPageSettings } from "@/lib/productPage";
-import { getProductReviews } from "@/lib/reviews";
 import { buildMetadata } from "@/lib/seo";
 
 type Params = { slug: string };
@@ -40,15 +40,14 @@ export default async function ProductPage({
 }) {
   const { slug } = await params;
 
-  // The product gates the page, but the settings and reviews don't depend on
-  // it, so all three go out together rather than in series.
-  const [product, settings, { reviews, summary }] = await Promise.all([
+  const [product, settings] = await Promise.all([
     getProductBySlug(slug),
     getProductPageSettings(),
-    getProductReviews(slug),
   ]);
 
   if (!product) notFound();
+
+  const { reviews, summary } = demoProductReviews;
 
   return (
     <>

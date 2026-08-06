@@ -406,7 +406,10 @@ export default function ProductDetails({
     >
       {/* Gallery columns run 1.55:1 — the design's big lead image beside a
           narrower stack, measured off the Figma frame. */}
-      <div className="mx-auto grid w-full grid-cols-1 gap-3 px-3 py-4 lg:items-start lg:grid-cols-[minmax(0,1.55fr)_minmax(0,1fr)_minmax(420px,420px)] lg:py-3 lg:px-4 xl:grid-cols-[minmax(0,1.55fr)_minmax(0,1fr)_minmax(650px,650px)]">
+      <div className="mx-auto flex w-full flex-col gap-3 px-3 py-4 lg:px-4 lg:py-3">
+        <div className="grid w-full grid-cols-1 gap-3 lg:grid-cols-[minmax(0,1.55fr)_minmax(0,1fr)_minmax(420px,420px)] lg:items-start xl:grid-cols-[minmax(0,1.55fr)_minmax(0,1fr)_minmax(650px,650px)]">
+        <div className="min-w-0 lg:col-span-2 lg:row-start-1">
+          <div className="grid grid-cols-1 gap-3 lg:grid-cols-[minmax(0,1.55fr)_minmax(0,1fr)] lg:items-start">
         {/* Mobile/tablet gallery — horizontal swipe before the product info. */}
         {gallery.length > 0 && (
           <div className="lg:hidden">
@@ -467,11 +470,13 @@ export default function ProductDetails({
           ))}
         </div>
 
-        {/* Info panel — pinned opposite. Capped to the viewport with its own
-            hidden-bar scroll, because the offers card and accordions make it
-            taller than the old panel; without the cap its lower half would be
-            unreachable once it pins. */}
-        <div className="flex min-w-0 flex-col gap-3 lg:sticky lg:top-[84px] lg:max-h-[calc(100dvh-100px)] lg:self-start lg:overflow-y-auto lg:[scrollbar-width:none] lg:[&::-webkit-scrollbar]:hidden">
+          </div>
+        </div>
+
+        {/* This panel is sticky only inside the gallery grid. The containing
+            grid ends with the final image, so Reviews never extend its sticky
+            range. */}
+        <div className="flex min-w-0 flex-col gap-3 lg:sticky lg:top-[84px] lg:col-start-3 lg:row-start-1 lg:self-start">
           <div className="rounded-xl border border-[#e2e2e2] bg-white p-4">
             <div className="flex items-start justify-between gap-3">
               <h1 className="min-w-0 text-[20px] font-semibold leading-snug text-black">
@@ -669,16 +674,16 @@ export default function ProductDetails({
 
           <ProductAccordion sections={accordionSections} />
         </div>
-      </div>
-
-      {/* Ratings & Reviews — full width, outside the grid. Keeping it out of the
-          gallery column is what lets the middle column scroll freely: inside it,
-          the reviews would sit below a stack of viewport-tall images. */}
-      {reviews && (
-        <div className="mx-auto w-full max-w-[1600px] px-3 pb-4 lg:px-6">
-          {reviews}
         </div>
-      )}
+
+        {reviews && (
+          <div className="grid w-full grid-cols-1 gap-3 lg:grid-cols-[minmax(0,1.55fr)_minmax(0,1fr)_minmax(420px,420px)] xl:grid-cols-[minmax(0,1.55fr)_minmax(0,1fr)_minmax(650px,650px)]">
+            <div className="min-w-0 lg:col-span-2">
+              {reviews}
+            </div>
+          </div>
+        )}
+      </div>
 
       {lightboxIndex !== null && (
         <ImageLightbox
