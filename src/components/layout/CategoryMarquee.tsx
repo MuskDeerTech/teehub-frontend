@@ -18,7 +18,7 @@ const config = {
   iconGap: 6,
   /** Space between items. Also used at every copy seam, so the
    *  seam is spaced identically to everything else and the loop is invisible. */
-  itemGap: 28,
+  itemGap: 36,
   /** Seconds for one full copy of the list to pass. Higher = slower. */
   durationSec: 30,
 } as const;
@@ -44,8 +44,8 @@ const items: MarqueeItem[] = [
   { label: "DESIGN YOUR OWN", icon: "/svg/marquee/design-your-own.svg" },
   { label: "FAST DELIVERY", icon: "/svg/marquee/fast-delivery.svg" },
   { label: "CASH ON DELIVERY", icon: "/svg/marquee/cash-on-delivery.svg" },
-  { label: "TRUSTED BY 15,000+ CUSTOMERS" },
-  { label: "MADE IN INDIA" },
+  { label: "TRUSTED BY 15,000+ CUSTOMERS", icon: "/svg/marquee/trusted.svg" },
+  { label: "MADE IN INDIA", icon: "/svg/marquee/india.svg" },
 ];
 
 /** Extra copies keep the track wider than large desktop viewports throughout
