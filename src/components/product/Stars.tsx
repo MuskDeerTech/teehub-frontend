@@ -8,14 +8,21 @@ export default function Stars({
   rating,
   size = 14,
   className = "",
+  color = "#f5b301",
 }: {
   rating: number;
-  size?: number;
+  /** Number of px, or any CSS length — pass `"1em"` to let the row scale with
+   *  the surrounding font size instead of being pinned to a pixel value. */
+  size?: number | string;
   className?: string;
+  /** Filled-star colour. Set inline rather than as a class so callers can
+   *  override it without depending on Tailwind's rule order. */
+  color?: string;
 }) {
   return (
     <span
-      className={`inline-flex items-center gap-px text-[#f5b301] ${className}`}
+      className={`inline-flex items-center gap-px ${className}`}
+      style={{ color }}
       role="img"
       aria-label={`${rating} out of 5 stars`}
     >

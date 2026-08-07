@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter, Anton_SC } from "next/font/google";
+import { Inter, Anton_SC, Bebas_Neue, Roboto } from "next/font/google";
 import "../globals.css";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
@@ -14,6 +14,9 @@ import { getPopularSearches } from "@/lib/search";
 
 const inter = Inter({ variable: "--font-inter", subsets: ["latin"] });
 const anton = Anton_SC({ variable: "--font-anton", weight: "400", subsets: ["latin"] });
+// Display face for the /reviews hero headline; Roboto carries reviewer names.
+const bebas = Bebas_Neue({ variable: "--font-bebas-neue", weight: "400", subsets: ["latin"] });
+const roboto = Roboto({ variable: "--font-roboto-sans", subsets: ["latin"] });
 
 export const metadata: Metadata = {
   // Resolves relative canonical/OG URLs to absolute ones against the live host.
@@ -26,7 +29,10 @@ export default async function StorefrontLayout({ children }: Readonly<{ children
   const popularSearches = await getPopularSearches();
 
   return (
-    <html lang="en" className={`${inter.variable} ${anton.variable} h-full antialiased`}>
+    <html
+      lang="en"
+      className={`${inter.variable} ${anton.variable} ${bebas.variable} ${roboto.variable} h-full antialiased`}
+    >
       <body className="min-h-full font-sans" suppressHydrationWarning>
         <AuthProvider>
           <BookmarksProvider>

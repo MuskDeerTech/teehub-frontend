@@ -72,6 +72,7 @@ export default function Navbar() {
   const [mobileDockVisible, setMobileDockVisible] = useState(true);
   const lastScrollY = useRef(0);
   const isHomePage = pathname === "/";
+  const isReviewsPage = pathname === "/reviews";
   const mobileDockIconClass = isHomePage
     ? "text-white hover:bg-white/15"
     : "text-black hover:bg-black/5";
@@ -176,13 +177,20 @@ export default function Navbar() {
         >
           Track Order
         </Link>
-        <span
+        {/* Fills solid on /reviews so the pill reads as the current page. */}
+        <Link
+          href="/reviews"
+          aria-current={isReviewsPage ? "page" : undefined}
           onMouseEnter={() => setCollectionsOpen(false)}
-          className="flex cursor-pointer items-center gap-1.5 rounded-full border border-[#f36d43] px-4 py-1.5 text-[14px] font-medium text-[#f36d43] transition-colors duration-200 hover:bg-[#f36d43]/5"
+          className={`flex cursor-pointer items-center gap-1.5 rounded-full border border-[#f36d43] px-4 py-1.5 text-[14px] font-medium transition-colors duration-200 ${
+            isReviewsPage
+              ? "bg-[#f36d43] text-white"
+              : "text-[#f36d43] hover:bg-[#f36d43]/5"
+          }`}
         >
           <ReviewIcon className="h-[15px] w-[15px]" />
-          Review
-        </span>
+          Reviews
+        </Link>
       </div>
 
       {/* LOGO */}
