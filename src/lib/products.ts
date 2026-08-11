@@ -533,9 +533,15 @@ export function getPlaceholderColors(slug: string): string[] {
   return colors;
 }
 
+/** A single amount as `₹1,299.00`. Shared so every price on the storefront
+ *  uses one grouping and decimal convention. */
+export function formatRupees(amount: number): string {
+  return `₹${amount.toLocaleString("en-IN", { minimumFractionDigits: 2 })}`;
+}
+
 /** Formats a product's price as a single `₹min – ₹max` (or just `₹min`) string. */
 export function formatPriceRange({ priceMin, priceMax }: Product): string {
-  const fmt = (n: number) =>
-    `₹${n.toLocaleString("en-IN", { minimumFractionDigits: 2 })}`;
-  return priceMax > priceMin ? `${fmt(priceMin)} – ${fmt(priceMax)}` : fmt(priceMin);
+  return priceMax > priceMin
+    ? `${formatRupees(priceMin)} – ${formatRupees(priceMax)}`
+    : formatRupees(priceMin);
 }

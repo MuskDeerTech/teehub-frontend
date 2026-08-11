@@ -2,8 +2,9 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useRef, useState, type CSSProperties } from "react";
+import { type CSSProperties } from "react";
 import Stars from "@/components/product/Stars";
+import { CarouselDots, useCarouselDots } from "@/components/reviews/carousel";
 import { REVIEWS_GUTTER } from "@/components/reviews/gutter";
 import { FEATURED_IMAGE_HEIGHT, type FeaturedReview } from "@/lib/reviewsPage";
 
@@ -111,34 +112,8 @@ export default function FeaturedReviews({
 }: {
   reviews: FeaturedReview[];
 }) {
-  const trackRef = useRef<HTMLDivElement>(null);
-  const cardRefs = useRef<(HTMLElement | null)[]>([]);
-  const [activeIndex, setActiveIndex] = useState(0);
-
-  /** The card whose left edge sits nearest the track's current scroll offset. */
-  const handleScroll = () => {
-    const track = trackRef.current;
-    if (!track) return;
-
-    let nearest = 0;
-    let smallest = Infinity;
-    cardRefs.current.forEach((card, index) => {
-      if (!card) return;
-      const distance = Math.abs(card.offsetLeft - track.scrollLeft);
-      if (distance < smallest) {
-        smallest = distance;
-        nearest = index;
-      }
-    });
-    setActiveIndex(nearest);
-  };
-
-  const scrollTo = (index: number) => {
-    const card = cardRefs.current[index];
-    const track = trackRef.current;
-    if (!card || !track) return;
-    track.scrollTo({ left: card.offsetLeft, behavior: "smooth" });
-  };
+  const { trackRef, setCardRef, activeIndex, handleScroll, scrollTo } =
+    useCarouselDots<HTMLElement>();
 
   return (
     <section className={`py-[clamp(32px,5.4vw,78px)] ${REVIEWS_GUTTER}`}>
@@ -162,30 +137,16 @@ export default function FeaturedReviews({
         className="scrollbar-hide mt-[clamp(18px,3vw,43px)] flex snap-x snap-mandatory gap-[clamp(12px,2.4vw,35px)] overflow-x-auto"
       >
         {reviews.map((review, index) => (
-          <ReviewCard
-            key={review.id}
-            review={review}
-            ref={(node) => {
-              cardRefs.current[index] = node;
-            }}
-          />
+          <ReviewCard key={review.id} review={review} ref={setCardRef(index)} />
         ))}
       </div>
 
-      <div className="mt-[clamp(18px,2.6vw,38px)] flex items-center justify-center gap-2">
-        {reviews.map((review, index) => (
-          <button
-            key={review.id}
-            type="button"
-            aria-label={`Go to review ${index + 1}`}
-            aria-current={index === activeIndex}
-            onClick={() => scrollTo(index)}
-            className={`h-2 cursor-pointer rounded-full transition-all ${
-              index === activeIndex ? "w-5 bg-[#111]" : "w-2 bg-[#d9d9d9]"
-            }`}
-          />
-        ))}
-      </div>
+      <CarouselDots
+        count={reviews.length}
+        activeIndex={activeIndex}
+        onSelect={scrollTo}
+        className="mt-[clamp(18px,2.6vw,38px)]"
+      />
     </section>
   );
 }

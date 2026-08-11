@@ -2,6 +2,10 @@ import type { Metadata } from "next";
 import CategoryMarquee from "@/components/layout/CategoryMarquee";
 import ReviewsHero from "@/components/reviews/ReviewsHero";
 import FeaturedReviews from "@/components/reviews/FeaturedReviews";
+import ReviewsByProduct from "@/components/reviews/ReviewsByProduct";
+import FanGallery from "@/components/reviews/FanGallery";
+import VideoTestimonials from "@/components/reviews/VideoTestimonials";
+import ReviewStats from "@/components/reviews/ReviewStats";
 import { featuredReviews } from "@/lib/reviewsPage";
 import { buildMetadata } from "@/lib/seo";
 
@@ -22,6 +26,10 @@ export default function ReviewsPage() {
       <CategoryMarquee />
       <ReviewsHero />
       <FeaturedReviews reviews={featuredReviews} />
+      <ReviewsByProduct />
+      <FanGallery />
+      <VideoTestimonials />
+      <ReviewStats />
     </main>
   );
 }
