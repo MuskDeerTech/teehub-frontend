@@ -6,6 +6,7 @@ import ReviewsByProduct from "@/components/reviews/ReviewsByProduct";
 import FanGallery from "@/components/reviews/FanGallery";
 import VideoTestimonials from "@/components/reviews/VideoTestimonials";
 import ReviewStats from "@/components/reviews/ReviewStats";
+import LeaveAReview from "@/components/reviews/LeaveAReview";
 import { featuredReviews } from "@/lib/reviewsPage";
 import { buildMetadata } from "@/lib/seo";
 
@@ -30,6 +31,7 @@ export default function ReviewsPage() {
       <FanGallery />
       <VideoTestimonials />
       <ReviewStats />
+      <LeaveAReview />
     </main>
   );
 }

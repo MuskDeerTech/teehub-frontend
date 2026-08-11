@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { IconClock, IconPlayerPlayFilled, IconUsers } from "@tabler/icons-react";
+import { IconClock, IconUsers } from "@tabler/icons-react";
 import { CarouselDots, useCarouselDots } from "@/components/reviews/carousel";
 import { REVIEWS_GUTTER } from "@/components/reviews/gutter";
 import { videoTestimonials, type VideoTestimonial } from "@/lib/reviewsPage";
@@ -39,12 +39,10 @@ function CardMeta({ video }: { video: VideoTestimonial }) {
 }
 
 /**
- * One testimonial tile: poster art, a play affordance, and the caption block
- * over the bottom edge.
+ * One testimonial tile: poster art with the caption block over its bottom edge.
  *
- * Rendered as a button rather than a link because the films aren't cut yet —
- * it carries the design's play affordance without claiming a destination it
- * doesn't have. Swap for the player once the sources land.
+ * No play control of its own — the poster artwork is expected to carry it. Not
+ * a link either, since the films aren't cut yet; wrap it once the sources land.
  */
 function VideoCard({
   video,
@@ -72,17 +70,6 @@ function VideoCard({
         aria-hidden="true"
         className="absolute inset-0 bg-linear-to-t from-black/85 via-black/25 to-transparent"
       />
-
-      <span
-        aria-hidden="true"
-        className="absolute top-1/2 left-1/2 flex aspect-square w-[clamp(34px,3.9vw,56px)] -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-2 border-white/90 text-white"
-        // Font size matches the circle so the triangle scales with it instead
-        // of staying pinned to the inherited body size.
-        style={{ fontSize: "clamp(34px,3.9vw,56px)" }}
-      >
-        {/* Nudged right so the triangle looks centred rather than measuring so. */}
-        <IconPlayerPlayFilled size="0.34em" className="ml-[0.03em]" />
-      </span>
 
       <div className="absolute inset-x-0 bottom-0 p-[clamp(8px,1.1vw,16px)]">
         <div className="flex gap-[clamp(6px,0.83vw,12px)]">
