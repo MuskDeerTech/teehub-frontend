@@ -1,5 +1,6 @@
 import type { Payload } from "payload";
 import type { Customer, Product } from "../../../payload-types";
+import { FALLBACK_SIZES } from "@/lib/products";
 
 export type CheckoutItemInput = {
   id: string;
@@ -95,15 +96,20 @@ export async function prepareCheckout(
     }
 
     const size = requiredText(item.size, "Size", 30);
-    const sizeRecord = product.detailSizes?.find((entry) => entry.label === size);
-    if (!sizeRecord || sizeRecord.stock === 0) {
+    const configuredSizes = product.detailSizes ?? [];
+    if (configuredSizes.length > 0) {
+      const sizeRecord = configuredSizes.find((entry) => entry.label === size);
+      if (!sizeRecord || sizeRecord.stock === 0) {
+        throw new CheckoutError(`${product.title} is unavailable in size ${size}.`, 409);
+      }
+      if (typeof sizeRecord.stock === "number" && quantity > sizeRecord.stock) {
+        throw new CheckoutError(
+          `Only ${sizeRecord.stock} of ${product.title} is available in size ${size}.`,
+          409,
+        );
+      }
+    } else if (!FALLBACK_SIZES.includes(size)) {
       throw new CheckoutError(`${product.title} is unavailable in size ${size}.`, 409);
-    }
-    if (typeof sizeRecord.stock === "number" && quantity > sizeRecord.stock) {
-      throw new CheckoutError(
-        `Only ${sizeRecord.stock} of ${product.title} is available in size ${size}.`,
-        409,
-      );
     }
 
     const price = product.price ?? product.priceMin;

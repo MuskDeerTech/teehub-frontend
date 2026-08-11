@@ -126,11 +126,23 @@ function headers(config: HdfcConfig, customerId: string) {
 
 async function parseGatewayResponse<T>(response: Response): Promise<T> {
   const data = (await response.json().catch(() => null)) as
-    | (T & { error_message?: string; error?: string; error_code?: string })
+    | (T & {
+        error_message?: string;
+        error?: string;
+        error_code?: string;
+        error_info?: {
+          code?: string;
+          developer_message?: string;
+          user_message?: string;
+        };
+      })
     | null;
 
   if (!response.ok || !data) {
     const message =
+      data?.error_info?.user_message ||
+      data?.error_info?.developer_message ||
+      data?.error_info?.code ||
       data?.error_message ||
       data?.error ||
       data?.error_code ||
