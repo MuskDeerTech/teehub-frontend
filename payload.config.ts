@@ -434,6 +434,17 @@ const Products: CollectionConfig = {
       type: "text",
       index: true,
     },
+    // Fabric. Lives here rather than on the Catalog tab because it isn't a
+    // filter — it's a spec, snapshotted onto every order line at purchase time
+    // so order history can show what was actually bought. Colour has the same
+    // job but already exists as the `colors` filter tag below.
+    {
+      name: "material",
+      type: "text",
+      admin: {
+        description: 'e.g. "Polyester". Copied onto order lines at checkout.',
+      },
+    },
     {
       name: "woocommerceStatus",
       type: "select",
@@ -1198,7 +1209,7 @@ const Orders: CollectionConfig = {
   },
   hooks: {
     beforeChange: [
-      ({ data, operation }) => {
+      ({ data, operation, originalDoc }) => {
         // Human-friendly id generated once on create; the DB id stays the PK.
         if (operation === "create" && data) {
           if (!data.orderNumber) {
@@ -1209,6 +1220,32 @@ const Orders: CollectionConfig = {
           if (!data.originalCreatedAt) {
             data.originalCreatedAt = new Date().toISOString();
           }
+        }
+        // Stamp the delivery date on the transition into "delivered" and never
+        // again, so re-saving a delivered order can't move the date. A partial
+        // update can carry `status` without `deliveredAt`, hence the originalDoc
+        // check — otherwise every later save would restamp it. The Woo sync
+        // supplies its own date from `date_completed`; that arrives already set
+        // and is left alone.
+        if (
+          data &&
+          data.status === "delivered" &&
+          !data.deliveredAt &&
+          !originalDoc?.deliveredAt
+        ) {
+          data.deliveredAt = new Date().toISOString();
+        }
+        // Every exchange gets a quotable reference the moment it's raised,
+        // however it was raised — a customer request from order history or
+        // staff setting a state by hand. Generated once, same as orderNumber.
+        if (
+          data?.exchange?.state &&
+          !data.exchange.reference &&
+          !originalDoc?.exchange?.reference
+        ) {
+          const stamp = Date.now().toString(36).toUpperCase();
+          const rand = Math.random().toString(36).slice(2, 6).toUpperCase();
+          data.exchange.reference = `EX-${stamp}-${rand}`;
         }
         return data;
       },
@@ -1284,6 +1321,22 @@ const Orders: CollectionConfig = {
       options: ["pending", "confirmed", "shipped", "delivered", "cancelled"],
       admin: { position: "sidebar" },
     },
+    // Stamped automatically the first time `status` becomes "delivered" (see the
+    // beforeChange hook), so "Delivered on …" appears in order history without
+    // anyone having to fill it in. Editable for the cases where the status was
+    // flipped late and the real date matters.
+    {
+      name: "deliveredAt",
+      label: "Delivered on",
+      type: "date",
+      admin: {
+        position: "sidebar",
+        description: "Set automatically when the status becomes Delivered.",
+        components: {
+          Cell: "/src/components/admin/OrderDateCell#default",
+        },
+      },
+    },
     {
       name: "woocommerceStatus",
       type: "text",
@@ -1345,6 +1398,18 @@ const Orders: CollectionConfig = {
                 { name: "woocommerceVariationId", type: "number" },
                 { name: "image", type: "text" },
                 { name: "size", type: "text" },
+                // Snapshotted alongside size so order history can show the exact
+                // variant bought, even after the product's own colours or fabric
+                // are edited. Free text rather than a select: WooCommerce line
+                // items carry whatever the variation attribute was named.
+                { name: "color", type: "text" },
+                {
+                  name: "material",
+                  type: "text",
+                  admin: {
+                    description: "Fabric at purchase time, e.g. Polyester.",
+                  },
+                },
                 {
                   name: "quantity",
                   type: "number",
@@ -1361,6 +1426,16 @@ const Orders: CollectionConfig = {
                   admin: {
                     description: "Name/number printed on the jersey, if any.",
                   },
+                },
+                // Which line the exchange is actually about. Orders can be part
+                // exchanged, so this is per item rather than order-wide: it puts
+                // the "Exchange" flag on this thumbnail in order history, while
+                // the reason and reference live once on the Exchange tab.
+                {
+                  name: "exchanged",
+                  label: "Part of an exchange",
+                  type: "checkbox",
+                  defaultValue: false,
                 },
               ],
             },
@@ -1440,6 +1515,52 @@ const Orders: CollectionConfig = {
             { name: "discountTotal", type: "number", min: 0 },
             { name: "taxTotal", type: "number", min: 0 },
             { name: "refundedTotal", type: "number", min: 0 },
+          ],
+        },
+        {
+          label: "Exchange",
+          description:
+            "An exchange or return raised against this order. Picking a state "
+            + "is what makes the strip appear on the customer's order history; "
+            + "leave it blank and the order shows as a normal one.",
+          fields: [
+            {
+              name: "exchange",
+              label: false,
+              type: "group",
+              fields: [
+                {
+                  name: "state",
+                  type: "select",
+                  options: [
+                    { label: "Requested (pending)", value: "pending" },
+                    { label: "Accepted", value: "accepted" },
+                  ],
+                  admin: {
+                    description:
+                      "Blank = no exchange on this order. This also drives the "
+                      + "Return tab in order history.",
+                  },
+                },
+                {
+                  name: "reason",
+                  type: "text",
+                  admin: {
+                    description:
+                      'Shown to the customer verbatim, e.g. "Size too small".',
+                  },
+                },
+                {
+                  name: "reference",
+                  label: "Exchange ID",
+                  type: "text",
+                  admin: {
+                    description:
+                      "Courier or internal reference the customer can quote.",
+                  },
+                },
+              ],
+            },
           ],
         },
       ],

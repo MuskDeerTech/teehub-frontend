@@ -387,11 +387,29 @@ function paymentMethod(method = "") {
   return "online";
 }
 
-function lineSize(item: WooLineItem) {
-  const size = item.meta_data?.find((meta) =>
-    (meta.display_key || meta.key).toLowerCase().includes("size"),
+/**
+ * Reads a variation attribute off a line item. WooCommerce stores the chosen
+ * attributes as meta whose key is the attribute name (`pa_size`, `Colour`, …),
+ * so matching is on a substring of the display key with the raw key as backup.
+ */
+function lineMeta(item: WooLineItem, ...needles: string[]) {
+  const match = item.meta_data?.find((meta) => {
+    const key = (meta.display_key || meta.key).toLowerCase();
+    return needles.some((needle) => key.includes(needle));
+  });
+  if (!match) return undefined;
+  const value = String(match.display_value ?? match.value ?? "").trim();
+  return value || undefined;
+}
+
+/** The product's own colour tags, joined for the order-line snapshot. */
+function productColors(product?: Doc) {
+  const colors = product?.colors;
+  if (!Array.isArray(colors)) return undefined;
+  const named = colors.filter(
+    (color): color is string => typeof color === "string" && color.length > 0,
   );
-  return size ? String(size.display_value ?? size.value) : undefined;
+  return named.length ? named.join(" & ") : undefined;
 }
 
 async function mapLineItem(
@@ -414,7 +432,13 @@ async function mapLineItem(
     woocommerceVariationId: item.variation_id || undefined,
     name: item.name,
     image: item.image?.src,
-    size: lineSize(item),
+    size: lineMeta(item, "size"),
+    // Prefer what the buyer actually picked; fall back to the product record so
+    // a simple (non-variable) product still shows its colour/fabric in history.
+    color: lineMeta(item, "color", "colour") ?? productColors(product),
+    material:
+      lineMeta(item, "material", "fabric") ??
+      (typeof product?.material === "string" ? product.material : undefined),
     quantity,
     price: total / quantity,
     mrp: subtotal / quantity,
@@ -494,6 +518,10 @@ export async function syncOrder(
     status: orderStatus(order.status),
     woocommerceStatus: order.status,
     originalCreatedAt: order.date_created,
+    // Woo's own completion date, so re-syncing an old order doesn't date it
+    // today. Left undefined for anything not completed — the Orders hook then
+    // stamps it if the status is set to delivered from the admin.
+    deliveredAt: order.date_completed || undefined,
     currency: order.currency || "INR",
     customer: customer?.id,
     items: lineItems,

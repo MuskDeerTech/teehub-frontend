@@ -140,7 +140,12 @@ export default function LeaveAReview() {
   };
 
   return (
-    <section className={`pb-[clamp(32px,5.4vw,78px)] ${REVIEWS_GUTTER}`}>
+    // The `id` is the target of the navbar account menu's "Review" link;
+    // `scroll-mt` clears the sticky navbar when it lands.
+    <section
+      id="leave-a-review"
+      className={`scroll-mt-24 pb-[clamp(32px,5.4vw,78px)] ${REVIEWS_GUTTER}`}
+    >
       <h2
         className={`font-sfpro ${TEXT_40} font-bold uppercase tracking-[0.2px] text-[#111]`}
       >

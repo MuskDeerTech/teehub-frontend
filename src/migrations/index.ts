@@ -5,6 +5,7 @@ import * as migration_childrens_corner from './childrens_corner';
 import * as migration_search_global from './search_global';
 import * as migration_top_collections from './top_collections';
 import * as migration_product_page_and_reviews from './product_page_and_reviews';
+import * as migration_order_exchange_and_variant_details from './order_exchange_and_variant_details';
 
 // Order matters: Payload runs anything not yet recorded in `payload_migrations`
 // top to bottom, so new migrations are appended rather than sorted in.
@@ -43,5 +44,10 @@ export const migrations = [
     up: migration_product_page_and_reviews.up,
     down: migration_product_page_and_reviews.down,
     name: 'product_page_and_reviews'
+  },
+  {
+    up: migration_order_exchange_and_variant_details.up,
+    down: migration_order_exchange_and_variant_details.down,
+    name: 'order_exchange_and_variant_details'
   },
 ];

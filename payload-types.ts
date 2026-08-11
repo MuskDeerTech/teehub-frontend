@@ -338,6 +338,10 @@ export interface Product {
   slug: string;
   category: number | Category;
   sku?: string | null;
+  /**
+   * e.g. "Polyester". Copied onto order lines at checkout.
+   */
+  material?: string | null;
   woocommerceStatus?: ('draft' | 'pending' | 'private' | 'publish' | 'trash') | null;
   woocommerceType?: ('simple' | 'grouped' | 'external' | 'variable') | null;
   originalCreatedAt?: string | null;
@@ -537,6 +541,10 @@ export interface Order {
    */
   orderNumber?: string | null;
   status?: ('pending' | 'confirmed' | 'shipped' | 'delivered' | 'cancelled') | null;
+  /**
+   * Set automatically when the status becomes Delivered.
+   */
+  deliveredAt?: string | null;
   woocommerceStatus?: string | null;
   originalCreatedAt?: string | null;
   currency?: string | null;
@@ -555,6 +563,11 @@ export interface Order {
         woocommerceVariationId?: number | null;
         image?: string | null;
         size?: string | null;
+        color?: string | null;
+        /**
+         * Fabric at purchase time, e.g. Polyester.
+         */
+        material?: string | null;
         quantity: number;
         price: number;
         mrp?: number | null;
@@ -562,6 +575,7 @@ export interface Order {
          * Name/number printed on the jersey, if any.
          */
         customName?: string | null;
+        exchanged?: boolean | null;
         id?: string | null;
       }[]
     | null;
@@ -614,6 +628,20 @@ export interface Order {
   discountTotal?: number | null;
   taxTotal?: number | null;
   refundedTotal?: number | null;
+  exchange?: {
+    /**
+     * Blank = no exchange on this order. This also drives the Return tab in order history.
+     */
+    state?: ('pending' | 'accepted') | null;
+    /**
+     * Shown to the customer verbatim, e.g. "Size too small".
+     */
+    reason?: string | null;
+    /**
+     * Courier or internal reference the customer can quote.
+     */
+    reference?: string | null;
+  };
   customerNote?: string | null;
   woocommerceData?:
     | {
@@ -915,6 +943,7 @@ export interface ProductsSelect<T extends boolean = true> {
   slug?: T;
   category?: T;
   sku?: T;
+  material?: T;
   woocommerceStatus?: T;
   woocommerceType?: T;
   originalCreatedAt?: T;
@@ -1019,6 +1048,7 @@ export interface OrdersSelect<T extends boolean = true> {
   woocommerceId?: T;
   orderNumber?: T;
   status?: T;
+  deliveredAt?: T;
   woocommerceStatus?: T;
   originalCreatedAt?: T;
   currency?: T;
@@ -1032,10 +1062,13 @@ export interface OrdersSelect<T extends boolean = true> {
         woocommerceVariationId?: T;
         image?: T;
         size?: T;
+        color?: T;
+        material?: T;
         quantity?: T;
         price?: T;
         mrp?: T;
         customName?: T;
+        exchanged?: T;
         id?: T;
       };
   fullName?: T;
@@ -1064,6 +1097,13 @@ export interface OrdersSelect<T extends boolean = true> {
   discountTotal?: T;
   taxTotal?: T;
   refundedTotal?: T;
+  exchange?:
+    | T
+    | {
+        state?: T;
+        reason?: T;
+        reference?: T;
+      };
   customerNote?: T;
   woocommerceData?: T;
   updatedAt?: T;

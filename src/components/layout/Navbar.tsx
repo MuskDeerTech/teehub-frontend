@@ -14,6 +14,7 @@ import {
   SearchIcon,
 } from "@/components/ui/icons";
 import MegaMenu from "@/components/layout/MegaMenu";
+import AccountMenu from "@/components/layout/AccountMenu";
 import CollectionsDropdown from "@/components/layout/CollectionsDropdown";
 import SearchOverlay from "@/components/layout/SearchOverlay";
 import AuthForm from "@/components/auth/AuthForm";
@@ -60,12 +61,13 @@ export default function Navbar() {
   const router = useRouter();
   const pathname = usePathname();
   const { openCart, cartOpen, totalCount } = useCart();
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
 
   const [menuOpen, setMenuOpen] = useState(false);
   const [collectionsOpen, setCollectionsOpen] = useState(false);
   const { searchOpen, openSearch, closeSearch } = useSearch();
   const [authOpen, setAuthOpen] = useState(false);
+  const [accountMenuOpen, setAccountMenuOpen] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
   const [categoriesLoaded, setCategoriesLoaded] = useState(false);
   const [categoriesLoading, setCategoriesLoading] = useState(false);
@@ -136,6 +138,46 @@ export default function Navbar() {
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  // Close the account menu on an outside click or Escape. Both profile
+  // triggers (desktop icon, mobile dock) are marked `data-account-menu`, so a
+  // click on either counts as inside and their own handler does the toggling
+  // rather than this closing it a moment before it reopens.
+  useEffect(() => {
+    if (!accountMenuOpen) return;
+
+    const handlePointerDown = (event: PointerEvent) => {
+      const target = event.target as HTMLElement | null;
+      if (target?.closest("[data-account-menu]")) return;
+      setAccountMenuOpen(false);
+    };
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setAccountMenuOpen(false);
+    };
+
+    document.addEventListener("pointerdown", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("pointerdown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [accountMenuOpen]);
+
+  // Guests get the sign-in form; signed-in shoppers get the menu.
+  const handleProfileClick = () => {
+    if (!user) {
+      setAuthOpen(true);
+      return;
+    }
+    setAccountMenuOpen((open) => !open);
+  };
+
+  const handleLogout = async () => {
+    setAccountMenuOpen(false);
+    await logout();
+    // Off any signed-in-only page, since the session that justified it is gone.
+    router.push("/");
+  };
 
   const toggleMenu = () => {
     const next = !menuOpen;
@@ -282,17 +324,27 @@ export default function Navbar() {
         </button>
 
         {/* PROFILE */}
-        <button
-          type="button"
-          aria-label={user ? "Account" : "Sign in"}
-          onClick={() => (user ? router.push("/account") : setAuthOpen(true))}
-          onMouseEnter={() => setCollectionsOpen(false)}
-          className="relative flex h-7 w-7 cursor-pointer items-center justify-center max-[1024px]:hidden"
-        >
-          <ProfileIcon
-            className={`h-6 w-6 ${user ? "text-[#f36d43]" : "text-[#6E6E6E]"}`}
+        <div data-account-menu className="relative max-[1024px]:hidden">
+          <button
+            type="button"
+            aria-label={user ? "Account" : "Sign in"}
+            aria-haspopup={user ? "menu" : undefined}
+            aria-expanded={user ? accountMenuOpen : undefined}
+            onClick={handleProfileClick}
+            onMouseEnter={() => setCollectionsOpen(false)}
+            className="relative flex h-7 w-7 cursor-pointer items-center justify-center"
+          >
+            <ProfileIcon
+              className={`h-6 w-6 ${user ? "text-[#f36d43]" : "text-[#6E6E6E]"}`}
+            />
+          </button>
+
+          <AccountMenu
+            open={accountMenuOpen}
+            onNavigate={() => setAccountMenuOpen(false)}
+            onLogout={handleLogout}
           />
-        </button>
+        </div>
 
         <button
           type="button"
@@ -349,14 +401,27 @@ export default function Navbar() {
           <SearchIcon className="h-7 w-7" />
         </button>
 
-        <button
-          type="button"
-          aria-label={user ? "Account" : "Sign in"}
-          onClick={() => (user ? router.push("/account") : setAuthOpen(true))}
-          className={`flex h-12 w-12 cursor-pointer items-center justify-center rounded-full transition-colors ${mobileDockIconClass}`}
-        >
-          <ProfileIcon className="h-7 w-7" />
-        </button>
+        <div data-account-menu className="relative">
+          <button
+            type="button"
+            aria-label={user ? "Account" : "Sign in"}
+            aria-haspopup={user ? "menu" : undefined}
+            aria-expanded={user ? accountMenuOpen : undefined}
+            onClick={handleProfileClick}
+            className={`flex h-12 w-12 cursor-pointer items-center justify-center rounded-full transition-colors ${mobileDockIconClass}`}
+          >
+            <ProfileIcon className="h-7 w-7" />
+          </button>
+
+          {/* The dock is pinned to the bottom of the viewport, so this one
+              opens upward. */}
+          <AccountMenu
+            open={accountMenuOpen}
+            placement="above"
+            onNavigate={() => setAccountMenuOpen(false)}
+            onLogout={handleLogout}
+          />
+        </div>
 
         <button
           type="button"
