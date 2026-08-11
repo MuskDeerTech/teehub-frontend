@@ -952,7 +952,17 @@ const Pages: CollectionConfig = {
 // checkout register step collects, so a saved address fills the form 1:1.
 const Customers: CollectionConfig = {
   slug: "customers",
-  auth: true,
+  // `maxLoginAttempts: 0` turns off account locking. Payload's default (5
+  // strikes, 10-minute lock) punishes the forgetful customer far more often
+  // than it stops an attacker, and because the login route reports every
+  // failure as "Invalid login or password", a locked shopper just sees their
+  // correct password rejected with no explanation. The sign-in form counts
+  // consecutive failures instead and offers a password reset — help, not a
+  // door. Note this also makes Payload skip the lock check entirely, so any
+  // `lockUntil` already sitting on a customer row stops having any effect.
+  auth: {
+    maxLoginAttempts: 0,
+  },
   defaultSort: "-lastActiveAt",
   hooks: {
     beforeChange: [

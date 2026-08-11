@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -15,6 +15,11 @@ import { AuthApiError, useAuth } from "@/components/auth/AuthContext";
 
 type AuthMode = "login" | "register" | "verify" | "reset-request" | "reset";
 type ResetReason = "forgot" | "migration";
+
+/** Consecutive failures against one account before we stop letting someone
+ *  guess and point them at a password reset. Accounts are never locked — see
+ *  the `Customers` auth config — so this is purely a nudge. */
+const RESET_HINT_AFTER_FAILURES = 5;
 
 interface AuthFormProps {
   open: boolean;
@@ -55,6 +60,11 @@ export default function AuthForm({
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  // Consecutive failed sign-ins for whichever account is currently being
+  // tried. Kept per-identifier so switching to a different email starts over
+  // rather than inheriting someone else's tally.
+  const [failedLogins, setFailedLogins] = useState(0);
+  const lastFailedIdentifier = useRef("");
 
   const isRegister = mode === "register";
   const isVerify = mode === "verify";
@@ -76,6 +86,8 @@ export default function AuthForm({
     setError("");
     setNotice("");
     setSubmitting(false);
+    setFailedLogins(0);
+    lastFailedIdentifier.current = "";
   };
 
   const switchMode = (next: AuthMode) => {
@@ -254,6 +266,8 @@ export default function AuthForm({
       } else {
         try {
           await login(value, password);
+          setFailedLogins(0);
+          lastFailedIdentifier.current = "";
           closeAuth();
           onAuthenticated?.();
         } catch (err) {
@@ -282,6 +296,13 @@ export default function AuthForm({
             setNotice("");
             return;
           }
+          // A genuine bad-credentials failure. Everything above this point is
+          // a redirect into another flow, not a wrong password, so it must not
+          // count towards the reset hint.
+          setFailedLogins((count) =>
+            lastFailedIdentifier.current === value ? count + 1 : 1,
+          );
+          lastFailedIdentifier.current = value;
           throw err;
         }
       }
@@ -509,6 +530,25 @@ export default function AuthForm({
 
           {error && <p className="px-2 text-xs text-red-500">{error}</p>}
           {notice && <p className="px-2 text-xs text-green-600">{notice}</p>}
+
+          {/* Offered, never enforced: the account stays open, we just stop
+              letting someone bounce off the same password forever. */}
+          {mode === "login" && failedLogins >= RESET_HINT_AFTER_FAILURES && (
+            <div className="rounded-xl border border-[#F26522]/30 bg-[#FFF4EF] px-4 py-3">
+              <p className="text-xs leading-5 text-gray-700">
+                That&apos;s {failedLogins} sign-in attempts that didn&apos;t
+                work. Your account is still open — but if you&apos;ve forgotten
+                your password, we can email you a 6-digit code to set a new one.
+              </p>
+              <button
+                type="button"
+                onClick={openForgotPassword}
+                className="mt-2 text-sm font-semibold text-[#F26522] hover:underline"
+              >
+                Reset my password
+              </button>
+            </div>
+          )}
 
           {!isVerify && !isReset && !isResetRequest && (
             <div className="flex items-center justify-between px-1">
