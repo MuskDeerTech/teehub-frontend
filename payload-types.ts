@@ -615,6 +615,21 @@ export interface Order {
     status?: ('pending' | 'paid' | 'failed' | 'refunded') | null;
     transactionId?: string | null;
     title?: string | null;
+    gatewayOrderId?: string | null;
+    gatewayStatus?: string | null;
+    verifiedAt?: string | null;
+    /**
+     * Sanitized server-to-server verification result. Secrets and full payment credentials are never stored.
+     */
+    gatewayResponse?:
+      | {
+          [k: string]: unknown;
+        }
+      | unknown[]
+      | string
+      | number
+      | boolean
+      | null;
   };
   giftWrap?: boolean | null;
   /**
@@ -1087,6 +1102,10 @@ export interface OrdersSelect<T extends boolean = true> {
         status?: T;
         transactionId?: T;
         title?: T;
+        gatewayOrderId?: T;
+        gatewayStatus?: T;
+        verifiedAt?: T;
+        gatewayResponse?: T;
       };
   giftWrap?: T;
   couponCode?: T;

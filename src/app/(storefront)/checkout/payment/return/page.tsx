@@ -1,0 +1,166 @@
+"use client";
+
+import Link from "next/link";
+import { Suspense, useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import {
+  IconCircleCheck,
+  IconCircleX,
+  IconClock,
+} from "@tabler/icons-react";
+import { useCart } from "@/components/cart/CartContext";
+
+type ViewState = "verifying" | "paid" | "pending" | "failed" | "missing";
+
+function PaymentReturnContent() {
+  const searchParams = useSearchParams();
+  const { clearCart, closeCart } = useCart();
+  const isCod = searchParams.get("cod") === "1";
+  const codOrderNumber = searchParams.get("order") || "";
+  const [state, setState] = useState<ViewState>(isCod ? "paid" : "verifying");
+  const [orderNumber, setOrderNumber] = useState(codOrderNumber);
+  const [message, setMessage] = useState("");
+
+  useEffect(() => {
+    if (isCod) {
+      clearCart();
+      closeCart();
+      return;
+    }
+
+    let cancelled = false;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const queryOrderId =
+      searchParams.get("order_id") || searchParams.get("orderId") || "";
+    let storedOrderId = "";
+    try {
+      const stored = JSON.parse(
+        window.sessionStorage.getItem("teehub-hdfc-payment") || "{}",
+      ) as { gatewayOrderId?: string; orderNumber?: string };
+      storedOrderId = stored.gatewayOrderId || "";
+    } catch {}
+
+    const gatewayOrderId = queryOrderId || storedOrderId;
+    if (!gatewayOrderId) {
+      timer = setTimeout(() => {
+        if (!cancelled) setState("missing");
+      }, 0);
+      return;
+    }
+
+    const verify = async (attempt: number) => {
+      try {
+        const response = await fetch("/api/payments/hdfc/verify", {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ gatewayOrderId }),
+        });
+        const data = (await response.json().catch(() => null)) as {
+          status?: "paid" | "pending" | "failed";
+          orderNumber?: string;
+          errors?: { message?: string }[];
+        } | null;
+        if (cancelled) return;
+        if (!response.ok || !data?.status) {
+          setState("failed");
+          setMessage(
+            data?.errors?.[0]?.message || "We could not verify this payment.",
+          );
+          return;
+        }
+
+        if (data.orderNumber) setOrderNumber(data.orderNumber);
+        setState(data.status);
+
+        if (data.status === "paid") {
+          clearCart();
+          closeCart();
+          window.sessionStorage.removeItem("teehub-hdfc-payment");
+        } else if (data.status === "pending" && attempt < 6) {
+          timer = setTimeout(() => verify(attempt + 1), 15_000);
+        }
+      } catch {
+        if (!cancelled) {
+          setState("failed");
+          setMessage("We could not reach the server to verify this payment.");
+        }
+      }
+    };
+
+    void verify(0);
+    return () => {
+      cancelled = true;
+      if (timer) clearTimeout(timer);
+    };
+  }, [clearCart, closeCart, isCod, searchParams]);
+
+  const paid = state === "paid";
+  const pending = state === "pending" || state === "verifying";
+  const Icon = paid ? IconCircleCheck : pending ? IconClock : IconCircleX;
+  const title = isCod
+    ? "Order placed successfully"
+    : paid
+      ? "Payment successful"
+      : pending
+        ? "Confirming your payment"
+        : "Payment not confirmed";
+
+  return (
+    <main className="flex min-h-[65vh] items-center justify-center bg-[#f7f7f7] px-5 py-16">
+      <section className="w-full max-w-lg rounded-2xl bg-white p-8 text-center shadow-sm ring-1 ring-black/5">
+        <Icon
+          size={58}
+          stroke={1.5}
+          className={`mx-auto ${paid ? "text-green-600" : pending ? "text-amber-500" : "text-red-500"}`}
+        />
+        <h1 className="mt-4 text-2xl font-bold text-[#111]">{title}</h1>
+        <p className="mt-2 text-sm leading-6 text-gray-500">
+          {isCod
+            ? "We have received your Cash on Delivery order."
+            : paid
+              ? "HDFC SmartGateway verified your payment server-side."
+              : pending
+                ? "The bank has not returned a final status yet. This page will check again automatically."
+                : message || "No successful charge was found for this order."}
+        </p>
+        {orderNumber && (
+          <p className="mt-4 rounded-lg bg-gray-50 px-4 py-3 text-sm font-semibold">
+            Order: {orderNumber}
+          </p>
+        )}
+
+        <div className="mt-7 flex flex-col justify-center gap-3 sm:flex-row">
+          <Link
+            href="/account/orders"
+            className="rounded-full bg-[#F26522] px-6 py-2.5 text-sm font-semibold text-white"
+          >
+            View Orders
+          </Link>
+          {!paid && !pending && (
+            <Link
+              href="/checkout/payment"
+              className="rounded-full border border-gray-300 px-6 py-2.5 text-sm font-semibold text-gray-700"
+            >
+              Try Again
+            </Link>
+          )}
+          <Link
+            href="/"
+            className="rounded-full border border-gray-300 px-6 py-2.5 text-sm font-semibold text-gray-700"
+          >
+            Continue Shopping
+          </Link>
+        </div>
+      </section>
+    </main>
+  );
+}
+
+export default function PaymentReturnPage() {
+  return (
+    <Suspense fallback={<main className="min-h-[65vh] bg-[#f7f7f7]" />}>
+      <PaymentReturnContent />
+    </Suspense>
+  );
+}

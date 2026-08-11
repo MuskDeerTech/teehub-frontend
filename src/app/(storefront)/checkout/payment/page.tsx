@@ -44,6 +44,7 @@ export default function CheckoutPaymentPage() {
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
   const {
+    items,
     totalCount,
     totalMrp,
     totalPrice,
@@ -64,7 +65,7 @@ export default function CheckoutPaymentPage() {
   const [loading, setLoading] = useState(false);
   const [submitError, setSubmitError] = useState("");
 
-  const onlineTotal = Math.max(0, totalPrice - 30);
+  const payableTotal = totalPrice + (makeGift === "YES" ? 20 : 0);
 
   useEffect(() => {
     if (authLoading || user) return;
@@ -105,20 +106,80 @@ export default function CheckoutPaymentPage() {
   };
 
   const handleContinue = async () => {
+    if (!customer) {
+      router.push("/checkout/address");
+      return;
+    }
+    if (!selectedPayment) {
+      setSubmitError("Choose a payment method to continue.");
+      return;
+    }
+
     setLoading(true);
     setSubmitError("");
     try {
-      // TODO: connect to backend when ready
-      // await fetch("/api/payment/initiate", {
-      //   method: "POST",
-      //   headers: { "Content-Type": "application/json" },
-      //   body: JSON.stringify({ paymentMethod: selectedPayment, couponCode, makeGift }),
-      // });
-      clearCart();
-      closeCart();
-      router.push("/");
-    } catch {
-      setSubmitError("Something went wrong. Please try again.");
+      const isCod = selectedPayment === "cod";
+      const response = await fetch(
+        isCod ? "/api/orders/checkout" : "/api/payments/hdfc/session",
+        {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            items: items.map(({ id, size, quantity, customName }) => ({
+              id,
+              size,
+              quantity,
+              customName,
+            })),
+            customer,
+            paymentMethod: selectedPayment,
+            couponCode,
+            giftWrap: makeGift === "YES",
+          }),
+        },
+      );
+      const data = (await response.json().catch(() => null)) as {
+        errors?: { message?: string }[];
+        orderId?: string | number;
+        orderNumber?: string;
+        gatewayOrderId?: string;
+        paymentUrl?: string;
+      } | null;
+
+      if (!response.ok) {
+        throw new Error(
+          data?.errors?.[0]?.message || "Could not start checkout.",
+        );
+      }
+
+      if (isCod) {
+        clearCart();
+        closeCart();
+        router.push(
+          `/checkout/payment/return?cod=1&order=${encodeURIComponent(data?.orderNumber || "")}`,
+        );
+        return;
+      }
+
+      if (!data?.gatewayOrderId || !data.paymentUrl) {
+        throw new Error("The payment gateway did not return a checkout link.");
+      }
+      window.sessionStorage.setItem(
+        "teehub-hdfc-payment",
+        JSON.stringify({
+          gatewayOrderId: data.gatewayOrderId,
+          orderId: data.orderId,
+          orderNumber: data.orderNumber,
+        }),
+      );
+      window.location.assign(data.paymentUrl);
+    } catch (error) {
+      setSubmitError(
+        error instanceof Error
+          ? error.message
+          : "Something went wrong. Please try again.",
+      );
     } finally {
       setLoading(false);
     }
@@ -155,7 +216,7 @@ export default function CheckoutPaymentPage() {
             </span>
 
             <span className="text-xl font-bold text-[#F26522]">
-              ₹{totalPrice}
+              ₹{payableTotal}
             </span>
           </div>
         </div>
@@ -325,17 +386,14 @@ export default function CheckoutPaymentPage() {
               <div>
                 <p className="text-sm font-bold">Online Payment</p>
                 <p className="text-[11px] text-green-600 font-medium">
-                  Save ₹30 and more on online payments
+                  Secure checkout powered by HDFC SmartGateway
                 </p>
               </div>
             </div>
             <div className="flex items-center gap-2 flex-shrink-0">
               <div className="text-right">
                 <p className="text-sm font-bold text-green-600">
-                  ₹{onlineTotal}
-                </p>
-                <p className="text-xs text-gray-400 line-through">
-                  ₹{totalPrice}
+                  ₹{payableTotal}
                 </p>
               </div>
               <div
@@ -612,7 +670,7 @@ export default function CheckoutPaymentPage() {
               <p className="text-sm font-semibold">Cash On Delivery</p>
             </div>
             <div className="flex items-center gap-2">
-              <p className="text-sm font-bold">₹{totalPrice}</p>
+              <p className="text-sm font-bold">₹{payableTotal}</p>
               <div
                 className={`w-6 h-6 border-2 rounded-md flex items-center justify-center flex-shrink-0 ${
                   selectedPayment === "cod"

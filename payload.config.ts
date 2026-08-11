@@ -1489,6 +1489,41 @@ const Orders: CollectionConfig = {
                 },
                 { name: "transactionId", type: "text" },
                 { name: "title", type: "text" },
+                {
+                  name: "gatewayOrderId",
+                  label: "Gateway order ID",
+                  type: "text",
+                  unique: true,
+                  index: true,
+                  admin: { readOnly: true },
+                },
+                {
+                  name: "gatewayStatus",
+                  label: "Gateway status",
+                  type: "text",
+                  admin: { readOnly: true },
+                },
+                {
+                  name: "verifiedAt",
+                  label: "Payment verified at",
+                  type: "date",
+                  admin: { readOnly: true },
+                },
+                {
+                  name: "gatewayResponse",
+                  label: "Verified gateway response",
+                  type: "json",
+                  access: {
+                    read: isAdminField,
+                    create: isAdminField,
+                    update: isAdminField,
+                  },
+                  admin: {
+                    readOnly: true,
+                    description:
+                      "Sanitized server-to-server verification result. Secrets and full payment credentials are never stored.",
+                  },
+                },
               ],
             },
             {

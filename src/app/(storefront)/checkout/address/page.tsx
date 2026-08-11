@@ -24,6 +24,7 @@ type CheckoutForm = {
   flatHouse: string;
   apartment: string;
   fullName: string;
+  phone: string;
   email: string;
 };
 
@@ -64,6 +65,7 @@ function formFromCustomerData(
       : payloadAddress.apartment,
     fullName:
       customer?.fullName ?? savedAddress?.fullName ?? user?.fullName ?? "",
+    phone: customer?.phone ?? savedAddress?.phone ?? user?.phone ?? "",
     email: customer?.email ?? user?.email ?? "",
   };
 }
@@ -127,6 +129,9 @@ export default function CheckoutAddressPage() {
     if (!form.state.trim()) e.state = "Required";
     if (!form.flatHouse.trim()) e.flatHouse = "Required";
     if (!form.fullName.trim()) e.fullName = "Required";
+    if (form.phone.replace(/\D/g, "").length !== 10) {
+      e.phone = "Enter valid 10-digit phone number";
+    }
     if (!form.email.trim() || !/\S+@\S+\.\S+/.test(form.email)) {
       e.email = "Enter valid email";
     }
@@ -173,14 +178,14 @@ export default function CheckoutAddressPage() {
         pincode: form.pincode.trim(),
         city: form.city.trim(),
         state: form.state.trim(),
-        phone: user?.phone ?? "",
+        phone: form.phone.replace(/\D/g, ""),
         email: form.email.trim(),
       });
       if (user) {
         const nextAddress: SavedAddress = {
           label: selectedSaveAs,
           fullName: form.fullName.trim(),
-          phone: user.phone ?? "",
+          phone: form.phone.replace(/\D/g, ""),
           address: fullAddress,
           city: form.city.trim(),
           state: form.state.trim(),
@@ -192,6 +197,7 @@ export default function CheckoutAddressPage() {
         );
         await updateProfile({
           fullName: form.fullName.trim(),
+          phone: form.phone.replace(/\D/g, ""),
           addresses: [nextAddress, ...otherAddresses],
         });
       }
@@ -406,6 +412,31 @@ export default function CheckoutAddressPage() {
               <p className="text-[10px] text-red-500 mt-0.5">
                 {errors.fullName}
               </p>
+            )}
+          </div>
+
+          <div className="mb-3">
+            <label className="text-xs text-gray-500 mb-1 block">
+              Mobile Number*
+            </label>
+            <input
+              className={INPUT}
+              type="tel"
+              inputMode="numeric"
+              maxLength={10}
+              value={form.phone}
+              onChange={(event) => {
+                const phone = event.target.value.replace(/\D/g, "").slice(0, 10);
+                setFormEdited(true);
+                setDraftForm((current) => ({
+                  ...(formEdited ? current : form),
+                  phone,
+                }));
+                setErrors((current) => ({ ...current, phone: "" }));
+              }}
+            />
+            {errors.phone && (
+              <p className="text-[10px] text-red-500 mt-0.5">{errors.phone}</p>
             )}
           </div>
 

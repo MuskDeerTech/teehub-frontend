@@ -57,6 +57,24 @@ If `S3_BUCKET` is unset, uploads go to local disk — no other S3 variables are 
 
 The `WOOCOMMERCE_*` variables are only needed for the one-time data migration and the live sync webhook — not for normal development. They're documented in [WOOCOMMERCE.md](WOOCOMMERCE.md). Note that `WOOCOMMERCE_WEBHOOK_SECRET` is still required in production for as long as the live sync runs.
 
+### HDFC SmartGateway
+
+The checkout uses HDFC's hosted payment page with the Basic Authentication API. Generate the API key in the SmartGateway dashboard under **Payments → Settings → Security → API Keys**. Keep the downloaded raw key server-side and never expose it through a `NEXT_PUBLIC_` variable.
+
+| Variable | What it is |
+| --- | --- |
+| `HDFC_SMARTGATEWAY_ENV` | `uat` for testing; change to `production` only after HDFC enables the live merchant. |
+| `HDFC_SMARTGATEWAY_MERCHANT_ID` | Merchant ID issued by HDFC. |
+| `HDFC_SMARTGATEWAY_API_KEY` | Raw API key downloaded from the dashboard. The server Base64-encodes it for the Basic Authorization header. |
+| `HDFC_SMARTGATEWAY_CLIENT_ID` | `hdfcmaster` in UAT; the production merchant ID in production unless HDFC supplies a different value. |
+| `HDFC_SMARTGATEWAY_RESELLER_ID` | Defaults to `hdfc_reseller`. |
+| `HDFC_SMARTGATEWAY_RETURN_URL` | Public HTTPS URL ending in `/checkout/payment/return`. HDFC rejects query strings, IP addresses, and redirecting return URLs. Use a secure tunnel URL for local UAT testing. |
+| `HDFC_SMARTGATEWAY_WEBHOOK_USERNAME` / `HDFC_SMARTGATEWAY_WEBHOOK_PASSWORD` | Random credentials you create locally and configure identically in HDFC's webhook settings. Do not reuse the dashboard password. |
+
+After adding these values, run `npm run payload:migrate` to add the gateway verification fields to orders. The storefront creates order totals from current Payload product prices, redirects to HDFC, and only marks an order paid after the server re-checks the HDFC order ID, amount, currency, merchant, and `CHARGED` status.
+
+In the HDFC dashboard, configure the webhook URL as `https://<your-domain>/api/payments/hdfc/webhook`, enter the dedicated webhook username/password above, and enable the order/payment events. The endpoint is idempotent and re-checks HDFC's authenticated Order Status API before updating the local order.
+
 ### Other
 
 | Variable | What it is |
