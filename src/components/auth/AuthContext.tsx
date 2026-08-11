@@ -53,12 +53,19 @@ export class AuthApiError extends Error {
  * All requests are same-origin to Payload's REST API; `credentials: "include"`
  * sends/receives the HTTP-only `payload-token` cookie Payload sets on login.
  * The token is never read in JS — login state is derived from `/me`.
+ *
+ * `cache: "no-store"` is not optional. Our host stamps `Cache-Control:
+ * max-age=7200` onto every 200 response, `/me` included, so the browser would
+ * otherwise replay a stale `{"user":null}` for two hours and show a signed-in
+ * customer as logged out on every fresh tab. This overrides response headers
+ * outright, so no proxy or CDN setting can reintroduce the bug.
  */
 const api = (path: string, init?: RequestInit) =>
   fetch(`/api/customers${path}`, {
     credentials: "include",
     headers: { "Content-Type": "application/json" },
     ...init,
+    cache: "no-store",
   });
 
 async function errorMessage(res: Response, fallback: string) {

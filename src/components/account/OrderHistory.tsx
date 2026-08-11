@@ -148,9 +148,13 @@ export default function OrderHistory() {
       limit: "50",
     });
 
+    // `no-store` for the same reason as the auth calls: the host stamps a
+    // two-hour `max-age` on 200s, which would serve a snapshot of this list
+    // taken before the customer's latest order existed.
     fetch(`/api/orders?${params.toString()}`, {
       credentials: "include",
       signal: controller.signal,
+      cache: "no-store",
     })
       .then((res) => (res.ok ? res.json() : { docs: [] }))
       .then((data: { docs?: Order[] }) => {
