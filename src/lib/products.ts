@@ -91,6 +91,12 @@ export type Team = {
   backgroundImage?: string;
   bannerLeft?: string;
   bannerRight?: string;
+  // The two headline lines over the artwork — the only copy that differs between
+  // slides. Line 2 is always orange; line 1 follows `theme`.
+  headlineTop?: string;
+  headlineBottom?: string;
+  /** "light" flips line 1 and the badge labels to black, for bright artwork. */
+  theme?: "dark" | "light";
 };
 
 /** Shared Hero banners used until per-team artwork is supplied. */

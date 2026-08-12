@@ -125,6 +125,9 @@ function toHeroTeam(
         name?: string | null;
         logo?: (number | null) | Media;
         backgroundImage?: (number | null) | Media;
+        headlineTop?: string | null;
+        headlineBottom?: string | null;
+        theme?: ("dark" | "light") | null;
       }
     | null
     | undefined,
@@ -150,6 +153,9 @@ function toHeroTeam(
     logoWidth: width,
     logoHeight: height,
     backgroundImage: background,
+    headlineTop: team.headlineTop?.trim() || undefined,
+    headlineBottom: team.headlineBottom?.trim() || undefined,
+    theme: team.theme ?? "dark",
   };
 }
 

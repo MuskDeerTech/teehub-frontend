@@ -2050,6 +2050,12 @@ const HomePage: GlobalConfig = {
               name: "heroTeams",
               type: "array",
               labels: { singular: "Team", plural: "Teams" },
+              admin: {
+                description:
+                  "One slide per team. The headline is the only copy that "
+                  + "changes between slides — the GEAR UP label, the four trust "
+                  + "badges and the SHOP NOW button are the same on every one.",
+              },
               fields: [
                 { name: "name", type: "text", required: true },
                 { name: "logo", type: "upload", relationTo: "media", required: true },
@@ -2059,6 +2065,45 @@ const HomePage: GlobalConfig = {
                   type: "upload",
                   relationTo: "media",
                   required: true,
+                },
+                {
+                  type: "row",
+                  fields: [
+                    {
+                      name: "headlineTop",
+                      label: "Headline line 1",
+                      type: "text",
+                      admin: {
+                        width: "50%",
+                        description: 'White (or black) line, e.g. "REPRESENT".',
+                      },
+                    },
+                    {
+                      name: "headlineBottom",
+                      label: "Headline line 2",
+                      type: "text",
+                      admin: {
+                        width: "50%",
+                        description: 'Always orange, e.g. "WITH PRIDE.".',
+                      },
+                    },
+                  ],
+                },
+                {
+                  name: "theme",
+                  label: "Headline colour",
+                  type: "select",
+                  defaultValue: "dark",
+                  options: [
+                    { label: "Dark artwork — white text", value: "dark" },
+                    { label: "Light artwork — black text", value: "light" },
+                  ],
+                  admin: {
+                    description:
+                      "Switches line 1 and the badge labels between white and "
+                      + "black. Pick Light for bright artwork (e.g. a sky "
+                      + "background) so the copy stays readable.",
+                  },
                 },
               ],
             },

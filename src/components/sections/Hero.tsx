@@ -11,9 +11,30 @@ import { categoryList, teamBanner } from "@/lib/products";
 
 const SLIDE_MS = 600;
 
-// Shared style for the hero's "View all" + category pills.
-const PILL_CLASS =
-  "cursor-pointer whitespace-nowrap rounded-full border border-white/40 bg-transparent px-5 py-2.5 text-[12px] font-bold tracking-[1px] text-white backdrop-blur-[10px] transition-colors duration-200 hover:bg-white hover:text-black";
+/**
+ * Shared style for the hero's "View all" + category pills. The colours are
+ * split out of the base so they can follow the active slide's theme — white
+ * pills vanish against bright artwork now that it isn't dimmed by a scrim.
+ */
+const PILL_BASE =
+  "cursor-pointer whitespace-nowrap rounded-full border bg-transparent px-5 py-2.5 text-[12px] font-bold tracking-[1px] backdrop-blur-[10px] transition-colors duration-200";
+const PILL_THEME = {
+  dark: "border-white/40 text-white hover:bg-white hover:text-black",
+  light: "border-black/30 text-[#111111] hover:bg-[#111111] hover:text-white",
+} as const;
+
+/**
+ * The trust strip under the headline. Identical on every slide, so it lives here
+ * rather than as CMS rows repeated per team — only the headline and its colour
+ * differ between slides. The SVGs carry their own orange (#FF5820) and never
+ * recolour; it's the labels that flip with the theme.
+ */
+const HERO_BADGES = [
+  { src: "/svg/hero/heart.svg", width: 44, height: 40, label: "Trusted\nby Fans" },
+  { src: "/svg/hero/premium.svg", width: 48, height: 46, label: "Premium\nQuality" },
+  { src: "/svg/hero/delivery.svg", width: 52, height: 52, label: "Fast\nDelivery" },
+  { src: "/svg/hero/custom.svg", width: 37, height: 37, label: "Custom\nMade" },
+] as const;
 
 // Which slide an animating layer is and where it's heading, mapped to the
 // keyframes defined in globals.css.
@@ -37,6 +58,13 @@ export default function Hero({ hero }: { hero: HomepageHero }) {
   const activeTeamIndex = activeIndex % teamCount;
   const prevIndex = (activeTeamIndex - 1 + teamCount) % teamCount;
   const nextIndex = (activeTeamIndex + 1) % teamCount;
+
+  const activeTeam = teams[activeTeamIndex];
+  // Bright artwork (a sky background, say) needs black copy over it. One flag
+  // rather than a colour field, because it drives both the headline and the
+  // badge labels — and a free-form colour could be made unreadable.
+  const light = activeTeam.theme === "light";
+  const pillClass = `${PILL_BASE} ${PILL_THEME[light ? "light" : "dark"]}`;
 
   // Fixed 4 dots that advance one step per click, starting on the third dot
   // (matches the RCB default at activeIndex 1).
@@ -67,7 +95,13 @@ export default function Hero({ hero }: { hero: HomepageHero }) {
             sizes="100vw"
             className="object-cover"
           />
-          <div className="absolute inset-0 bg-black/25" />
+          {/* Darkens the artwork so white copy stays readable. A light slide's
+              copy is already black, so the scrim would only mute the artwork —
+              read off this banner's own team, not the active one, so both
+              layers of a transition are treated correctly. */}
+          {team.theme !== "light" && (
+            <div className="absolute inset-0 bg-black/25" />
+          )}
         </>
       );
     }
@@ -167,14 +201,14 @@ export default function Hero({ hero }: { hero: HomepageHero }) {
       {/* CATEGORY + SEARCH */}
       <div className="absolute left-6 right-6 top-6 z-10 flex items-center gap-6">
         <div className="scrollbar-hide flex min-w-0 flex-1 gap-3 overflow-x-auto">
-          <Link href="/category/all" className={PILL_CLASS}>
+          <Link href="/category/all" className={pillClass}>
             View all
           </Link>
           {categoryList.map((cat) => (
             <Link
               key={cat.slug}
               href={`/category/${cat.slug}`}
-              className={PILL_CLASS}
+              className={pillClass}
             >
               {cat.label}
             </Link>
@@ -187,30 +221,98 @@ export default function Hero({ hero }: { hero: HomepageHero }) {
           type="button"
           onClick={openSearch}
           aria-label="Search products"
-          className="flex w-[260px] shrink-0 cursor-pointer items-center gap-3 border-b border-white/70 pb-2.5 text-left transition-colors hover:border-white"
+          className={`flex w-[260px] shrink-0 cursor-pointer items-center gap-3 border-b pb-2.5 text-left transition-colors ${
+            light
+              ? "border-black/40 hover:border-black"
+              : "border-white/70 hover:border-white"
+          }`}
         >
-          <SearchIcon className="h-[22px] w-[22px] shrink-0 text-white" />
-          <span className="text-[19px] text-white/90">Search</span>
+          <SearchIcon
+            className={`h-[22px] w-[22px] shrink-0 ${
+              light ? "text-[#111111]" : "text-white"
+            }`}
+          />
+          <span
+            className={`text-[19px] ${light ? "text-[#111111]" : "text-white/90"}`}
+          >
+            Search
+          </span>
         </button>
       </div>
 
-      {/* TEE / HUB overlay text (fixed above the moving background). */}
-      <div className="pointer-events-none absolute -left-7.5 top-1/2 z-[5] -translate-y-1/2 whitespace-nowrap font-display text-[clamp(60px,14vw,280px)] uppercase leading-[0.85] text-[#ff5820] min-[1440px]:text-[240px] max-[1024px]:text-[160px] max-[768px]:w-1/2 max-[360px]:hidden">
-        TEE
-      </div>
-      <div className="pointer-events-none absolute -right-7.5 top-1/2 z-[5] -translate-y-1/2 whitespace-nowrap font-display text-[clamp(60px,14vw,280px)] uppercase leading-[0.85] text-[#ff5820] min-[1440px]:text-[240px] max-[1024px]:text-[160px] max-[768px]:w-1/2 max-[360px]:hidden">
-        HUB
-      </div>
+      {/* LEFT COPY BLOCK
+          Only the two headline lines and the light/dark flag come from the CMS
+          (per team). The GEAR UP label, the four badges and the button are the
+          same on every slide, so they're fixed here. Bebas Neue for the display
+          copy, Inter (the body face) for the badges and button — matching the
+          design, and both fonts are already loaded by the storefront layout.
 
-      {/* CENTER BUTTON */}
-      {hero.showCta && (
-        <Link
-          href={hero.ctaHref}
-          className="absolute left-1/2 top-[55%] z-20 flex h-[clamp(60px,7vw,85px)] w-[clamp(180px,20vw,260px)] -translate-x-1/2 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full bg-[#ff5b1f] text-[clamp(20px,2vw,30px)] font-normal text-white shadow-[0_12px_30px_rgba(0,0,0,0.25)] min-[1440px]:h-[60px] min-[1440px]:text-[30px] max-[1024px]:h-[50px]"
-        >
-          {hero.ctaLabel}
-        </Link>
-      )}
+          Sizes are `clamp(min, vw, design)` so the design values land at ~1440px
+          and scale down smoothly rather than snapping at breakpoints. */}
+      <div className="absolute left-[clamp(20px,5.5vw,78px)] top-1/2 z-10 w-[min(88vw,470px)] -translate-y-1/2">
+        <p className="font-bebas text-[clamp(16px,1.95vw,28px)] uppercase leading-none tracking-[1.5px] text-[#ff5820]">
+          GEAR UP
+        </p>
+
+        {/* The homepage has no other h1, so the hero headline is the page's. */}
+        {(activeTeam.headlineTop || activeTeam.headlineBottom) && (
+          <h1 className="mt-[clamp(6px,1vw,14px)] font-bebas text-[clamp(44px,7.4vw,106px)] uppercase leading-[0.87]">
+            {activeTeam.headlineTop && (
+              <span className={`block ${light ? "text-[#111111]" : "text-white"}`}>
+                {activeTeam.headlineTop}
+              </span>
+            )}
+            {activeTeam.headlineBottom && (
+              <span className="block text-[#ff5820]">
+                {activeTeam.headlineBottom}
+              </span>
+            )}
+          </h1>
+        )}
+
+        <div className="mt-[clamp(10px,1.6vw,22px)] h-[4px] w-[clamp(110px,13.4vw,193px)] bg-[#ff5820]" />
+
+        {/* Cells size to their content (the design uses Hug widths), so the
+            dividers sit tight to the labels instead of spreading. */}
+        <div className="mt-[clamp(14px,2.2vw,30px)] flex items-stretch">
+          {HERO_BADGES.map((badge, index) => (
+            <div
+              key={badge.src}
+              className={`flex flex-col items-center gap-[clamp(4px,0.8vw,10px)] px-[clamp(8px,1.3vw,18px)] ${
+                index === 0
+                  ? "pl-0"
+                  : light
+                    ? "border-l border-black/15"
+                    : "border-l border-white/25"
+              }`}
+            >
+              <Image
+                src={badge.src}
+                alt=""
+                width={badge.width}
+                height={badge.height}
+                className="h-[clamp(22px,2.3vw,32px)] w-auto"
+              />
+              <span
+                className={`whitespace-pre-line text-center text-[clamp(11px,0.95vw,13.72px)] font-semibold leading-[1.3] ${
+                  light ? "text-[#111111]" : "text-white"
+                }`}
+              >
+                {badge.label}
+              </span>
+            </div>
+          ))}
+        </div>
+
+        {hero.showCta && (
+          <Link
+            href={hero.ctaHref}
+            className="mt-[clamp(18px,2.6vw,36px)] inline-flex cursor-pointer items-center justify-center rounded-full bg-[#ff5b1f] px-[clamp(22px,2.6vw,34px)] py-[clamp(9px,1.1vw,14px)] text-[clamp(15px,1.4vw,20px)] font-bold text-white shadow-[0_12px_30px_rgba(0,0,0,0.25)] transition-colors duration-200 hover:bg-[#e64d15]"
+          >
+            {hero.ctaLabel}
+          </Link>
+        )}
+      </div>
 
       {/* TEAM SLIDER */}
       <div className="absolute bottom-[30px] left-1/2 z-20 flex w-[clamp(280px,45vw,520px)] -translate-x-1/2 flex-col items-center gap-2">

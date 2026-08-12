@@ -1229,11 +1229,26 @@ export interface Homepage {
   heroCtaHref?: string | null;
   heroLeftImage?: (number | null) | Media;
   heroRightImage?: (number | null) | Media;
+  /**
+   * One slide per team. The headline is the only copy that changes between slides — the GEAR UP label, the four trust badges and the SHOP NOW button are the same on every one.
+   */
   heroTeams?:
     | {
         name: string;
         logo: number | Media;
         backgroundImage: number | Media;
+        /**
+         * White (or black) line, e.g. "REPRESENT".
+         */
+        headlineTop?: string | null;
+        /**
+         * Always orange, e.g. "WITH PRIDE.".
+         */
+        headlineBottom?: string | null;
+        /**
+         * Switches line 1 and the badge labels between white and black. Pick Light for bright artwork (e.g. a sky background) so the copy stays readable.
+         */
+        theme?: ('dark' | 'light') | null;
         id?: string | null;
       }[]
     | null;
@@ -1456,6 +1471,9 @@ export interface HomepageSelect<T extends boolean = true> {
         name?: T;
         logo?: T;
         backgroundImage?: T;
+        headlineTop?: T;
+        headlineBottom?: T;
+        theme?: T;
         id?: T;
       };
   latestDropsNote?: T;

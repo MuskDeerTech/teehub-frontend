@@ -7,6 +7,7 @@ import * as migration_top_collections from './top_collections';
 import * as migration_product_page_and_reviews from './product_page_and_reviews';
 import * as migration_order_exchange_and_variant_details from './order_exchange_and_variant_details';
 import * as migration_hdfc_smartgateway from './hdfc_smartgateway';
+import * as migration_hero_headlines from './hero_headlines';
 
 // Order matters: Payload runs anything not yet recorded in `payload_migrations`
 // top to bottom, so new migrations are appended rather than sorted in.
@@ -55,5 +56,10 @@ export const migrations = [
     up: migration_hdfc_smartgateway.up,
     down: migration_hdfc_smartgateway.down,
     name: 'hdfc_smartgateway'
+  },
+  {
+    up: migration_hero_headlines.up,
+    down: migration_hero_headlines.down,
+    name: 'hero_headlines'
   },
 ];
