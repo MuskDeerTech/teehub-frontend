@@ -17,6 +17,8 @@
     "repair:woocommerce": "esbuild scripts/repair-woocommerce.ts --bundle --platform=node --format=esm --packages=external --outfile=scripts/.repair-woocommerce.mjs && node --env-file=.env scripts/.repair-woocommerce.mjs",
     "verify:woocommerce": "esbuild scripts/verify-woocommerce.ts --bundle --platform=node --format=esm --packages=external --outfile=scripts/.verify-woocommerce.mjs && node --env-file=.env scripts/.verify-woocommerce.mjs",
     "test:woocommerce": "esbuild scripts/woocommerce.test.ts --bundle --platform=node --format=esm --packages=external --outfile=scripts/.woocommerce.test.mjs && node --test scripts/.woocommerce.test.mjs",
+    "sweep:payments": "esbuild scripts/sweep-abandoned-payments.ts --bundle --platform=node --format=esm --packages=external --outfile=scripts/.sweep-abandoned-payments.mjs && node --env-file=.env scripts/.sweep-abandoned-payments.mjs",
+    "sweep:payments:dry": "npm run sweep:payments -- --dry-run",
     "payload:migrate:create": "payload migrate:create",
     "payload:migrate": "payload migrate",
     "generate:types": "esbuild scripts/gen-types.ts --bundle --platform=node --format=esm --packages=external --outfile=scripts/.gentypes.compiled.mjs && node --env-file=.env scripts/.gentypes.compiled.mjs",

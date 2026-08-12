@@ -1,4 +1,5 @@
 import config from "@payload-config";
+import { after } from "next/server";
 import { getPayload } from "payload";
 import type { Customer } from "../../../../../../payload-types";
 import {
@@ -7,6 +8,7 @@ import {
   prepareCheckout,
   type CheckoutInput,
 } from "@/lib/orders/checkout";
+import { sendOrderEmails } from "@/lib/email/orderEmails";
 
 function errorResponse(message: string, status = 400) {
   return Response.json({ errors: [{ message }] }, { status });
@@ -26,6 +28,11 @@ export async function POST(request: Request) {
       method: "cod",
       title: "Cash on Delivery",
     });
+
+    // A COD order is real the moment it is written, so both emails go out on
+    // create. Deferred so a slow mail provider never delays the confirmation
+    // the customer is waiting on.
+    after(() => sendOrderEmails(payload, order));
 
     return Response.json({
       status: "confirmed",

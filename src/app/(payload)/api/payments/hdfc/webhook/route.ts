@@ -1,8 +1,10 @@
 import { createHash, timingSafeEqual } from "node:crypto";
 import config from "@payload-config";
+import { after } from "next/server";
 import { getPayload } from "payload";
 import { HdfcGatewayError } from "@/lib/payments/hdfc";
 import { reconcileHdfcOrder } from "@/lib/payments/reconcileHdfc";
+import { sendOrderEmails } from "@/lib/email/orderEmails";
 
 function safeEqual(left: string, right: string) {
   const leftBuffer = Buffer.from(left);
@@ -117,7 +119,16 @@ export async function POST(request: Request) {
       return Response.json({ received: true });
     }
 
-    await reconcileHdfcOrder(payload, order, customerId);
+    const { updated, becamePaid } = await reconcileHdfcOrder(
+      payload,
+      order,
+      customerId,
+    );
+
+    // Catches the customer who paid and closed the tab before the return page
+    // could verify. Guarded, so a gateway retry of the same event is silent.
+    if (becamePaid) after(() => sendOrderEmails(payload, updated));
+
     await payload.update({
       collection: "webhook-events",
       id: log.id,

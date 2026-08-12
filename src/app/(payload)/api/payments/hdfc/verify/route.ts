@@ -1,9 +1,11 @@
 import config from "@payload-config";
+import { after } from "next/server";
 import { getPayload } from "payload";
 import {
   HdfcGatewayError,
 } from "@/lib/payments/hdfc";
 import { reconcileHdfcOrder } from "@/lib/payments/reconcileHdfc";
+import { sendOrderEmails } from "@/lib/email/orderEmails";
 
 function errorResponse(message: string, status = 400) {
   return Response.json({ errors: [{ message }] }, { status });
@@ -41,11 +43,12 @@ export async function POST(request: Request) {
   if (!order) return errorResponse("Payment order not found.", 404);
 
   try {
-    const { updated, paymentState, gatewayStatus } = await reconcileHdfcOrder(
-      payload,
-      order,
-      user.id,
-    );
+    const { updated, paymentState, gatewayStatus, becamePaid } =
+      await reconcileHdfcOrder(payload, order, user.id);
+
+    // Only on the first transition into "paid" — this route is polled while the
+    // bank decides, and the customer can refresh the return page at will.
+    if (becamePaid) after(() => sendOrderEmails(payload, updated));
 
     return Response.json({
       status: paymentState,

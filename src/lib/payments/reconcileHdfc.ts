@@ -30,6 +30,10 @@ export async function reconcileHdfcOrder(
   const paid = gatewayStatus.status === HDFC_PAID_STATUS;
   const pending = HDFC_PENDING_STATUSES.has(gatewayStatus.status);
   const paymentState = paid ? "paid" : pending ? "pending" : "failed";
+  // The return page and the webhook both reconcile the same order, and a
+  // customer refreshing the return page reconciles it again. Order emails hang
+  // off this flag so they go out on the first transition into "paid" only.
+  const becamePaid = paid && order.payment?.status !== "paid";
   const updated = await payload.update({
     collection: "orders",
     id: order.id,
@@ -49,5 +53,5 @@ export async function reconcileHdfcOrder(
     },
   });
 
-  return { updated, paymentState, gatewayStatus: gatewayStatus.status };
+  return { updated, paymentState, gatewayStatus: gatewayStatus.status, becamePaid };
 }
