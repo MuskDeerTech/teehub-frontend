@@ -77,12 +77,14 @@ export default function ReviewCard({ review }: { review: Review }) {
                       preload="metadata"
                       className="h-full w-full object-cover"
                     />
-                    <span className="absolute inset-0 flex items-center justify-center bg-black/25">
-                      <IconPlayerPlayFilled
-                        size={18}
-                        className="text-white"
-                        aria-label="Video review"
-                      />
+                    <span className="absolute inset-0 flex items-center justify-center bg-black/20">
+                      <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#e8342a] shadow-sm">
+                        <IconPlayerPlayFilled
+                          size={12}
+                          className="text-white"
+                          aria-label="Video review"
+                        />
+                      </span>
                     </span>
                   </>
                 ) : (

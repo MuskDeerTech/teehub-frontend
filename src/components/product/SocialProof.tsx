@@ -2,9 +2,9 @@ import Link from "next/link";
 import {
   IconBrandInstagram,
   IconChevronRight,
-  IconCircleCheck,
   IconFlame,
   IconPackage,
+  IconPercentage,
   IconStarFilled,
 } from "@tabler/icons-react";
 import type { SocialProofChip } from "@/lib/products";
@@ -16,6 +16,36 @@ const CHIP_ICONS = {
   parcel: IconPackage,
   star: IconStarFilled,
 } as const;
+
+/** Instagram keeps its own brand colour; everything else carries the store
+ *  orange, matching the design. */
+const CHIP_ICON_COLORS: Record<SocialProofChip["icon"], string> = {
+  fire: "text-[#f36d43]",
+  instagram: "text-[#e1306c]",
+  parcel: "text-[#f36d43]",
+  star: "text-[#f36d43]",
+};
+
+/**
+ * Chip copy with the figure picked out, e.g. `*54* Jerseys Sold Today` renders
+ * "54" bold orange and the rest plain — the emphasis the design puts on the
+ * number.
+ *
+ * A marker inside the existing text field rather than a second field, so the CMS
+ * needs no schema change. `split` with a capturing group hands back
+ * [plain, marked, plain, marked, …], so the odd indices are the marked runs.
+ */
+function chipText(text: string) {
+  return text.split(/\*([^*]+)\*/g).map((part, index) =>
+    index % 2 === 1 ? (
+      <strong key={index} className="font-bold text-[#f36d43]">
+        {part}
+      </strong>
+    ) : (
+      part
+    ),
+  );
+}
 
 /**
  * The small pill row under the price — "54 Jerseys Sold Today", "Featured in
@@ -29,21 +59,25 @@ export function SocialProofChips({ chips }: { chips: SocialProofChip[] }) {
     <ul className="mt-3 flex flex-wrap items-stretch gap-1.5">
       {chips.map((chip) => {
         const Icon = CHIP_ICONS[chip.icon];
+        // Centred against the icon, so a chip that wraps to two lines sits level
+        // with its glyph instead of riding high.
         const content = (
           <>
             <Icon
               size={13}
               stroke={1.8}
               aria-hidden="true"
-              className="mt-px shrink-0 text-[#f36d43]"
+              className={`shrink-0 ${CHIP_ICON_COLORS[chip.icon]}`}
             />
-            <span className="min-w-0 flex-1 leading-[1.25]">{chip.text}</span>
+            <span className="min-w-0 flex-1 leading-tight">
+              {chipText(chip.text)}
+            </span>
             {chip.href && (
               <IconChevronRight
                 size={12}
                 stroke={2}
                 aria-hidden="true"
-                className="mt-px shrink-0 text-[#9a9a9a]"
+                className="shrink-0 text-[#9a9a9a]"
               />
             )}
           </>
@@ -54,12 +88,12 @@ export function SocialProofChips({ chips }: { chips: SocialProofChip[] }) {
             {chip.href ? (
               <Link
                 href={chip.href}
-                className="flex h-full items-start gap-1.5 rounded-md border border-[#efd9d0] bg-[#fdf6f3] px-2 py-1.5 text-[9px] font-medium text-[#5c5c5c] transition-colors hover:border-[#f36d43]"
+                className="flex h-full items-center gap-1.5 rounded-lg border border-[#efd9d0] bg-white px-2 py-1.5 text-[9px] font-medium text-[#5c5c5c] transition-colors hover:border-[#f36d43]"
               >
                 {content}
               </Link>
             ) : (
-              <span className="flex h-full items-start gap-1.5 rounded-md border border-[#efd9d0] bg-[#fdf6f3] px-2 py-1.5 text-[9px] font-medium text-[#5c5c5c]">
+              <span className="flex h-full items-center gap-1.5 rounded-lg border border-[#efd9d0] bg-white px-2 py-1.5 text-[9px] font-medium text-[#5c5c5c]">
                 {content}
               </span>
             )}
@@ -89,12 +123,11 @@ export function PrepaidBox({
   return (
     <div className="mt-3 flex items-center justify-between gap-3 rounded-lg border border-[#cfe9da] bg-[#eef8f2] px-3 py-2.5">
       <div className="flex min-w-0 items-center gap-2">
-        <IconCircleCheck
-          size={18}
-          stroke={1.9}
-          aria-hidden="true"
-          className="shrink-0 text-[#0f7a45]"
-        />
+        {/* Dark disc with a percent glyph, per the design — the old green tick
+            read as "confirmed" rather than "here's a discount". */}
+        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#111]">
+          <IconPercentage size={13} stroke={2.4} aria-hidden="true" className="text-white" />
+        </span>
         <div className="min-w-0">
           <p className="text-[14px] font-bold leading-none text-[#0f7a45]">
             Get it @ ₹{price.toLocaleString("en-IN")}
@@ -108,7 +141,7 @@ export function PrepaidBox({
       </div>
 
       {badge && (
-        <span className="shrink-0 rounded border border-[#cfe9da] bg-white px-2 py-1 text-[8px] font-semibold leading-tight text-[#0f7a45]">
+        <span className="shrink-0 rounded-lg border border-[#0f7a45]/40 bg-white px-2 py-1 text-[8px] font-semibold leading-tight text-[#0f7a45]">
           {badge}
         </span>
       )}

@@ -62,7 +62,7 @@ export default function ReviewsSection({
                       size={12}
                       stroke={2}
                       aria-hidden="true"
-                      className="text-[#0f7a45]"
+                      className="text-[#8a8a8a]"
                     />
                   </li>
                 ))}

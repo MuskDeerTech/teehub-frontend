@@ -12,6 +12,8 @@ import {
 import { createPortal } from "react-dom";
 import {
   IconBrandWhatsapp,
+  IconFlameFilled,
+  IconMessage,
   IconRuler2,
   IconStarFilled,
   IconTruckDelivery,
@@ -137,9 +139,17 @@ function GalleryImage({
         style={fitTransform(image.fit)}
       />
 
+      {/* Comment glyph before the copy and a flame after it, per the design —
+          the count reads as chatter about the product rather than a bare label. */}
       {badge && (
-        <span className="pointer-events-none absolute left-3 top-3 flex items-center gap-1.5 rounded-md bg-black/75 px-2.5 py-1.5 text-[10px] font-semibold text-white backdrop-blur-sm">
+        <span className="pointer-events-none absolute left-3 top-3 flex items-center gap-1.5 rounded-md bg-black/90 px-2.5 py-1.5 text-[10px] font-semibold text-white backdrop-blur-sm">
+          <IconMessage size={12} stroke={2} aria-hidden="true" />
           {badge}
+          <IconFlameFilled
+            size={12}
+            aria-hidden="true"
+            className="text-[#ff5b1f]"
+          />
         </span>
       )}
     </div>
@@ -478,9 +488,12 @@ export default function ProductDetails({
             is sticky rather than fixed, the recommendations and footer scroll
             normally once this parent grid has passed. */}
         <div className="flex min-w-0 flex-col gap-3 lg:sticky lg:top-[84px] lg:col-start-3 lg:row-span-2 lg:row-start-1 lg:self-start">
-          <div className="rounded-xl border border-[#e2e2e2] bg-white p-4">
+          {/* Grey card, white controls. The design leans on that contrast to
+              make the size pills and quantity stepper read as controls — on a
+              white card they only showed through their own thin borders. */}
+          <div className="rounded-xl border border-[#e2e2e2] bg-[#f7f7f7] p-4">
             <div className="flex items-start justify-between gap-3">
-              <h1 className="min-w-0 text-[20px] font-semibold leading-snug text-black">
+              <h1 className="min-w-0 text-[20px] font-bold leading-snug text-black">
                 {product.title}
               </h1>
               <BookmarkButton
@@ -508,18 +521,14 @@ export default function ProductDetails({
                 )}
               </span>
 
+              {/* Star, score and count all carry the star's amber in the design,
+                  so the colour sits on the wrapper rather than per-child. */}
               {product.rating != null && (
-                <span className="flex shrink-0 items-center gap-1 text-[13px] text-[#111]">
-                  <IconStarFilled
-                    size={14}
-                    aria-hidden="true"
-                    className="text-[#f5b301]"
-                  />
+                <span className="flex shrink-0 items-center gap-1 text-[13px] text-[#f5b301]">
+                  <IconStarFilled size={14} aria-hidden="true" />
                   <span className="font-semibold">{product.rating}</span>
                   {product.reviewCount != null && (
-                    <span className="text-[#8a8a8a]">
-                      ({product.reviewCount})
-                    </span>
+                    <span>({product.reviewCount})</span>
                   )}
                 </span>
               )}
@@ -552,7 +561,16 @@ export default function ProductDetails({
                 </button>
               </div>
 
-              <div className="mt-2 flex flex-wrap gap-2">
+              {/* Equal-width cells, so XS and XXL are the same size as in the
+                  design instead of hugging their label. Capped at seven per row:
+                  the usual XS–XXXL run lands on one row, and a longer size list
+                  wraps while every pill keeps the same width. */}
+              <div
+                className="mt-2 grid gap-2"
+                style={{
+                  gridTemplateColumns: `repeat(${Math.min(sizes.length, 7)}, minmax(0, 1fr))`,
+                }}
+              >
                 {sizes.map((size) => {
                   const available = isSizeAvailable(size);
                   const active = selectedSize === size.label;
@@ -565,15 +583,23 @@ export default function ProductDetails({
                         available ? size.label : `${size.label} — out of stock`
                       }
                       onClick={() => setSelectedSize(size.label)}
-                      className={`min-w-[42px] rounded-md border px-3 py-2 text-[12px] font-medium transition ${
+                      className={`relative overflow-hidden rounded-lg border py-2 text-[13px] font-medium transition ${
                         !available
-                          ? "cursor-not-allowed border-[#ececec] bg-[#f4f4f4] text-[#bdbdbd]"
+                          ? "cursor-not-allowed border-[#dcdcdc] bg-[#e6e6e6] text-[#a8a8a8]"
                           : active
                             ? "border-black bg-black text-white"
                             : "cursor-pointer border-[#d6d6d6] bg-white text-black hover:border-black"
                       }`}
                     >
                       {size.label}
+                      {/* Diagonal slash across a sold-out pill. Clipped by
+                          `overflow-hidden`, so it reads corner to corner. */}
+                      {!available && (
+                        <span
+                          aria-hidden="true"
+                          className="pointer-events-none absolute left-1/2 top-1/2 h-px w-[140%] -translate-x-1/2 -translate-y-1/2 -rotate-[32deg] bg-[#b0b0b0]"
+                        />
+                      )}
                     </button>
                   );
                 })}
@@ -587,25 +613,29 @@ export default function ProductDetails({
               </span>
 
               <div className="mt-2 flex items-center gap-2.5">
-                <div className="flex h-11 shrink-0 items-center gap-3 rounded-md border border-[#d6d6d6] px-3">
-                  <button
-                    type="button"
-                    onClick={() => setQuantity((prev) => Math.max(1, prev - 1))}
-                    aria-label="Decrease quantity"
-                    className="cursor-pointer text-[18px] leading-none text-[#555] hover:text-black"
-                  >
-                    −
-                  </button>
-                  <span className="min-w-4 text-center text-[15px] font-semibold text-black">
-                    {quantity}
-                  </span>
+                {/* Segmented control: the two buttons and the count each get
+                    their own cell divided by a rule. Plus sits on the left and
+                    minus on the right — unconventional, but that's the order in
+                    the design, in both the full page and the panel detail. */}
+                <div className="flex h-11 shrink-0 items-stretch overflow-hidden rounded-lg border border-[#d6d6d6] bg-white">
                   <button
                     type="button"
                     onClick={() => setQuantity((prev) => prev + 1)}
                     aria-label="Increase quantity"
-                    className="cursor-pointer text-[18px] leading-none text-[#555] hover:text-black"
+                    className="flex w-10 cursor-pointer items-center justify-center text-[18px] leading-none text-[#555] transition-colors hover:bg-[#fafafa] hover:text-black"
                   >
                     +
+                  </button>
+                  <span className="flex w-12 items-center justify-center border-x border-[#d6d6d6] text-[15px] font-semibold text-black">
+                    {quantity}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setQuantity((prev) => Math.max(1, prev - 1))}
+                    aria-label="Decrease quantity"
+                    className="flex w-10 cursor-pointer items-center justify-center text-[18px] leading-none text-[#555] transition-colors hover:bg-[#fafafa] hover:text-black"
+                  >
+                    −
                   </button>
                 </div>
 
@@ -626,7 +656,7 @@ export default function ProductDetails({
                 <BookmarkButton
                   id={productBookmarkId(product.slug)}
                   variant="heart"
-                  className="flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-md border border-[#d6d6d6] text-[#111] transition-colors hover:border-black"
+                  className="flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-[#d6d6d6] bg-white text-[#111] transition-colors hover:border-black"
                 />
 
                 {settings.whatsappNumber && (
@@ -637,7 +667,7 @@ export default function ProductDetails({
                     target="_blank"
                     rel="noopener noreferrer"
                     aria-label="Ask about this product on WhatsApp"
-                    className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md bg-[#25d366] text-white transition-opacity hover:opacity-90"
+                    className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-[#1eb955] bg-[#25d366] text-white transition-opacity hover:opacity-90"
                   >
                     <IconBrandWhatsapp size={22} stroke={1.9} />
                   </a>
@@ -651,7 +681,7 @@ export default function ProductDetails({
                 type="button"
                 disabled={!selectedInStock}
                 onClick={() => handlePurchase("cart")}
-                className="flex h-12 items-center justify-center rounded-md bg-black text-[13px] font-semibold uppercase tracking-[0.5px] text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:bg-[#c9c9c9]"
+                className="flex h-12 items-center justify-center rounded-lg bg-black text-[13px] font-semibold uppercase tracking-[0.5px] text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:bg-[#c9c9c9]"
               >
                 {selectedInStock ? "Add to Cart" : "Out of Stock"}
               </button>
@@ -660,7 +690,7 @@ export default function ProductDetails({
                 type="button"
                 disabled={!selectedInStock}
                 onClick={() => handlePurchase("buy")}
-                className="flex h-12 items-center justify-center rounded-md border border-black bg-white text-[13px] font-semibold uppercase tracking-[0.5px] text-black transition-colors hover:bg-[#f6f6f6] disabled:cursor-not-allowed disabled:border-[#d6d6d6] disabled:text-[#bdbdbd]"
+                className="flex h-12 items-center justify-center rounded-lg border border-black bg-white text-[13px] font-semibold uppercase tracking-[0.5px] text-black transition-colors hover:bg-[#f6f6f6] disabled:cursor-not-allowed disabled:border-[#d6d6d6] disabled:text-[#bdbdbd]"
               >
                 Buy Now
               </button>

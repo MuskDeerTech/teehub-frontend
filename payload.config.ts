@@ -761,7 +761,10 @@ const Products: CollectionConfig = {
                   type: "text",
                   required: true,
                   admin: {
-                    description: 'e.g. "54 Jerseys Sold Today".',
+                    description:
+                      'e.g. "*54* Jerseys Sold Today". Wrap the figure in '
+                      + "*asterisks* to show it bold and orange, as the design "
+                      + "does; text without asterisks renders plain.",
                   },
                 },
                 {

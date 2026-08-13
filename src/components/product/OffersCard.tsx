@@ -50,11 +50,22 @@ export default function OffersCard({
             <h2 className="text-[15px] font-semibold text-[#111]">{title}</h2>
           </div>
 
-          <div className="mt-3 grid grid-cols-3 gap-2.5">
-            {offers.map((offer) => (
+          {/* One segmented strip rather than separate tiles: the design draws a
+              single bordered box split by vertical hairlines. Columns are set
+              off the offer count (same as the trust strip below) so they always
+              sit on one row instead of wrapping at four. */}
+          <div
+            className="mt-3 grid overflow-hidden rounded-lg border border-[#f6c9b8] bg-[#fdf1ec]"
+            style={{
+              gridTemplateColumns: `repeat(${offers.length}, minmax(0, 1fr))`,
+            }}
+          >
+            {offers.map((offer, index) => (
               <div
                 key={`${offer.amountOff}-${offer.minSpend}`}
-                className="rounded-lg border border-[#f6c9b8] bg-[#fdf1ec] px-2 py-3 text-center"
+                className={`px-2 py-3 text-center ${
+                  index > 0 ? "border-l border-[#f6c9b8]" : ""
+                }`}
               >
                 <p className="text-[10px] font-medium uppercase tracking-[0.4px] text-[#8a8a8a]">
                   Get
@@ -87,12 +98,10 @@ export default function OffersCard({
                 key={badge.title}
                 className="flex flex-col items-center gap-1 text-center"
               >
-                <Icon
-                  size={20}
-                  stroke={1.7}
-                  aria-hidden="true"
-                  className="text-[#0f7a45]"
-                />
+                {/* Outlined circle around the glyph, matching the design. */}
+                <span className="flex h-7 w-7 items-center justify-center rounded-full border border-[#0f7a45]/35 text-[#0f7a45]">
+                  <Icon size={15} stroke={1.7} aria-hidden="true" />
+                </span>
                 <p className="text-[11px] font-semibold leading-tight text-[#111]">
                   {badge.title}
                 </p>
