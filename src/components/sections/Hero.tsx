@@ -149,8 +149,8 @@ export default function Hero({ hero }: { hero: HomepageHero }) {
         }}
         className={`flex shrink-0 items-center justify-center rounded-[10px] bg-white transition-all duration-200 ${
           active
-            ? "h-[clamp(70px,8vw,100px)] w-[clamp(70px,8vw,100px)]"
-            : "h-[clamp(52px,6vw,72px)] w-[clamp(52px,6vw,72px)] cursor-pointer opacity-90 hover:opacity-100"
+            ? "h-[clamp(56px,8vw,100px)] w-[clamp(56px,8vw,100px)] max-[1024px]:h-[clamp(56px,5vw,64px)] max-[1024px]:w-[clamp(56px,5vw,64px)]"
+            : "h-[clamp(44px,6vw,72px)] w-[clamp(44px,6vw,72px)] cursor-pointer opacity-90 hover:opacity-100 max-[1024px]:h-[clamp(44px,4vw,50px)] max-[1024px]:w-[clamp(44px,4vw,50px)]"
         }`}
       >
         <Image
@@ -165,7 +165,11 @@ export default function Hero({ hero }: { hero: HomepageHero }) {
   };
 
   return (
-    <section className="relative h-[calc(100vh_-_72px)] min-h-[650px] w-full overflow-hidden">
+    // Full viewport height on desktop. Phones and tablets get ~56svh: a
+    // full-height hero is a portrait slab on a 9:19.5 screen, which both dwarfed
+    // the product rows below and forced `object-cover` to crop the artwork to a
+    // narrow vertical strip. `svh` (not `vh`) so browser chrome is excluded.
+    <section className="relative h-[calc(100vh_-_72px)] min-h-[650px] w-full overflow-hidden max-[1024px]:h-[56svh] max-[1024px]:min-h-[450px]">
       {/* BACKGROUND SLIDER */}
       <div className="absolute inset-0 z-0 bg-black">
         {transition ? (
@@ -200,7 +204,11 @@ export default function Hero({ hero }: { hero: HomepageHero }) {
 
       {/* CATEGORY + SEARCH */}
       <div className="absolute left-6 right-6 top-6 z-10 flex items-center gap-6">
-        <div className="scrollbar-hide flex min-w-0 flex-1 gap-3 overflow-x-auto">
+        {/* Phones only (<=640px) drop the pills: at that width they had no room
+            beside the search field and clipped mid-word. Categories stay
+            reachable there via the marquee above the hero and the hamburger
+            menu. Tablets are wide enough to keep pills and search together. */}
+        <div className="scrollbar-hide flex min-w-0 flex-1 gap-3 overflow-x-auto max-[640px]:hidden">
           <Link href="/category/all" className={pillClass}>
             View all
           </Link>
@@ -221,19 +229,19 @@ export default function Hero({ hero }: { hero: HomepageHero }) {
           type="button"
           onClick={openSearch}
           aria-label="Search products"
-          className={`flex w-[260px] shrink-0 cursor-pointer items-center gap-3 border-b pb-2.5 text-left transition-colors ${
+          className={`flex w-[260px] shrink-0 cursor-pointer items-center gap-3 border-b pb-2.5 text-left transition-colors max-[640px]:w-full ${
             light
               ? "border-black/40 hover:border-black"
               : "border-white/70 hover:border-white"
           }`}
         >
           <SearchIcon
-            className={`h-[22px] w-[22px] shrink-0 ${
+            className={`h-[22px] w-[22px] shrink-0 max-[640px]:h-[20px] max-[640px]:w-[20px] ${
               light ? "text-[#111111]" : "text-white"
             }`}
           />
           <span
-            className={`text-[19px] ${light ? "text-[#111111]" : "text-white/90"}`}
+            className={`text-[19px] max-[640px]:text-[16px] ${light ? "text-[#111111]" : "text-white/90"}`}
           >
             Search
           </span>
@@ -249,14 +257,19 @@ export default function Hero({ hero }: { hero: HomepageHero }) {
 
           Sizes are `clamp(min, vw, design)` so the design values land at ~1440px
           and scale down smoothly rather than snapping at breakpoints. */}
+      {/* Vertically centred at every width — same composition as desktop, just
+          smaller. Below 1024px the section is ~40% shorter but the copy is
+          still sized off viewport *width*, so each item below also caps its
+          `vw` term on that breakpoint; without those caps the stack is taller
+          than the space between the pill row and the team slider. */}
       <div className="absolute left-[clamp(20px,5.5vw,78px)] top-1/2 z-10 w-[min(88vw,470px)] -translate-y-1/2">
-        <p className="font-bebas text-[clamp(16px,1.95vw,28px)] uppercase leading-none tracking-[1.5px] text-[#ff5820]">
+        <p className="font-bebas text-[clamp(14px,1.95vw,28px)] uppercase leading-none tracking-[1.5px] text-[#ff5820] max-[1024px]:text-[clamp(14px,1.4vw,18px)]">
           GEAR UP
         </p>
 
         {/* The homepage has no other h1, so the hero headline is the page's. */}
         {(activeTeam.headlineTop || activeTeam.headlineBottom) && (
-          <h1 className="mt-[clamp(6px,1vw,14px)] font-bebas text-[clamp(44px,7.4vw,106px)] uppercase leading-[0.87]">
+          <h1 className="mt-[clamp(4px,1vw,14px)] font-bebas text-[clamp(38px,7.4vw,106px)] uppercase leading-[0.87] max-[1024px]:mt-[clamp(4px,0.6vw,8px)] max-[1024px]:text-[clamp(38px,5vw,52px)]">
             {activeTeam.headlineTop && (
               <span className={`block ${light ? "text-[#111111]" : "text-white"}`}>
                 {activeTeam.headlineTop}
@@ -270,11 +283,11 @@ export default function Hero({ hero }: { hero: HomepageHero }) {
           </h1>
         )}
 
-        <div className="mt-[clamp(10px,1.6vw,22px)] h-[4px] w-[clamp(110px,13.4vw,193px)] bg-[#ff5820]" />
+        <div className="mt-[clamp(8px,1.6vw,22px)] h-[4px] w-[clamp(110px,13.4vw,193px)] bg-[#ff5820] max-[1024px]:mt-[clamp(8px,1vw,14px)]" />
 
         {/* Cells size to their content (the design uses Hug widths), so the
             dividers sit tight to the labels instead of spreading. */}
-        <div className="mt-[clamp(14px,2.2vw,30px)] flex items-stretch">
+        <div className="mt-[clamp(10px,2.2vw,30px)] flex items-stretch max-[1024px]:mt-[clamp(10px,1.2vw,18px)]">
           {HERO_BADGES.map((badge, index) => (
             <div
               key={badge.src}
@@ -291,10 +304,10 @@ export default function Hero({ hero }: { hero: HomepageHero }) {
                 alt=""
                 width={badge.width}
                 height={badge.height}
-                className="h-[clamp(22px,2.3vw,32px)] w-auto"
+                className="h-[clamp(20px,2.3vw,32px)] w-auto max-[1024px]:h-[clamp(20px,1.8vw,24px)]"
               />
               <span
-                className={`whitespace-pre-line text-center text-[clamp(11px,0.95vw,13.72px)] font-semibold leading-[1.3] ${
+                className={`whitespace-pre-line text-center text-[clamp(10px,0.95vw,13.72px)] font-semibold leading-[1.3] ${
                   light ? "text-[#111111]" : "text-white"
                 }`}
               >
@@ -307,7 +320,7 @@ export default function Hero({ hero }: { hero: HomepageHero }) {
         {hero.showCta && (
           <Link
             href={hero.ctaHref}
-            className="mt-[clamp(18px,2.6vw,36px)] inline-flex cursor-pointer items-center justify-center rounded-full bg-[#ff5b1f] px-[clamp(22px,2.6vw,34px)] py-[clamp(9px,1.1vw,14px)] text-[clamp(15px,1.4vw,20px)] font-bold text-white shadow-[0_12px_30px_rgba(0,0,0,0.25)] transition-colors duration-200 hover:bg-[#e64d15]"
+            className="mt-[clamp(14px,2.6vw,36px)] inline-flex cursor-pointer items-center justify-center rounded-full bg-[#ff5b1f] px-[clamp(20px,2.6vw,34px)] py-[clamp(8px,1.1vw,14px)] text-[clamp(14px,1.4vw,20px)] font-bold text-white shadow-[0_12px_30px_rgba(0,0,0,0.25)] transition-colors duration-200 hover:bg-[#e64d15] max-[1024px]:mt-[clamp(14px,1.6vw,22px)] max-[1024px]:py-[clamp(8px,0.9vw,11px)] max-[1024px]:text-[clamp(14px,1.1vw,16px)]"
           >
             {hero.ctaLabel}
           </Link>
@@ -315,7 +328,12 @@ export default function Hero({ hero }: { hero: HomepageHero }) {
       </div>
 
       {/* TEAM SLIDER */}
-      <div className="absolute bottom-[30px] left-1/2 z-20 flex w-[clamp(280px,45vw,520px)] -translate-x-1/2 flex-col items-center gap-2">
+      {/* Sits at the bottom at every width. The floating nav dock (Navbar,
+          `bottom-5`) is pinned to the viewport rather than to this section, and
+          now the hero is ~56svh its bottom edge lands well clear of the dock at
+          the top of the page — so this row no longer needs to lift out of the
+          way the way it did when the hero filled the whole viewport. */}
+      <div className="absolute bottom-[30px] left-1/2 z-20 flex w-[clamp(280px,45vw,520px)] -translate-x-1/2 flex-col items-center gap-2 max-[1024px]:bottom-[12px]">
         <div className="flex items-center justify-center gap-3">
           <button
             onClick={goPrev}
@@ -338,7 +356,7 @@ export default function Hero({ hero }: { hero: HomepageHero }) {
           </button>
         </div>
 
-        <div aria-hidden="true" className="h-[22px]" />
+        <div aria-hidden="true" className="h-[22px] max-[1024px]:h-[8px]" />
 
         <Dots tone="light" count={dotCount} active={activeDot} />
       </div>

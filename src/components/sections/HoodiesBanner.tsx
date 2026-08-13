@@ -6,7 +6,12 @@ export default function HoodiesBanner({ banner }: { banner: HomepageBanner }) {
   if (!banner.image) return null;
 
   return (
-    <section className="relative h-[100svh] min-h-[560px] w-full overflow-hidden max-[640px]:min-h-[620px]">
+    // On phones the height comes from the artwork's own aspect ratio rather
+    // than the viewport. This banner's headline is baked into the image (unlike
+    // the others, which overlay theirs as HTML), so a viewport-height box made
+    // `object-cover` crop ~23% off each side and cut the copy mid-word. Matching
+    // the source ratio shows all of it and no letterboxing.
+    <section className="relative h-[100svh] min-h-[560px] w-full overflow-hidden max-[1024px]:h-[52svh] max-[1024px]:min-h-[360px] max-[640px]:aspect-[1440/871] max-[640px]:h-auto max-[640px]:min-h-0">
       <Image
         src={banner.image}
         alt={banner.heading || "Banner 1"}

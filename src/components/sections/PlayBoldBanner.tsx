@@ -4,7 +4,14 @@ import type { HomepageBanner } from "@/lib/homepage";
 
 const config = {
   section: {
-    className: "h-[100svh] min-h-[560px] max-[640px]:min-h-[620px]",
+    // Full-bleed on desktop. Phones and tablets get roughly half that: at full
+    // viewport height the landscape artwork was scaled up to cover a portrait
+    // slab, so only ~a third of it stayed visible.
+    // On phones the height comes from the artwork's own aspect ratio (this
+    // banner's source is 1440x821) rather than the viewport, so `object-cover`
+    // has nothing to crop and the whole image is visible.
+    className:
+      "h-[100svh] min-h-[560px] max-[1024px]:h-[52svh] max-[1024px]:min-h-[360px] max-[640px]:aspect-[1440/821] max-[640px]:h-auto max-[640px]:min-h-0",
   },
 } as const;
  

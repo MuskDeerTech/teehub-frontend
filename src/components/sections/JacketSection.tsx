@@ -6,7 +6,10 @@ export default function JacketSection({ banner }: { banner: HomepageBanner }) {
   if (!banner.image) return null;
 
   return (
-    <section className="relative h-[100svh] min-h-[560px] w-full overflow-hidden max-[640px]:min-h-[620px]">
+    // On phones the height comes from the artwork's own aspect ratio (this
+    // banner's source is 1440x857) rather than the viewport, so `object-cover`
+    // has nothing to crop and the whole image is visible.
+    <section className="relative h-[100svh] min-h-[560px] w-full overflow-hidden max-[1024px]:h-[52svh] max-[1024px]:min-h-[360px] max-[640px]:aspect-[1440/857] max-[640px]:h-auto max-[640px]:min-h-0">
       <Image
         src={banner.image}
         alt={banner.heading || "Banner 2"}
