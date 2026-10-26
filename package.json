@@ -8,6 +8,7 @@
     "build": "next build --webpack",
     "start": "next start",
     "lint": "eslint",
+    "test:hdfc": "node --test scripts/hdfc.test.mjs",
     "migrate:woocommerce": "esbuild scripts/migrate-woocommerce.ts --bundle --platform=node --format=esm --packages=external --outfile=scripts/.migrate-woocommerce.mjs && node --env-file=.env scripts/.migrate-woocommerce.mjs",
     "migrate:woocommerce:dry": "npm run migrate:woocommerce -- --dry-run",
     "migrate:woocommerce:restart": "npm run migrate:woocommerce -- --restart",

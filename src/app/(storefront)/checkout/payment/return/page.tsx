@@ -19,6 +19,8 @@ function PaymentReturnContent() {
   const codOrderNumber = searchParams.get("order") || "";
   const [state, setState] = useState<ViewState>(isCod ? "paid" : "verifying");
   const [orderNumber, setOrderNumber] = useState(codOrderNumber);
+  const [amount, setAmount] = useState<string | null>(null);
+  const [currency, setCurrency] = useState("INR");
   const [message, setMessage] = useState("");
 
   useEffect(() => {
@@ -53,12 +55,16 @@ function PaymentReturnContent() {
         const response = await fetch("/api/payments/hdfc/verify", {
           method: "POST",
           credentials: "include",
+          cache: "no-store",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ gatewayOrderId }),
         });
         const data = (await response.json().catch(() => null)) as {
           status?: "paid" | "pending" | "failed";
           orderNumber?: string;
+          gatewayOrderId?: string;
+          amount?: string;
+          currency?: string;
           errors?: { message?: string }[];
         } | null;
         if (cancelled) return;
@@ -70,7 +76,14 @@ function PaymentReturnContent() {
           return;
         }
 
-        if (data.orderNumber) setOrderNumber(data.orderNumber);
+        if (!data.gatewayOrderId || !data.amount || !data.currency) {
+          setState("failed");
+          setMessage("We could not verify the payment details. Please try again.");
+          return;
+        }
+        setOrderNumber(data.gatewayOrderId);
+        setAmount(data.amount);
+        setCurrency(data.currency);
         setState(data.status);
 
         if (data.status === "paid") {
@@ -119,7 +132,7 @@ function PaymentReturnContent() {
           {isCod
             ? "We have received your Cash on Delivery order."
             : paid
-              ? "HDFC SmartGateway verified your payment server-side."
+              ? "Your payment has been received successfully."
               : pending
                 ? "The bank has not returned a final status yet. This page will check again automatically."
                 : message || "No successful charge was found for this order."}
@@ -127,6 +140,11 @@ function PaymentReturnContent() {
         {orderNumber && (
           <p className="mt-4 rounded-lg bg-gray-50 px-4 py-3 text-sm font-semibold">
             Order: {orderNumber}
+          </p>
+        )}
+        {amount !== null && (
+          <p className="mt-2 rounded-lg bg-gray-50 px-4 py-3 text-sm font-semibold">
+            Amount: {currency} {amount}
           </p>
         )}
 
