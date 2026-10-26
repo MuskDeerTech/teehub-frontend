@@ -55,6 +55,9 @@ export async function POST(request: Request) {
       gatewayStatus,
       orderId: updated.id,
       orderNumber: updated.orderNumber,
+      gatewayOrderId: updated.payment?.gatewayOrderId,
+      amount: Number(updated.totalPrice).toFixed(2),
+      currency: updated.currency,
     });
   } catch (error) {
     if (error instanceof HdfcGatewayError) {
