@@ -17,21 +17,75 @@ function PaymentReturnContent() {
   const { clearCart, closeCart } = useCart();
   const isCod = searchParams.get("cod") === "1";
   const codOrderNumber = searchParams.get("order") || "";
-  const [state, setState] = useState<ViewState>(isCod ? "paid" : "verifying");
-  const [orderNumber, setOrderNumber] = useState(codOrderNumber);
+  const [state, setState] = useState<ViewState>("verifying");
+  const [orderNumber, setOrderNumber] = useState("");
   const [amount, setAmount] = useState<string | null>(null);
   const [currency, setCurrency] = useState("INR");
   const [message, setMessage] = useState("");
 
   useEffect(() => {
-    if (isCod) {
-      clearCart();
-      closeCart();
-      return;
-    }
-
     let cancelled = false;
     let timer: ReturnType<typeof setTimeout> | undefined;
+
+    // Never trust the URL for success: the order number is checked against the
+    // signed-in customer's own COD orders before anything is shown.
+    if (isCod) {
+      const confirm = async () => {
+        try {
+          const response = await fetch("/api/orders/cod-confirmation", {
+            method: "POST",
+            credentials: "include",
+            cache: "no-store",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ orderNumber: codOrderNumber }),
+          });
+          const data = (await response.json().catch(() => null)) as {
+            status?: "placed" | "failed";
+            orderNumber?: string;
+            amount?: string;
+            currency?: string;
+            errors?: { message?: string }[];
+          } | null;
+          if (cancelled) return;
+          if (!response.ok || !data?.status || !data.orderNumber || !data.amount) {
+            setState("failed");
+            setMessage(
+              data?.errors?.[0]?.message || "We could not find this order.",
+            );
+            return;
+          }
+
+          setOrderNumber(data.orderNumber);
+          setAmount(data.amount);
+          setCurrency(data.currency || "INR");
+          if (data.status === "placed") {
+            setState("paid");
+            clearCart();
+            closeCart();
+          } else {
+            setState("failed");
+            setMessage("This order has been cancelled.");
+          }
+        } catch {
+          if (!cancelled) {
+            setState("failed");
+            setMessage("We could not reach the server to confirm this order.");
+          }
+        }
+      };
+
+      if (!codOrderNumber) {
+        timer = setTimeout(() => {
+          if (!cancelled) setState("missing");
+        }, 0);
+      } else {
+        void confirm();
+      }
+      return () => {
+        cancelled = true;
+        if (timer) clearTimeout(timer);
+      };
+    }
     const queryOrderId =
       searchParams.get("order_id") || searchParams.get("orderId") || "";
     let storedOrderId = "";
@@ -106,13 +160,17 @@ function PaymentReturnContent() {
       cancelled = true;
       if (timer) clearTimeout(timer);
     };
-  }, [clearCart, closeCart, isCod, searchParams]);
+  }, [clearCart, closeCart, codOrderNumber, isCod, searchParams]);
 
   const paid = state === "paid";
   const pending = state === "pending" || state === "verifying";
   const Icon = paid ? IconCircleCheck : pending ? IconClock : IconCircleX;
   const title = isCod
-    ? "Order placed successfully"
+    ? paid
+      ? "Order placed successfully"
+      : pending
+        ? "Confirming your order"
+        : "Order not confirmed"
     : paid
       ? "Payment successful"
       : pending
@@ -130,7 +188,11 @@ function PaymentReturnContent() {
         <h1 className="mt-4 text-2xl font-bold text-[#111]">{title}</h1>
         <p className="mt-2 text-sm leading-6 text-gray-500">
           {isCod
-            ? "We have received your Cash on Delivery order."
+            ? paid
+              ? "We have received your Cash on Delivery order."
+              : pending
+                ? "Checking your order…"
+                : message || "We could not find this order."
             : paid
               ? "Your payment has been received successfully."
               : pending
